@@ -3,8 +3,10 @@ using ChartEditWinform.ChartCore.Interface;
 using ScottPlot;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -33,18 +35,66 @@ namespace ChartEditWinform.ChartCore
                 if (value is null)
                     return;
                 if (dragData is not null)
+                {
                     dragData.PropertyChanged -= DraggedLinePropertyChanged;
+                    dragData.OnDataChanged -= DraggedLineDataChanged;
+                    dragData.SplitLines.CollectionChanged -= SplitLines_CollectionChanged;
+                }
                 dragData = value;
-                richTextBox1.Text = dragData.GetDescription(out var index);
                 dragData.PropertyChanged += DraggedLinePropertyChanged;
+                dragData.OnDataChanged += DraggedLineDataChanged;
+                dragData.SplitLines.CollectionChanged += SplitLines_CollectionChanged;
+                dataGridView1.Rows.Clear();
+                dataGridView1.RowCount = dragData.SplitLines.Count;
+            }
+        }
+
+        private void SplitLines_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            dataGridView1.RowCount = dragData!.SplitLines.Count;
+        }
+
+        private void DraggedLineDataChanged()
+        {
+            if (currentDraggedLine is not null && currentDraggedLine is BaseLine )
+            {
+                dataGridView1.Refresh();
             }
         }
 
         private void ChartEditControl_Load(object sender, EventArgs e)
         {
+            //dataGridView1.AutoSize = false;
+            dataGridView1.AllowUserToAddRows = false;
+            dataGridView1.AllowUserToDeleteRows = false;
+            dataGridView1.AllowUserToOrderColumns = false;
+            dataGridView1.AllowUserToResizeColumns = false;
+            dataGridView1.AllowUserToResizeRows = false;
+            dataGridView1.VirtualMode = true;
+            dataGridView1.CellValueNeeded += DataGridView1_CellValueNeeded;
+            dataGridView1.AutoGenerateColumns = false;
+            dataGridView1.RowHeadersWidth = 20;
+            dataGridView1.MultiSelect = false;
 
+            foreach (DataGridViewColumn column in dataGridView1.Columns)
+            {
+                column.Width = 80;
+                column.Resizable = DataGridViewTriState.False;
+                column.SortMode = DataGridViewColumnSortMode.NotSortable;
+            }
+            indexC.Width = 50;
+            radioC.Width = 135;
+            RTC.DefaultCellStyle.Format = "0.000";
+            startC.DefaultCellStyle.Format = "0.000";
+            endC.DefaultCellStyle.Format = "0.000";
+            areaC.DefaultCellStyle.Format = "0.00";
+            radioC.DefaultCellStyle.Format = "0.00";
 
+        }
 
+        private void DataGridView1_CellValueNeeded(object? sender, DataGridViewCellValueEventArgs e)
+        {
+            e.Value = DragData?.SplitLines[e.RowIndex][e.ColumnIndex];
         }
 
         private void DraggedLinePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -55,6 +105,8 @@ namespace ChartEditWinform.ChartCore
             DraggableChartVM vm = (DraggableChartVM)sender;
             if (e.PropertyName != nameof(vm.DraggedLine))
                 return;
+            dataGridView1.Refresh();
+            dataGridView1.ClearSelection();
             if (currentDraggedLine != null)
             {
                 currentDraggedLine.PropertyChanged -= CurrentLine_PropertyChanged;
@@ -62,31 +114,49 @@ namespace ChartEditWinform.ChartCore
 
             if (vm.DraggedLine is null)
             {
-                richTextBox1.Text = vm.GetDescription(out var index);
                 return;
             }
 
             currentDraggedLine = vm.DraggedLine.Value.DraggedLine;
             CurrentLine_PropertyChanged(currentDraggedLine, new PropertyChangedEventArgs(nameof(currentDraggedLine.Line)));
             currentDraggedLine.PropertyChanged += CurrentLine_PropertyChanged;
+
         }
 
+        private DateTime refreshTime = DateTime.Now;
 
         private void CurrentLine_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if(sender is null) 
+            if (sender is null)
                 return;
             if (e.PropertyName != nameof(EditLineBase.Line))
                 return;
-            
-            richTextBox1.Text = DragData!.GetDescription(out var index);
-            if (index.HasValue)
+            if (sender is SplitLine line)
             {
-                int start = richTextBox1.Find(richTextBox1.Lines[index.Value]);
-                richTextBox1.SelectionStart = start;
-                richTextBox1.SelectionLength = richTextBox1.Lines[index.Value].Length;
-                richTextBox1.SelectionColor = Color.Red;
-                richTextBox1.HideSelection = true;
+                UpdateData(line);
+            }
+
+        }
+
+        private void UpdateData(SplitLine line)
+        {
+            SplitLine? nextLine = DragData?.SplitLines.ElementAtOrDefault(line.Index);
+            //dataGridView1.ClearSelection();
+            dataGridView1.Rows[line.Index - 1].Selected = true;
+            foreach (DataGridViewColumn i in dataGridView1.Columns)
+            {
+                dataGridView1.Rows[line.Index - 1].Cells[i.Index].Value = null;
+                if (nextLine is not null)
+                {
+                    dataGridView1.Rows[line.Index].Cells[i.Index].Value = null;
+                }
+            }
+            if (line.Equals(DragData?.SplitLines[^1]))
+            {
+                foreach(var i in DragData.SplitLines)
+                {
+                    dataGridView1.Rows[i.Index - 1].Cells[5].Value = null;
+                }
             }
         }
     }

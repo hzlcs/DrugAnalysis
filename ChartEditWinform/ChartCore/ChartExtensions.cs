@@ -27,7 +27,7 @@ namespace ChartEditWinform.ChartCore
 
         public static void RemoveSplitLine(this FormsPlot chart, SplitLine line)
         {
-            if(linePlotWeakTable.TryGetValue(line, out var linePlot))
+            if (linePlotWeakTable.TryGetValue(line, out var linePlot))
                 chart.Plot.Remove(linePlot);
         }
 
@@ -55,9 +55,9 @@ namespace ChartEditWinform.ChartCore
             return info.IsStart ? info.DraggedLine.Start : info.DraggedLine.End;
         }
 
-        
 
-        public static void BinaryInsert<T>(this IList<T> list, T item, IComparer<T> comparer)
+
+        public static int BinaryInsert<T>(this IList<T> list, T item, IComparer<T> comparer)
         {
             int l = 0;
             int r = list.Count - 1;
@@ -71,11 +71,16 @@ namespace ChartEditWinform.ChartCore
                     r = mid - 1;
             }
             list.Insert(l, item);
+            return l;
         }
-        public static void BinaryInsert<T>(this IList<T> list, T item) where T : IComparable<T>
+        public static int BinaryInsert<T>(this IList<T> list, T item) where T : IComparable<T>
         {
-            list.BinaryInsert(item, Comparer<T>.Create((l, r) => l.CompareTo(r)));
+            return list.BinaryInsert(item, Comparer<T>.Create((l, r) => l.CompareTo(r)));
         }
 
+        public static ScottPlot.Color ToScottColor(this System.Drawing.Color color)
+        {
+            return new ScottPlot.Color(color.R, color.G, color.B, color.A);
+        }
     }
 }

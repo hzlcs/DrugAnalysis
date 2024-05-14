@@ -20,6 +20,8 @@ using SplitLine = ChartEditWinform.ChartCore.Entity.SplitLine;
 using Color = System.Drawing.Color;
 using System.Numerics;
 using OpenTK;
+using SkiaSharp.Views.Desktop;
+using ChartEditWinform.ChartCore.UserForms;
 
 namespace ChartEditWinform.ChartCore
 {
@@ -42,12 +44,14 @@ namespace ChartEditWinform.ChartCore
                 MyHighlightText = chartPlot.Plot.Add.Text("", 0, 0);
                 MyHighlightText.IsVisible = false;
 
-                chartPlot.Plot.Add.ScatterPoints(chartData.DataSource).Color = ScottPlot.Color.FromARGB((uint)Color.SkyBlue.ToArgb());
-
+                var source = chartPlot.Plot.Add.ScatterPoints(chartData.DataSource);
+                source.Color = ScottPlot.Color.FromARGB((uint)Color.SkyBlue.ToArgb());
+                source.MarkerSize = 3;
                 perVaule = value.YMax.Y / 100;
                 chartPlot.AddEditLine(value.BaseLine);
                 value.SplitLines.CollectionChanged += VerticalLines_CollectionChanged;
                 InitSplitLine();
+                //chartData.SplitLines[chartData.SplitLines.Count - 1].TrySetDPIndex(2);
                 chartPlot.Plot.Axes.AutoScale();
                 chartPlot.Refresh();
             }
@@ -89,6 +93,9 @@ namespace ChartEditWinform.ChartCore
                 Filter = "csv文件(*.txt)|*.csv",
             };
 
+
+            InitStyle();
+
             chartPlot.MouseDown += FormsPlot1_MouseDown;
             chartPlot.MouseUp += FormsPlot1_MouseUp;
             chartPlot.MouseMove += FormsPlot1_MouseMove;
@@ -98,78 +105,16 @@ namespace ChartEditWinform.ChartCore
             chartPlot.Menu.Add("Remove Line", RemoveLineMenu);
             chartPlot.Menu.Add("Clear These Line", ClearLineMenu);
             chartPlot.Menu.Add("Save Data", SaveDataMenu);
+            chartPlot.Menu.Add("Set DP", SetDPMenu);
         }
 
-        private void ClearLineMenu(IPlotControl control)
-        {
-            var range = chartPlot.Plot.Axes.Bottom.Range;
-            var lines = chartData.SplitLines.Where(v => v.Start.X > range.Min && v.Start.X < range.Max).ToArray();
-            if (MessageBox.Show($"是否删除这{lines.Length}条分割线?", "", MessageBoxButtons.YesNo) == DialogResult.No)
-                return;
-            foreach (var line in lines)
-                chartData.RemoveSplitLine(line);
-            chartPlot.Refresh();
-        }
+        
 
-        private void SaveDataMenu(IPlotControl control)
+        private void InitStyle()
         {
-            dialog.FileName = chartData.FileName + ".csv";
-            if (dialog.ShowDialog() == DialogResult.OK)
-            {
-                string fileName = dialog.FileName;
-                if (File.Exists(fileName))
-                {
-                    File.Delete(fileName);
-                }
-                string dir = Path.GetDirectoryName(fileName)!;
-                if (!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
-                File.WriteAllText(fileName, chartData.GetSaveContent(), Encoding.UTF8);
-            }
-        }
-
-        private void RemoveLineMenu(IPlotControl control)
-        {
-            //var chartPoint = chartData.GetChartPoint(mouseCoordinates.X);
-            //if (chartPoint is null)
-            //{
-            //    MessageBox.Show("Can't remove line here");
-            //}
-            //else
-            {
-                var lineInfo = chartData.GetDraggedLine(mouseCoordinates);
-                if (!lineInfo.HasValue)
-                {
-                    MessageBox.Show("Can't remove line here");
-                }
-                else if (lineInfo.Value.IsBaseLine)
-                {
-                    MessageBox.Show("Can't remove baseLine");
-                }
-                else
-                {
-                    SplitLine line = (SplitLine)lineInfo.Value.DraggedLine;
-                    if (MessageBox.Show($"确认移除分割线：({line.End.X}, {line.End.Y})?", "", MessageBoxButtons.YesNo) == DialogResult.No)
-                        return;
-                    chartData.RemoveSplitLine(line);
-                    chartPlot.Refresh();
-                }
-            }
-        }
-
-        private void AddLineMenu(IPlotControl control)
-        {
-            var chartPoint = chartData.GetChartPoint(mouseCoordinates.X);
-            if (chartPoint is null)
-            {
-                MessageBox.Show("Can't add line here");
-            }
-            else
-            {
-                var line = AddSplitLine(chartPoint.Value);
-                chartData.DraggedLine = DraggableChartVM.GetFocusLineInfo(line);
-                chartPlot.Refresh();
-            }
+            var plot = chartPlot.Plot;
+            plot.FigureBackground.Color = Color.White.ToScottColor();
+            plot.Grid.IsVisible = false;
         }
 
         public DraggableChartControl(DraggableChartVM chartData) : this()
@@ -223,78 +168,8 @@ namespace ChartEditWinform.ChartCore
             return new Vector2d(chartPlot.Plot.Axes.Bottom.Width / 50, chartPlot.Plot.Axes.Left.Height / 50);
         }
 
-        private void FormsPlot1_MouseDown(object? sender, MouseEventArgs e)
-        {
-            if (chartData is null)
-                return;
-
-            Pixel mousePixel = new(e.Location.X, e.Location.Y);
-            mouseCoordinates = chartPlot.Plot.GetCoordinates(mousePixel);
-
-            chartData.Sensitivity = GetSensitivity();
-
-
-
-            if (e.Button == MouseButtons.Left)
-            {
-                draggedLine = chartData.GetDraggedLine(mouseCoordinates);
-                if (draggedLine is not null)
-                {
-                    var value = draggedLine.Value.GetMarkPoint();
-                    if (MyHighlightText is not null)
-                    {
-                        MyHighlightText.IsVisible = true;
-                        MyHighlightText.Location = value;
-                        MyHighlightText.LabelText = $"({value.X: 0.000}, {value.Y: 0.000})";
-                    }
-                    chartPlot.Refresh();
-                    chartPlot.Interaction.Disable();
-                }
-            }
-        }
-
-        private void FormsPlot1_MouseUp(object? sender, MouseEventArgs e)
-        {
-            if (chartData is null)
-                return;
-            if (draggedLine is null)
-                return;
-            var line = draggedLine.Value;
-            if (line.IsBaseLine)
-            {
-                foreach (var i in chartData.SplitLines)
-                {
-                    i.Start = chartData.BaseLine.CreateSplitLinePoint(i.Start.X);
-                }
-            }
-
-            draggedLine = null;
-            if (MyHighlightText is not null)
-                MyHighlightText.IsVisible = false;
-            chartPlot.Interaction.Enable();
-            chartPlot.Refresh();
-        }
-
-        private void FormsPlot1_MouseMove(object? sender, MouseEventArgs e)
-        {
-            if (chartData is null)
-                return;
-            if (draggedLine is null)
-                return;
-            Pixel mousePixel = new(e.Location.X, e.Location.Y);
-            Coordinates mouseLocation = chartPlot.Plot.GetCoordinates(mousePixel);
-            var line = draggedLine.Value;
-            var chartPoint = chartData.GetChartPoint(mouseLocation.X, line.IsBaseLine ? mouseLocation.Y : null);
-            MoveLine(chartPoint, mouseLocation);
-            var markPoint = draggedLine.Value.GetMarkPoint();
-            if (MyHighlightText is not null)
-            {
-                MyHighlightText.Location = markPoint;
-                MyHighlightText.LabelText = $"({markPoint.X: 0.000}, {markPoint.Y: 0.000})";
-            }
-
-            chartPlot.Refresh();
-        }
+        private CoordinateLine oldBaseLine;
+        
 
         private void MoveLine(Coordinates? chartPoint, Coordinates mouseLocation)
         {
@@ -339,7 +214,7 @@ namespace ChartEditWinform.ChartCore
         private SplitLine AddSplitLine(Coordinates point)
         {
             CoordinateLine chartLine = chartData.CreateSplitLine(point);
-            var line = new Entity.SplitLine(chartLine);
+            var line = new Entity.SplitLine(chartLine, chartData);
             chartData.AddSplitLine(line);
             return line;
         }
@@ -416,7 +291,184 @@ namespace ChartEditWinform.ChartCore
             }
         }
 
+        #region Mouse
+        private void FormsPlot1_MouseDown(object? sender, MouseEventArgs e)
+        {
+            if (chartData is null)
+                return;
 
+            Pixel mousePixel = new(e.Location.X, e.Location.Y);
+            mouseCoordinates = chartPlot.Plot.GetCoordinates(mousePixel);
+
+            chartData.Sensitivity = GetSensitivity();
+
+
+
+            if (e.Button == MouseButtons.Left)
+            {
+                draggedLine = chartData.GetDraggedLine(mouseCoordinates);
+                if (draggedLine is not null)
+                {
+                    if (draggedLine.Value.IsBaseLine)
+                        oldBaseLine = draggedLine.Value.DraggedLine.Line;
+                    var value = draggedLine.Value.GetMarkPoint();
+                    if (MyHighlightText is not null)
+                    {
+                        MyHighlightText.IsVisible = true;
+                        MyHighlightText.Location = value;
+                        MyHighlightText.LabelText = $"({value.X: 0.000}, {value.Y: 0.000})";
+                    }
+                    chartPlot.Refresh();
+                    chartPlot.Interaction.Disable();
+                }
+            }
+        }
+
+        private void FormsPlot1_MouseUp(object? sender, MouseEventArgs e)
+        {
+            if (chartData is null)
+                return;
+            if (draggedLine is null)
+                return;
+            var line = draggedLine.Value;
+            if (line.IsBaseLine)
+            {
+                chartData.UpdateBaseLine(oldBaseLine, line.DraggedLine.Line);
+            }
+            draggedLine = null;
+            //ChartData.DraggedLine = null;
+            if (MyHighlightText is not null)
+                MyHighlightText.IsVisible = false;
+            chartPlot.Interaction.Enable();
+            chartPlot.Refresh();
+        }
+
+        private void FormsPlot1_MouseMove(object? sender, MouseEventArgs e)
+        {
+            if (chartData is null)
+                return;
+            if (draggedLine is null)
+                return;
+            Pixel mousePixel = new(e.Location.X, e.Location.Y);
+            Coordinates mouseLocation = chartPlot.Plot.GetCoordinates(mousePixel);
+            var line = draggedLine.Value;
+            var chartPoint = chartData.GetChartPoint(mouseLocation.X, line.IsBaseLine ? mouseLocation.Y : null);
+            MoveLine(chartPoint, mouseLocation);
+            var markPoint = draggedLine.Value.GetMarkPoint();
+            if (MyHighlightText is not null)
+            {
+                MyHighlightText.Location = markPoint;
+                MyHighlightText.LabelText = $"({markPoint.X: 0.000}, {markPoint.Y: 0.000})";
+            }
+
+            chartPlot.Refresh();
+        }
+        #endregion
+
+        #region Menu
+        private void ClearLineMenu(IPlotControl control)
+        {
+            var range = chartPlot.Plot.Axes.Bottom.Range;
+            var lines = chartData.SplitLines.Where(v => v.Start.X > range.Min && v.Start.X < range.Max).ToArray();
+            if (MessageBox.Show($"是否删除这{lines.Length}条分割线?", "", MessageBoxButtons.YesNo) == DialogResult.No)
+                return;
+            foreach (var line in lines)
+                chartData.RemoveSplitLine(line);
+            chartPlot.Refresh();
+        }
+
+        private void SaveDataMenu(IPlotControl control)
+        {
+            dialog.FileName = chartData.FileName + ".csv";
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                string fileName = dialog.FileName;
+                if (File.Exists(fileName))
+                {
+                    File.Delete(fileName);
+                }
+                string dir = Path.GetDirectoryName(fileName)!;
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+                File.WriteAllText(fileName, chartData.GetSaveContent(), Encoding.UTF8);
+            }
+        }
+
+        private void RemoveLineMenu(IPlotControl control)
+        {
+            //var chartPoint = chartData.GetChartPoint(mouseCoordinates.X);
+            //if (chartPoint is null)
+            //{
+            //    MessageBox.Show("Can't remove line here");
+            //}
+            //else
+            {
+                var lineInfo = chartData.GetDraggedLine(mouseCoordinates);
+                if (!lineInfo.HasValue)
+                {
+                    MessageBox.Show("Can't remove line here");
+                }
+                else if (lineInfo.Value.IsBaseLine)
+                {
+                    MessageBox.Show("Can't remove baseLine");
+                }
+                else
+                {
+                    SplitLine line = (SplitLine)lineInfo.Value.DraggedLine;
+                    if (MessageBox.Show($"确认移除分割线：({line.End.X}, {line.End.Y})?", "", MessageBoxButtons.YesNo) == DialogResult.No)
+                        return;
+                    chartData.RemoveSplitLine(line);
+                    chartPlot.Refresh();
+                }
+            }
+        }
+
+        private void AddLineMenu(IPlotControl control)
+        {
+            var chartPoint = chartData.GetChartPoint(mouseCoordinates.X);
+            if (chartPoint is null)
+            {
+                MessageBox.Show("Can't add line here");
+            }
+            else
+            {
+                var line = AddSplitLine(chartPoint.Value);
+                chartData.DraggedLine = DraggableChartVM.GetFocusLineInfo(line);
+                chartPlot.Refresh();
+            }
+        }
+
+        private void SetDPMenu(IPlotControl control)
+        {
+            var lineInfo = chartData.GetDraggedLine(mouseCoordinates);
+            if (!lineInfo.HasValue)
+            {
+                MessageBox.Show("Can't set dp here");
+            }
+            else if (lineInfo.Value.IsBaseLine)
+            {
+                MessageBox.Show("Can't set baseLine");
+            }
+            else
+            {
+                SplitLine line = (SplitLine)lineInfo.Value.DraggedLine;
+                var form = new InputDPForm(line.DP);
+                if(form.ShowDialog() == DialogResult.OK)
+                {
+                    if(!line.TrySetDPIndex(form.DPValue))
+                    { 
+                        MessageBox.Show("无效的DP值");
+                    }
+                    else
+                    {
+                        chartData.DraggedLine = null;
+                        chartData.DraggedLine = DraggableChartVM.GetFocusLineInfo(line);
+                    }
+                }
+
+            }
+        }
+        #endregion
     }
 
 

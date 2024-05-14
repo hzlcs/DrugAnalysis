@@ -9,7 +9,7 @@ namespace ChartEditWinform
 {
     internal static class Session
     {
-        public static float unit = 0.0066666667f;
+        public static double unit = 0.0066666667;
 
     }
 
