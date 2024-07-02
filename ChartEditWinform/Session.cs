@@ -38,6 +38,17 @@ namespace ChartEditWinform
             }
             
         }
+
+        public static void InitDataGridView(this DataGridView dataGridView)
+        {
+            dataGridView.AllowUserToAddRows = false;
+            dataGridView.AllowUserToDeleteRows = false;
+            dataGridView.AllowUserToOrderColumns = false;
+            dataGridView.AllowUserToResizeColumns = false;
+            dataGridView.AllowUserToResizeRows = false;
+            dataGridView.AutoGenerateColumns = false;
+            dataGridView.RowHeadersWidth = 20;
+        }
     }
 
 }

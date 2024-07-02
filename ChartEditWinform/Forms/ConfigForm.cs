@@ -1,4 +1,5 @@
-﻿using ChartEditWinform.Entitys;
+﻿using ChartEditLibrary.Entitys;
+using ChartEditWinform.Entitys;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

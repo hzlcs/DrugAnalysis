@@ -18,16 +18,16 @@ namespace ChartEditLibrary.Model
 
     public abstract partial class EditLineBase : ObservableObject
     {
-        protected delegate void SplitLineMovedEventHandler(SplitLine mover, CoordinateLine oldValue, CoordinateLine newValue);
-
+        public delegate void SplitLineMovedEventHandler(SplitLine mover, CoordinateLine oldValue, CoordinateLine newValue);
+        public delegate void SplitLineMovingEventHandler(SplitLine line, CoordinateLine oldValue, CoordinateLine newValue);
         /// <summary>
         /// 分割线移动时（主要用于判断此次移动是否跨越其他线）
         /// </summary>
-        public event LineMovingEventHandler? SplitLineMoving;
+        public event SplitLineMovingEventHandler? SplitLineMoving;
         /// <summary>
         /// 分割线移动后（主要用于处理移动变换，及处理对该线右边一条线的影响）
         /// </summary>
-        protected event SplitLineMovedEventHandler? SplitLineMoved;
+        public event SplitLineMovedEventHandler? SplitLineMoved;
 
 
         public Coordinates Start
@@ -61,11 +61,11 @@ namespace ChartEditLibrary.Model
         /// </summary>
         partial void OnLineChanging(CoordinateLine oldValue, CoordinateLine newValue)
         {
-            if (oldValue.Start.X == newValue.Start.X)
+            if (this is not SplitLine line || oldValue.Start.X == newValue.Start.X)
             {
                 return;
             }
-            SplitLineMoving?.Invoke(this, oldValue, newValue);
+            SplitLineMoving?.Invoke(line, oldValue, newValue);
         }
 
         /// <summary>
@@ -97,6 +97,8 @@ namespace ChartEditLibrary.Model
     /// </summary>
     public partial class SplitLine : EditLineBase, IComparable<SplitLine>
     {
+        public delegate void NextLineChangedEventHandler(SplitLine sender, EditLineBase? oldValue, EditLineBase newValue);
+        public event NextLineChangedEventHandler? NextLineChanged;
         /// <summary>
         /// 聚合度表
         /// </summary>
@@ -110,7 +112,7 @@ namespace ChartEditLibrary.Model
         /// </summary>
         public int RTIndex { get; set; }
 
-        public double RT => bindChart.DataSource[RTIndex].X;
+        public double RT { get; set; }
 
         public string? DP { get; set; }
 
@@ -136,94 +138,12 @@ namespace ChartEditLibrary.Model
             }
         }
 
-        /// <summary>
-        /// 当前绑定的数据源
-        /// </summary>
-        private readonly DraggableChartVM bindChart;
 
-        public SplitLine(CoordinateLine line, DraggableChartVM bindChart) : base(line)
+        public SplitLine(CoordinateLine line) : base(line)
         {
-            this.bindChart = bindChart;
-            SplitLineMoved += OnLineMoved;
+            
         }
 
-        /// <summary>
-        /// 处理分割线移动时的事件
-        /// </summary>
-        private void OnLineMoved(EditLineBase mover, CoordinateLine oldValue, CoordinateLine newValue)
-        {
-            //本次移动的范围
-            int startIndex = bindChart.GetDateSourceIndex(oldValue.Start.X);
-            int endIndex = bindChart.GetDateSourceIndex(newValue.Start.X);
-
-            //向右移动
-            int sign = 1;
-            //向左移动
-            if (startIndex > endIndex)
-            {
-                (endIndex, startIndex) = (startIndex, endIndex);
-                sign = -1;  
-            }
-            //面积变化量
-            double change = bindChart.GetArea(startIndex, endIndex) * sign;
-
-            if (mover.Equals(this)) //移动的是本身
-            {
-                //更新面积
-                Area += change;
-                AreaRatio = Area / bindChart.SumArea;
-                //当前是最后一个分割线时更新总面积及分割线的面积比例
-                if (this.Equals(bindChart.SplitLines[^1]))
-                {
-                    bindChart.SumArea += change;
-                    foreach (var line in bindChart.SplitLines)
-                    {
-                        line.AreaRatio = line.Area / bindChart.SumArea;
-                    }
-                }
-
-                if (sign == -1)
-                {
-                    //向左移动时，若跨过RT值，则默认RT值为当前移动值，即默认递减
-                    if (RTIndex > endIndex)
-                    {
-                        RTIndex = endIndex;
-                    }
-                }
-                else
-                {
-                    //向右移动时，需先获取当前移动范围内的最大值，若大于RT值则更新RT值
-                    var max = bindChart.DataSource[startIndex..endIndex].MaxBy(v => v.Y);
-                    if (max.Y > bindChart.DataSource[RTIndex].Y)
-                    {
-                        RTIndex = bindChart.GetDateSourceIndex(max.X);
-                    }
-                }
-            }
-            else //处理移动对右边一条线的影响
-            {
-                //此时面积为减去变化量
-                Area -= change;
-                AreaRatio = Area / bindChart.SumArea;
-
-                //RT值处理与本身相反
-                if (sign == -1)
-                {
-                    var max = bindChart.DataSource[startIndex..endIndex].MaxBy(v => v.Y);
-                    if (max.Y > bindChart.DataSource[RTIndex].Y)
-                    {
-                        RTIndex = bindChart.GetDateSourceIndex(max.X);
-                    }
-                }
-                else
-                {
-                    if (RTIndex < endIndex)
-                    {
-                        RTIndex = endIndex;
-                    }
-                }
-            }
-        }
 
         public int CompareTo(SplitLine? other)
         {
@@ -241,19 +161,8 @@ namespace ChartEditLibrary.Model
         /// </summary>
         partial void OnNextLineChanged(EditLineBase? oldValue, EditLineBase newValue)
         {
-            if (oldValue is null)//第一次设置时
-            {
-                //初始化面积和RT
-                Area = bindChart.GetArea(this, newValue);
-                int startIndex = bindChart.GetDateSourceIndex(newValue.Start.X);
-                int endIndex = bindChart.GetDateSourceIndex(Start.X);
-                RTIndex = bindChart.GetDateSourceIndex(bindChart.DataSource[startIndex..endIndex].MaxBy(v => v.Y).X);
-            }
-            //添加对下一条线移动的监听，以处理移动对本线的影响
-            if (oldValue is SplitLine old)
-                old.SplitLineMoved -= OnLineMoved;
-            if (newValue is SplitLine newLine)
-                newLine.SplitLineMoved += OnLineMoved;
+            NextLineChanged?.Invoke(this, oldValue, newValue);
+            
         }
 
         public double Area { get; set; }
@@ -272,7 +181,7 @@ namespace ChartEditLibrary.Model
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public bool TrySetDPIndex(string? value)
+        public bool TrySetDPIndex(string? value, IList<SplitLine> lines)
         {
             if (value is null)
             {
@@ -281,7 +190,7 @@ namespace ChartEditLibrary.Model
             }
             if (DP is null && int.TryParse(value, out int dp))
             {
-                if (bindChart.SplitLines.Take(Index).All(v => v.DP is null))
+                if (lines.Take(Index).All(v => v.DP is null))
                 {
                     //获取该DP在聚合度表中的索引
                     int index = Array.IndexOf(DPTable, dp);
@@ -289,7 +198,7 @@ namespace ChartEditLibrary.Model
                     {
                         for (int i = Index - 1; i >= 0; --i)
                         {
-                            bindChart.SplitLines[i].DP = DPTable.ElementAtOrDefault(index).ToString();
+                            lines[i].DP = DPTable.ElementAtOrDefault(index).ToString();
                             ++index;
                         }
                         return true;
@@ -399,6 +308,6 @@ namespace ChartEditLibrary.Model
         }
     }
 
-    public delegate void LineMovingEventHandler(EditLineBase line, CoordinateLine oldValue, CoordinateLine newValue);
+    
 
 }

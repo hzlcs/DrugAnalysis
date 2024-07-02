@@ -1,4 +1,4 @@
-﻿using ChartEditWinform.ChartCore.Entity;
+﻿using ChartEditLibrary.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

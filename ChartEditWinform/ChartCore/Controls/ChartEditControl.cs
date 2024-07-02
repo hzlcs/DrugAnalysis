@@ -1,4 +1,5 @@
-﻿using ChartEditWinform.ChartCore.Entity;
+﻿using ChartEditLibrary.Model;
+using ChartEditLibrary.ViewModel;
 using ScottPlot;
 using System;
 using System.Collections.Generic;

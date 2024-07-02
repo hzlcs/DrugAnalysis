@@ -12,10 +12,8 @@ using System.Windows.Forms;
 using ScottPlot.Hatches;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using ScottPlot.Colormaps;
-using ChartEditWinform.ChartCore.Entity;
 using ScottPlot.Palettes;
 using System.Collections.Specialized;
-using SplitLine = ChartEditWinform.ChartCore.Entity.SplitLine;
 using Color = System.Drawing.Color;
 using System.Numerics;
 using OpenTK;
@@ -23,6 +21,11 @@ using SkiaSharp.Views.Desktop;
 using ChartEditWinform.ChartCore.UserForms;
 using System.Diagnostics;
 using System.Reflection.Emit;
+using ChartEditLibrary.ViewModel;
+using ChartEditLibrary.Model;
+using OpenTK.Mathematics;
+using ChartEditLibrary;
+using ChartEditLibrary.Interfaces;
 
 namespace ChartEditWinform.ChartCore
 {
@@ -112,7 +115,7 @@ namespace ChartEditWinform.ChartCore
             chartPlot.Menu.Add("Set DP", SetDPMenu);
         }
 
-
+        IChartControl chartControl = null!;
 
         private void InitStyle()
         {
@@ -121,9 +124,12 @@ namespace ChartEditWinform.ChartCore
             plot.Grid.IsVisible = false;
         }
 
+
         public DraggableChartControl(DraggableChartVM chartData) : this()
         {
             ChartData = chartData;
+            chartControl.PlotControl = chartPlot;
+            chartControl.ChartData = chartData;
         }
 
         private void FormsPlot1_KeyDown(object? sender, KeyEventArgs e)
@@ -206,7 +212,7 @@ namespace ChartEditWinform.ChartCore
             }
         }
 
-        private Entity.SplitLine? AddSplitLine(double x)
+        private SplitLine? AddSplitLine(double x)
         {
 
             var point = chartData.GetChartPoint(x);
@@ -214,8 +220,6 @@ namespace ChartEditWinform.ChartCore
                 return null;
             return chartData.AddSplitLine(point.Value);
         }
-
-
 
         public void RemoveLine(double x)
         {
@@ -230,14 +234,12 @@ namespace ChartEditWinform.ChartCore
             }
         }
 
-
-
         #region Mouse
         private void FormsPlot1_MouseDown(object? sender, MouseEventArgs e)
         {
             if (chartData is null)
                 return;
-
+            chartControl.MouseDown(sender, MousePosition, e.Button == MouseButtons.Left);
             Pixel mousePixel = new(e.Location.X, e.Location.Y);
             mouseCoordinates = chartPlot.Plot.GetCoordinates(mousePixel);
 
@@ -396,7 +398,7 @@ namespace ChartEditWinform.ChartCore
                 var form = new InputDPForm(line.DP);
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    if (!line.TrySetDPIndex(form.DPValue))
+                    if (!line.TrySetDPIndex(form.DPValue, chartData.SplitLines))
                     {
                         MessageBox.Show("无效的DP值");
                     }

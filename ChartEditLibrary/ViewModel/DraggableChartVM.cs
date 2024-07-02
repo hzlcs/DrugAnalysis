@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OpenTK.Mathematics;
+using ScottPlot.Colormaps;
 
 namespace ChartEditLibrary.ViewModel
 {
@@ -128,10 +129,8 @@ namespace ChartEditLibrary.ViewModel
         /// <summary>
         /// 分割线移动时，检测是否跨过相邻分割线
         /// </summary>
-        private void OnLineMoving(EditLineBase sender, CoordinateLine oldValue, CoordinateLine newValue)
+        private void OnLineMoving(SplitLine line, CoordinateLine oldValue, CoordinateLine newValue)
         {
-            if (sender is not SplitLine line)
-                return;
             if (oldValue.Start.X < newValue.Start.X)
             {
                 var after = SplitLines.ElementAtOrDefault(draggedSplitLineIndex + 1);
@@ -338,6 +337,8 @@ namespace ChartEditLibrary.ViewModel
         /// <param name="line"></param>
         public void AddSplitLine(SplitLine line)
         {
+            line.SplitLineMoved += OnLineMoved;
+            line.NextLineChanged += OnNextLineChanged;
             int index = SplitLines.BinaryInsert(line);
             line.Index = index + 1;
             for (int i = index + 1; i < SplitLines.Count; ++i)
@@ -359,6 +360,7 @@ namespace ChartEditLibrary.ViewModel
                     if (DataSource[parentLine.RTIndex].X < line.Start.X)
                     {
                         parentLine.RTIndex = GetDateSourceIndex(line.Start.X);
+                        parentLine.RT = DataSource[parentLine.RTIndex].X;
                     }
                 }
             }
@@ -382,16 +384,22 @@ namespace ChartEditLibrary.ViewModel
                 if (DataSource[parentLine.RTIndex].X < line.Start.X)
                 {
                     parentLine.RTIndex = GetDateSourceIndex(line.Start.X);
+                    parentLine.RT = DataSource[parentLine.RTIndex].X;
                 }
             }
+
         }
+
+
 
         /// <summary>
         /// 移除分割线
         /// </summary>
         /// <param name="line"></param>
-        internal void RemoveSplitLine(SplitLine line)
+        public void RemoveSplitLine(SplitLine line)
         {
+            line.SplitLineMoved -= OnLineMoved;
+            line.NextLineChanged -= OnNextLineChanged;
             int index = SplitLines.IndexOf(line);
             for (int i = index + 1; i < SplitLines.Count; ++i)
             {
@@ -408,6 +416,7 @@ namespace ChartEditLibrary.ViewModel
                     if (DataSource[changeLine.RTIndex].Y < DataSource[line.RTIndex].Y)
                     {
                         changeLine.RTIndex = line.RTIndex;
+                        changeLine.RT = DataSource[line.RTIndex].X;
                     }
                 }
                 else
@@ -432,6 +441,7 @@ namespace ChartEditLibrary.ViewModel
                 if (DataSource[changeLine.RTIndex].Y < DataSource[line.RTIndex].Y)
                 {
                     changeLine.RTIndex = line.RTIndex;
+                    changeLine.RT = DataSource[changeLine.RTIndex].X;
                 }
             }
             SplitLines.Remove(line);
@@ -566,7 +576,7 @@ namespace ChartEditLibrary.ViewModel
             }
             int dp6Index = maxDots.IndexOf(heighestIndex);
             Debug.Assert(dp6Index != -1);
-            if(4.Equals(tag))
+            if (4.Equals(tag))
             {
                 if (DataSource[maxDots[dp6Index]].Y - DataSource[minDots[dp6Index - 1]].Y > 10)
                 {
@@ -588,7 +598,7 @@ namespace ChartEditLibrary.ViewModel
             {
                 ++endMin;
             }
-            if(DataSource[maxDots[endMin]].X - DataSource[minDots[endMin]].X > -0.7)
+            if (DataSource[maxDots[endMin]].X - DataSource[minDots[endMin]].X > -0.7)
             {
                 ++endMin;
             }
@@ -677,7 +687,7 @@ namespace ChartEditLibrary.ViewModel
                         if (++peakCount == 2)
                             break;
                     }
-                    
+
                 }
             }
 
@@ -774,7 +784,7 @@ namespace ChartEditLibrary.ViewModel
         public SplitLine AddSplitLine(Coordinates point)
         {
             CoordinateLine chartLine = CreateSplitLine(point);
-            var line = new SplitLine(chartLine, this);
+            var line = new SplitLine(chartLine);
             AddSplitLine(line);
             return line;
         }
@@ -819,10 +829,109 @@ namespace ChartEditLibrary.ViewModel
                 string[] data = lines[i].Split(',');
                 double x = double.Parse(data[1]);
                 Coordinates? point = GetChartPoint(x);
-                if(point.HasValue)
+                if (point.HasValue)
                     AddSplitLine(point.Value).DP = data[6].Substring(2);
             }
-            
+
+        }
+
+        private void OnLineMoved(EditLineBase mover, CoordinateLine oldValue, CoordinateLine newValue)
+        {
+            if (mover is not SplitLine line)
+                return;
+            //本次移动的范围
+            int startIndex = GetDateSourceIndex(oldValue.Start.X);
+            int endIndex = GetDateSourceIndex(newValue.Start.X);
+
+            //向右移动
+            int sign = 1;
+            //向左移动
+            if (startIndex > endIndex)
+            {
+                (endIndex, startIndex) = (startIndex, endIndex);
+                sign = -1;
+            }
+            //面积变化量
+            double change = GetArea(startIndex, endIndex) * sign;
+
+            //更新面积
+            line.Area += change;
+            line.AreaRatio = line.Area / SumArea;
+            //当前是最后一个分割线时更新总面积及分割线的面积比例
+            if (this.Equals(SplitLines[^1]))
+            {
+                SumArea += change;
+                foreach (var temp in SplitLines)
+                {
+                    temp.AreaRatio = temp.Area / SumArea;
+                }
+            }
+
+            if (sign == -1)
+            {
+                //向左移动时，若跨过RT值，则默认RT值为当前移动值，即默认递减
+                if (line.RTIndex > endIndex)
+                {
+                    line.RTIndex = endIndex;
+                    line.RT = DataSource[line.RTIndex].X;
+                }
+            }
+            else
+            {
+                //向右移动时，需先获取当前移动范围内的最大值，若大于RT值则更新RT值
+                var max = DataSource[startIndex..endIndex].MaxBy(v => v.Y);
+                if (max.Y > DataSource[line.RTIndex].Y)
+                {
+                    line.RTIndex = GetDateSourceIndex(max.X);
+                    line.RT = DataSource[line.RTIndex].X;
+                }
+            }
+
+            //处理移动对右边一条线的影响
+            var rightLine = SplitLines.ElementAtOrDefault(line.Index);
+            if (rightLine is not null)
+            {
+                //此时面积为减去变化量
+                rightLine.Area -= change;
+                rightLine.AreaRatio = rightLine.Area / SumArea;
+
+                //RT值处理与本身相反
+                if (sign == -1)
+                {
+                    var max = DataSource[startIndex..endIndex].MaxBy(v => v.Y);
+                    if (max.Y > DataSource[rightLine.RTIndex].Y)
+                    {
+                        rightLine.RTIndex = GetDateSourceIndex(max.X);
+                        rightLine.RT = DataSource[line.RTIndex].X;
+                    }
+                }
+                else
+                {
+                    if (rightLine.RTIndex < endIndex)
+                    {
+                        rightLine.RTIndex = endIndex;
+                        rightLine.RT = DataSource[rightLine.RTIndex].X;
+                    }
+                }
+            }
+        }
+
+        private void OnNextLineChanged(SplitLine sender, EditLineBase? oldValue, EditLineBase newValue)
+        {
+            if (oldValue is null)//第一次设置时
+            {
+                //初始化面积和RT
+                sender.Area = GetArea(sender, newValue);
+                int startIndex = GetDateSourceIndex(newValue.Start.X);
+                int endIndex = GetDateSourceIndex(sender.Start.X);
+                sender.RTIndex = GetDateSourceIndex(DataSource[startIndex..endIndex].MaxBy(v => v.Y).X);
+                sender.RT = DataSource[sender.RTIndex].X;
+            }
+            //添加对下一条线移动的监听，以处理移动对本线的影响
+            //if (oldValue is SplitLine old)
+            //    old.SplitLineMoved -= OnLineMoved;
+            //if (newValue is SplitLine newLine)
+            //    newLine.SplitLineMoved += OnLineMoved;
         }
     }
 

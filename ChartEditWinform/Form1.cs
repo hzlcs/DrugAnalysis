@@ -1,5 +1,6 @@
+using ChartEditLibrary.Entitys;
+using ChartEditLibrary.ViewModel;
 using ChartEditWinform.ChartCore;
-using ChartEditWinform.ChartCore.Entity;
 using ChartEditWinform.Controls;
 using ChartEditWinform.Entitys;
 using ChartEditWinform.Forms;
@@ -57,7 +58,7 @@ namespace ChartEditWinform
             {
                 MessageBox.Show("»º´æÎÄ¼þ¼ÓÔØÊ§°Ü");
             }
-            var vms = cacheContents!.Select(DraggableChartVM.Create).ToArray();
+            var vms = cacheContents!.Select(v=>DraggableChartVM.Create(v)).ToArray();
             foreach (var vm in vms)
             {
                 var data = new DataItem() { DraggableChartVM = vm!, FileName = vm!.FileName };
@@ -250,14 +251,6 @@ namespace ChartEditWinform
         }
     }
 
-    public class CacheContent
-    {
-        public string FileName { get; set; } = null!;
-        public double[] X { get; set; } = null!;
-        public double[] Y { get; set; } = null!;
-        public string SaveContent { get; set; } = null!;
-    }
-
     struct FileItem
     {
         public int index;
@@ -272,10 +265,4 @@ namespace ChartEditWinform
         }
     }
 
-    public enum ExportType
-    {
-        None,
-        Enoxaparin,
-        Other
-    }
 }
