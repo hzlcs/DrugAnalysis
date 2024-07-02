@@ -4,7 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ChartEditWinform.ChartCore.Interface
+namespace ChartEditLibrary.Entitys
 {
-
+    public enum ExportType
+    {
+        None,
+        Enoxaparin,
+        Other
+    }
 }

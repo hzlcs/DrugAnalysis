@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             tableLayoutPanel1 = new TableLayoutPanel();
-            panel1 = new Panel();
             dataGridView1 = new DataGridView();
             indexC = new DataGridViewTextBoxColumn();
             RTC = new DataGridViewTextBoxColumn();
@@ -46,24 +45,14 @@
             // 
             tableLayoutPanel1.ColumnCount = 1;
             tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-            tableLayoutPanel1.Controls.Add(panel1, 0, 1);
             tableLayoutPanel1.Controls.Add(dataGridView1, 0, 0);
             tableLayoutPanel1.Dock = DockStyle.Fill;
             tableLayoutPanel1.Location = new Point(0, 0);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
-            tableLayoutPanel1.RowCount = 2;
+            tableLayoutPanel1.RowCount = 1;
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 93.24074F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 6.759259F));
             tableLayoutPanel1.Size = new Size(920, 1080);
             tableLayoutPanel1.TabIndex = 0;
-            // 
-            // panel1
-            // 
-            panel1.Dock = DockStyle.Fill;
-            panel1.Location = new Point(3, 1010);
-            panel1.Name = "panel1";
-            panel1.Size = new Size(914, 67);
-            panel1.TabIndex = 0;
             // 
             // dataGridView1
             // 
@@ -74,7 +63,7 @@
             dataGridView1.Location = new Point(3, 3);
             dataGridView1.Name = "dataGridView1";
             dataGridView1.RowHeadersWidth = 62;
-            dataGridView1.Size = new Size(914, 1001);
+            dataGridView1.Size = new Size(914, 1074);
             dataGridView1.TabIndex = 1;
             // 
             // indexC
@@ -149,7 +138,6 @@
         #endregion
 
         private TableLayoutPanel tableLayoutPanel1;
-        private Panel panel1;
         private DataGridView dataGridView1;
         private DataGridViewTextBoxColumn indexC;
         private DataGridViewTextBoxColumn RTC;

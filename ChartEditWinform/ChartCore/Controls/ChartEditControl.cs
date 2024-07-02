@@ -1,5 +1,4 @@
 ﻿using ChartEditWinform.ChartCore.Entity;
-using ChartEditWinform.ChartCore.Interface;
 using ScottPlot;
 using System;
 using System.Collections.Generic;
@@ -45,13 +44,13 @@ namespace ChartEditWinform.ChartCore
                 dragData.OnDataChanged += DraggedLineDataChanged;
                 dragData.SplitLines.CollectionChanged += SplitLines_CollectionChanged;
                 dataGridView1.Rows.Clear();
-                dataGridView1.RowCount = dragData.SplitLines.Count;
+                dataGridView1.RowCount = dragData.SplitLines.Count + 1;
             }
         }
 
         private void SplitLines_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            dataGridView1.RowCount = dragData!.SplitLines.Count;
+            dataGridView1.RowCount = Math.Max(1, dragData!.SplitLines.Count);
         }
 
         private void DraggedLineDataChanged()
@@ -64,16 +63,9 @@ namespace ChartEditWinform.ChartCore
 
         private void ChartEditControl_Load(object sender, EventArgs e)
         {
-            //dataGridView1.AutoSize = false;
-            dataGridView1.AllowUserToAddRows = false;
-            dataGridView1.AllowUserToDeleteRows = false;
-            dataGridView1.AllowUserToOrderColumns = false;
-            dataGridView1.AllowUserToResizeColumns = false;
-            dataGridView1.AllowUserToResizeRows = false;
+            dataGridView1.InitDataGridView();
             dataGridView1.VirtualMode = true;
             dataGridView1.CellValueNeeded += DataGridView1_CellValueNeeded;
-            dataGridView1.AutoGenerateColumns = false;
-            dataGridView1.RowHeadersWidth = 20;
             dataGridView1.MultiSelect = false;
 
             foreach (DataGridViewColumn column in dataGridView1.Columns)

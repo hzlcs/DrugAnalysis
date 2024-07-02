@@ -13,7 +13,6 @@ using ScottPlot.Hatches;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using ScottPlot.Colormaps;
 using ChartEditWinform.ChartCore.Entity;
-using ChartEditWinform.ChartCore.Interface;
 using ScottPlot.Palettes;
 using System.Collections.Specialized;
 using SplitLine = ChartEditWinform.ChartCore.Entity.SplitLine;
@@ -22,6 +21,8 @@ using System.Numerics;
 using OpenTK;
 using SkiaSharp.Views.Desktop;
 using ChartEditWinform.ChartCore.UserForms;
+using System.Diagnostics;
+using System.Reflection.Emit;
 
 namespace ChartEditWinform.ChartCore
 {
@@ -40,18 +41,22 @@ namespace ChartEditWinform.ChartCore
 
 
                 chartPlot.Plot.Clear();
-
+                chartPlot.Plot.XLabel(value.FileName);
                 MyHighlightText = chartPlot.Plot.Add.Text("", 0, 0);
                 MyHighlightText.IsVisible = false;
 
                 var source = chartPlot.Plot.Add.ScatterPoints(chartData.DataSource);
                 source.Color = ScottPlot.Color.FromARGB((uint)Color.SkyBlue.ToArgb());
                 source.MarkerSize = 3;
-                perVaule = value.YMax.Y / 100;
+
                 chartPlot.AddEditLine(value.BaseLine);
+                foreach (var i in value.SplitLines)
+                {
+                    chartPlot.AddEditLine(i);
+                }
                 value.SplitLines.CollectionChanged += VerticalLines_CollectionChanged;
-                InitSplitLine();
                 //chartData.SplitLines[chartData.SplitLines.Count - 1].TrySetDPIndex(2);
+                chartPlot.PerformAutoScale();
                 chartPlot.Plot.Axes.AutoScale();
                 chartPlot.Refresh();
             }
@@ -75,7 +80,6 @@ namespace ChartEditWinform.ChartCore
             }
         }
 
-        double perVaule = 0.1f;
         private Text? MyHighlightText;
 
         private Coordinates[] DataSource => chartData.DataSource;
@@ -108,7 +112,7 @@ namespace ChartEditWinform.ChartCore
             chartPlot.Menu.Add("Set DP", SetDPMenu);
         }
 
-        
+
 
         private void InitStyle()
         {
@@ -130,7 +134,7 @@ namespace ChartEditWinform.ChartCore
                 if (!chartData.DraggedLine.HasValue || chartData.DraggedLine.Value.IsBaseLine)
                     return;
                 var x = chartData.DraggedLine.Value.DraggedLine.Start.X;
-                var point = chartData.GetChartPoint(x - Session.unit);
+                var point = chartData.GetChartPoint(x - ChartData.Unit);
                 if (point.HasValue)
                 {
                     chartData.DraggedLine.Value.DraggedLine.Line = chartData.CreateSplitLine(point.Value);
@@ -142,7 +146,7 @@ namespace ChartEditWinform.ChartCore
                 if (!chartData.DraggedLine.HasValue || chartData.DraggedLine.Value.IsBaseLine)
                     return;
                 var x = chartData.DraggedLine.Value.DraggedLine.Start.X;
-                var point = chartData.GetChartPoint(x + Session.unit);
+                var point = chartData.GetChartPoint(x + ChartData.Unit);
                 if (point.HasValue)
                 {
                     chartData.DraggedLine.Value.DraggedLine.Line = chartData.CreateSplitLine(point.Value);
@@ -169,7 +173,7 @@ namespace ChartEditWinform.ChartCore
         }
 
         private CoordinateLine oldBaseLine;
-        
+
 
         private void MoveLine(Coordinates? chartPoint, Coordinates mouseLocation)
         {
@@ -208,16 +212,10 @@ namespace ChartEditWinform.ChartCore
             var point = chartData.GetChartPoint(x);
             if (point is null)
                 return null;
-            return AddSplitLine(point.Value);
+            return chartData.AddSplitLine(point.Value);
         }
 
-        private SplitLine AddSplitLine(Coordinates point)
-        {
-            CoordinateLine chartLine = chartData.CreateSplitLine(point);
-            var line = new Entity.SplitLine(chartLine, chartData);
-            chartData.AddSplitLine(line);
-            return line;
-        }
+
 
         public void RemoveLine(double x)
         {
@@ -232,64 +230,7 @@ namespace ChartEditWinform.ChartCore
             }
         }
 
-        private void InitSplitLine()
-        {
-            //double m = dataSource.Take(dataSource.Length / 2).Min(v => v.Y);
-            //for (int i = 0; i < dataSource.Length; i++)
-            //    dataSource[i].Y -= m;
-            int end = DataSource.Length / 3 * 2;
-            while (end < DataSource.Length - 1 && DataSource[end].Y > 0)
-                end++;
 
-            int inter = 15;
-            List<int> maxDots = new List<int>();
-            List<int> minDots = new List<int>();
-
-            for (int i = 0; i < end; i++)
-            {
-                if (maxDots.Count > 5)
-                    inter = 30;
-                int max = i;
-                for (int j = i; j < end; j++)
-                {
-                    if (DataSource[j].Y > DataSource[max].Y)
-                        max = j;
-                    else if (j - max > inter)
-                        break;
-                }
-
-                if (DataSource[max].Y > 1 * perVaule)
-                    maxDots.Add(max);
-
-
-                if (maxDots.Count > 1 && DataSource[max].X - DataSource[maxDots[maxDots.Count - 2]].X < 0.3)
-                    maxDots.Remove(max);
-
-                int min = max;
-                for (int j = max + 1; j < end; j++)
-                {
-                    if (DataSource[j].Y < DataSource[min].Y)
-                        min = j;
-                    else if (j - min > inter)
-                        break;
-                }
-                if (maxDots.Count > 0 && DataSource[min].X > 10 && DataSource[min].X < 50)
-                    minDots.Add(min);
-
-                if (maxDots.Count == 1 && DataSource[max].Y < 10 * perVaule)
-                {
-                    maxDots.Clear();
-                    minDots.Clear();
-                }
-
-
-                i = min;
-            }
-            foreach (var i in minDots)
-            {
-                AddSplitLine(DataSource[i].X);
-            }
-        }
 
         #region Mouse
         private void FormsPlot1_MouseDown(object? sender, MouseEventArgs e)
@@ -342,7 +283,7 @@ namespace ChartEditWinform.ChartCore
             chartPlot.Interaction.Enable();
             chartPlot.Refresh();
         }
-
+        [DebuggerHidden]
         private void FormsPlot1_MouseMove(object? sender, MouseEventArgs e)
         {
             if (chartData is null)
@@ -432,7 +373,7 @@ namespace ChartEditWinform.ChartCore
             }
             else
             {
-                var line = AddSplitLine(chartPoint.Value);
+                var line = chartData.AddSplitLine(chartPoint.Value);
                 chartData.DraggedLine = DraggableChartVM.GetFocusLineInfo(line);
                 chartPlot.Refresh();
             }
@@ -440,7 +381,7 @@ namespace ChartEditWinform.ChartCore
 
         private void SetDPMenu(IPlotControl control)
         {
-            var lineInfo = chartData.GetDraggedLine(mouseCoordinates);
+            var lineInfo = chartData.GetDraggedLine(mouseCoordinates, true);
             if (!lineInfo.HasValue)
             {
                 MessageBox.Show("Can't set dp here");
@@ -453,10 +394,10 @@ namespace ChartEditWinform.ChartCore
             {
                 SplitLine line = (SplitLine)lineInfo.Value.DraggedLine;
                 var form = new InputDPForm(line.DP);
-                if(form.ShowDialog() == DialogResult.OK)
+                if (form.ShowDialog() == DialogResult.OK)
                 {
-                    if(!line.TrySetDPIndex(form.DPValue))
-                    { 
+                    if (!line.TrySetDPIndex(form.DPValue))
+                    {
                         MessageBox.Show("无效的DP值");
                     }
                     else
@@ -467,6 +408,19 @@ namespace ChartEditWinform.ChartCore
                 }
 
             }
+        }
+
+        internal void AutoFit()
+        {
+            chartPlot.Plot.Axes.AutoScale();
+            chartPlot.Refresh();
+        }
+
+        internal byte[] GetImage()
+        {
+            //PixelSize size = chartPlot.Plot.RenderManager.LastRender.FigureRect.Size;
+            PixelSize size = new(1920, 1080);
+            return chartPlot.Plot.GetImageBytes((int)size.Width, (int)size.Height, ImageFormat.Png);
         }
         #endregion
     }

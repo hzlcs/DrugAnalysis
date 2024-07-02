@@ -1,23 +1,16 @@
-﻿using ChartEditWinform.ChartCore.Entity;
+﻿using ChartEditLibrary.Model;
 using ScottPlot;
 using ScottPlot.Plottables;
-using ScottPlot.WinForms;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ChartEditWinform.ChartCore
+namespace ChartEditLibrary
 {
-    public static class ChartExtensions
+    public static class Extension
     {
         private static readonly ConditionalWeakTable<EditLineBase, LinePlot> linePlotWeakTable = [];
 
-        public static LinePlot AddEditLine(this FormsPlot chart, EditLineBase line)
+        public static LinePlot AddEditLine(this IPlotControl chart, EditLineBase line)
         {
             var linePlot = chart.Plot.Add.Line(line.Line);
             linePlotWeakTable.TryAdd(line, linePlot);
@@ -25,7 +18,7 @@ namespace ChartEditWinform.ChartCore
             return linePlot;
         }
 
-        public static void RemoveSplitLine(this FormsPlot chart, SplitLine line)
+        public static void RemoveSplitLine(this IPlotControl chart, SplitLine line)
         {
             if (linePlotWeakTable.TryGetValue(line, out var linePlot))
                 chart.Plot.Remove(linePlot);

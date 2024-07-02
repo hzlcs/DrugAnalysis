@@ -5,15 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ChartEditWinform
+namespace ChartEditLibrary
 {
-    internal static class Session
-    {
-        
-
-    }
-
-    public static class Utility 
+    public static class Utility
     {
         public static async Task<Coordinates[]> ReadCsv(string path, int skip = 0)
         {
@@ -36,8 +30,7 @@ namespace ChartEditWinform
             {
                 throw new Exception(Path.GetFileNameWithoutExtension(path) + "数据格式错误");
             }
-            
+
         }
     }
-
 }

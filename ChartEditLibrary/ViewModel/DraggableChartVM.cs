@@ -1,6 +1,6 @@
-﻿using ChartEditWinform.Entitys;
+﻿using ChartEditLibrary.Model;
+using ChartEditLibrary.Entitys;
 using CommunityToolkit.Mvvm.ComponentModel;
-using OpenTK;
 using ScottPlot;
 using ScottPlot.Plottables;
 using System;
@@ -14,9 +14,9 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Windows.Forms.AxHost;
+using OpenTK.Mathematics;
 
-namespace ChartEditWinform.ChartCore.Entity
+namespace ChartEditLibrary.ViewModel
 {
     public partial class DraggableChartVM : ObservableObject
     {
@@ -774,7 +774,7 @@ namespace ChartEditWinform.ChartCore.Entity
         public SplitLine AddSplitLine(Coordinates point)
         {
             CoordinateLine chartLine = CreateSplitLine(point);
-            var line = new Entity.SplitLine(chartLine, this);
+            var line = new SplitLine(chartLine, this);
             AddSplitLine(line);
             return line;
         }

@@ -1,0 +1,49 @@
+﻿using ChartEditWinform.ChartCore.Entity;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace ChartEditWinform.Controls
+{
+    public partial class ShowControl : UserControl
+    {
+        readonly DraggableChartVM vm = null!;
+        public ShowControl()
+        {
+            InitializeComponent();
+        }
+
+        public ShowControl(DraggableChartVM vm) :this()
+        {
+            this.vm = vm;
+            draggableChartControl1.ChartData = vm;
+            chartEditControl1.DragData = vm;
+        }
+
+        public void ChangeEditView(bool hide)
+        {
+            if (hide)
+                tableLayoutPanel1.ColumnStyles[1].Width = 0;
+            else
+                tableLayoutPanel1.ColumnStyles[1].Width = 617;
+        }
+
+        internal void AutoFit()
+        {
+            draggableChartControl1.AutoFit();
+        }
+
+        internal async Task Export(string selectedPath)
+        {
+            string content = vm.GetSaveContent();
+            await File.WriteAllTextAsync($"{selectedPath}\\{vm.FileName}.csv", content).ConfigureAwait(false);
+            await File.WriteAllBytesAsync($"{selectedPath}\\{vm.FileName}.png", draggableChartControl1.GetImage()).ConfigureAwait(false);
+        }
+    }
+}
