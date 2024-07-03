@@ -6,10 +6,8 @@ using System.Threading.Tasks;
 
 namespace ChartEditLibrary.Interfaces
 {
-    public interface IMessageBox
+    public interface IInputForm
     {
-        void Show(string message);
-
-        bool ConfirmOperation(string message);
+        bool TryGetInput(object? data, out string? value);
     }
 }

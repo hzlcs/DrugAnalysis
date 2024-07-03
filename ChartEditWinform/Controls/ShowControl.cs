@@ -1,4 +1,5 @@
-﻿using ChartEditLibrary.ViewModel;
+﻿using ChartEditLibrary.Interfaces;
+using ChartEditLibrary.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -19,11 +20,11 @@ namespace ChartEditWinform.Controls
             InitializeComponent();
         }
 
-        public ShowControl(DraggableChartVM vm) :this()
+        public ShowControl(IChartControl chartControl) : this()
         {
-            this.vm = vm;
-            draggableChartControl1.ChartData = vm;
-            chartEditControl1.DragData = vm;
+            this.vm = chartControl.ChartData;
+            draggableChartControl1.ChartControl = chartControl;
+            chartEditControl1.BindData(chartControl.ChartData);
         }
 
         public void ChangeEditView(bool hide)

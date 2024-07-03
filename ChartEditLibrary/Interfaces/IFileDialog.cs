@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace ChartEditLibrary.Interfaces
 {
-    public interface IMessageBox
+    public interface IFileDialog
     {
-        void Show(string message);
-
-        bool ConfirmOperation(string message);
+        string FileName { get; set; }
+        bool ShowDialog();
     }
 }

@@ -1,5 +1,7 @@
-﻿using ChartEditLibrary.Model;
+﻿using ChartEditLibrary.Interfaces;
+using ChartEditLibrary.Model;
 using ChartEditLibrary.ViewModel;
+using Newtonsoft.Json.Linq;
 using ScottPlot;
 using System;
 using System.Collections.Generic;
@@ -16,7 +18,7 @@ using Color = System.Drawing.Color;
 
 namespace ChartEditWinform.ChartCore
 {
-    public partial class ChartEditControl : UserControl
+    public partial class ChartEditControl : UserControl, IChartDataControl
     {
         EditLineBase? currentDraggedLine;
         private DraggableChartVM? dragData;
@@ -27,36 +29,14 @@ namespace ChartEditWinform.ChartCore
         }
 
 
-        public DraggableChartVM? DragData
-        {
-            get => dragData;
-            set
-            {
-                if (value is null)
-                    return;
-                if (dragData is not null)
-                {
-                    dragData.PropertyChanged -= DraggedLinePropertyChanged;
-                    dragData.OnDataChanged -= DraggedLineDataChanged;
-                    dragData.SplitLines.CollectionChanged -= SplitLines_CollectionChanged;
-                }
-                dragData = value;
-                dragData.PropertyChanged += DraggedLinePropertyChanged;
-                dragData.OnDataChanged += DraggedLineDataChanged;
-                dragData.SplitLines.CollectionChanged += SplitLines_CollectionChanged;
-                dataGridView1.Rows.Clear();
-                dataGridView1.RowCount = dragData.SplitLines.Count + 1;
-            }
-        }
-
-        private void SplitLines_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        public void SplitLines_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             dataGridView1.RowCount = Math.Max(1, dragData!.SplitLines.Count);
         }
 
-        private void DraggedLineDataChanged()
+        public void BaseLineDataChanged()
         {
-            if (currentDraggedLine is not null && currentDraggedLine is BaseLine )
+            if (currentDraggedLine is not null && currentDraggedLine is BaseLine)
             {
                 dataGridView1.Refresh();
             }
@@ -87,10 +67,10 @@ namespace ChartEditWinform.ChartCore
 
         private void DataGridView1_CellValueNeeded(object? sender, DataGridViewCellValueEventArgs e)
         {
-            e.Value = DragData?.SplitLines[e.RowIndex][e.ColumnIndex];
+            e.Value = dragData?.SplitLines[e.RowIndex][e.ColumnIndex];
         }
 
-        private void DraggedLinePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        public void DraggedLineChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (sender is null)
                 return;
@@ -102,7 +82,7 @@ namespace ChartEditWinform.ChartCore
             dataGridView1.ClearSelection();
             if (currentDraggedLine != null)
             {
-                currentDraggedLine.PropertyChanged -= CurrentLine_PropertyChanged;
+                currentDraggedLine.PropertyChanged -= CurrentSplitLine_PropertyChanged;
             }
 
             if (vm.DraggedLine is null)
@@ -111,29 +91,25 @@ namespace ChartEditWinform.ChartCore
             }
 
             currentDraggedLine = vm.DraggedLine.Value.DraggedLine;
-            CurrentLine_PropertyChanged(currentDraggedLine, new PropertyChangedEventArgs(nameof(currentDraggedLine.Line)));
-            currentDraggedLine.PropertyChanged += CurrentLine_PropertyChanged;
+            CurrentSplitLine_PropertyChanged(currentDraggedLine, new PropertyChangedEventArgs(nameof(currentDraggedLine.Line)));
+            currentDraggedLine.PropertyChanged += CurrentSplitLine_PropertyChanged;
 
         }
 
         private DateTime refreshTime = DateTime.Now;
 
-        private void CurrentLine_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        public void CurrentSplitLine_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (sender is null)
+            if (sender is not SplitLine line)
                 return;
             if (e.PropertyName != nameof(EditLineBase.Line))
                 return;
-            if (sender is SplitLine line)
-            {
-                UpdateData(line);
-            }
-
+            UpdateData(line);
         }
 
         private void UpdateData(SplitLine line)
         {
-            SplitLine? nextLine = DragData?.SplitLines.ElementAtOrDefault(line.Index);
+            SplitLine? nextLine = dragData?.SplitLines.ElementAtOrDefault(line.Index);
             //dataGridView1.ClearSelection();
             dataGridView1.Rows[line.Index - 1].Selected = true;
             foreach (DataGridViewColumn i in dataGridView1.Columns)
@@ -144,13 +120,29 @@ namespace ChartEditWinform.ChartCore
                     dataGridView1.Rows[line.Index].Cells[i.Index].Value = null;
                 }
             }
-            if (line.Equals(DragData?.SplitLines[^1]))
+            if (line.Equals(dragData?.SplitLines[^1]))
             {
-                foreach(var i in DragData.SplitLines)
+                foreach (var i in dragData.SplitLines)
                 {
                     dataGridView1.Rows[i.Index - 1].Cells[5].Value = null;
                 }
             }
+        }
+
+        public void BindData(DraggableChartVM vm)
+        {
+            if (dragData is not null)
+            {
+                dragData.PropertyChanged -= DraggedLineChanged;
+                dragData.OnBaseLineChanged -= BaseLineDataChanged;
+                dragData.SplitLines.CollectionChanged -= SplitLines_CollectionChanged;
+            }
+            dragData = vm;
+            dragData.PropertyChanged += DraggedLineChanged;
+            dragData.OnBaseLineChanged += BaseLineDataChanged;
+            dragData.SplitLines.CollectionChanged += SplitLines_CollectionChanged;
+            dataGridView1.Rows.Clear();
+            dataGridView1.RowCount = dragData.SplitLines.Count + 1;
         }
     }
 }

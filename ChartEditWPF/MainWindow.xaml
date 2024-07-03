@@ -2,13 +2,30 @@
     x:Class="ChartEditWPF.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:behavior="clr-namespace:ChartEditWPF.Behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:local="clr-namespace:ChartEditWPF"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
     Title="MainWindow"
     Width="800"
     Height="450"
-    mc:Ignorable="d"
-    MouseDown="Window_MouseDown">
-    <Grid />
+    d:DataContext="{d:DesignInstance vm:MainViewModel}"
+    mc:Ignorable="d">
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <StackPanel>
+        <Label
+            behavior:LabelHelper.Title="111"
+            behavior:LabelHelper2.MyProperty="123"
+            Content="123" />
+
+    </StackPanel>
+
+
+
+
 </Window>

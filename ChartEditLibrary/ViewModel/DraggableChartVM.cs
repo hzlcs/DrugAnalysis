@@ -26,7 +26,7 @@ namespace ChartEditLibrary.ViewModel
         /// <summary>
         /// 通知前端数据发生变化
         /// </summary>
-        public event Action? OnDataChanged;
+        public event Action? OnBaseLineChanged;
 
         public string FileName { get; init; }
 
@@ -123,7 +123,7 @@ namespace ChartEditLibrary.ViewModel
             {
                 i.AreaRatio = i.Area / SumArea;
             }
-            OnDataChanged?.Invoke();
+            OnBaseLineChanged?.Invoke();
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace ChartEditLibrary.ViewModel
                 }
             }
 
-            OnDataChanged?.Invoke();
+            //OnDataChanged?.Invoke();
 
 
         }

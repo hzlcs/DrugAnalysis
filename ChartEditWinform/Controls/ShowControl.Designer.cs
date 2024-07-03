@@ -61,7 +61,6 @@
             // 
             // draggableChartControl1
             // 
-            draggableChartControl1.ChartData = null;
             draggableChartControl1.Dock = DockStyle.Fill;
             draggableChartControl1.Location = new Point(3, 3);
             draggableChartControl1.Name = "draggableChartControl1";

@@ -1,9 +1,11 @@
 using ChartEditLibrary.Entitys;
+using ChartEditLibrary.Interfaces;
 using ChartEditLibrary.ViewModel;
 using ChartEditWinform.ChartCore;
 using ChartEditWinform.Controls;
 using ChartEditWinform.Entitys;
 using ChartEditWinform.Forms;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using ScottPlot;
 using System;
@@ -19,6 +21,7 @@ namespace ChartEditWinform
         private readonly List<DataItem> datas = [];
         private readonly BindingSource source;
         readonly OpenFileDialog dialog;
+        private readonly IServiceProvider _serviceProvider;
         public Form1()
         {
             InitializeComponent();
@@ -31,6 +34,11 @@ namespace ChartEditWinform
                 Filter = "csv文件(*.txt)|*.csv",
                 Multiselect = true,
             };
+        }
+
+        public Form1(IServiceProvider serviceProvider) : this()
+        {
+            _serviceProvider = serviceProvider;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -58,12 +66,14 @@ namespace ChartEditWinform
             {
                 MessageBox.Show("缓存文件加载失败");
             }
-            var vms = cacheContents!.Select(v=>DraggableChartVM.Create(v)).ToArray();
+            var vms = cacheContents!.Select(v => DraggableChartVM.Create(v)).ToArray();
             foreach (var vm in vms)
             {
                 var data = new DataItem() { DraggableChartVM = vm!, FileName = vm!.FileName };
                 datas.Insert(0, data);
-                var control = new ShowControl(data.DraggableChartVM) { Dock = DockStyle.Top };
+                IChartControl chartControl = _serviceProvider.GetRequiredService<IChartControl>();
+                chartControl.ChartData = vm;
+                var control = new ShowControl(chartControl) { Dock = DockStyle.Top };
                 data.Control = control;
                 float height = Math.Max(control.Height, (float)MainPanel.Height / cacheContents.Length);
                 control.Width = MainPanel.Width;
@@ -161,7 +171,7 @@ namespace ChartEditWinform
             source.ResetBindings(false);
         }
 
-        private static DataItem[] GetDataItems(string[] files, ExportType exportedType, object? tag)
+        private DataItem[] GetDataItems(string[] files, ExportType exportedType, object? tag)
         {
             var tasks = files.Select(async v =>
             {
@@ -182,7 +192,12 @@ namespace ChartEditWinform
             }).ToArray();
             Task.WaitAll(tasks);
             return tasks.Select(v => v.Result).Where(v => v is not null)
-                .Select(v => new DataItem() { DraggableChartVM = v, Control = new ShowControl(v!) { Dock = DockStyle.Top }, FileName = v.FileName }).ToArray();
+                .Select(v =>
+                {
+                    IChartControl  chartControl = _serviceProvider.GetRequiredService<IChartControl>();
+                    chartControl.ChartData = v;
+                    return new DataItem() { DraggableChartVM = v, Control = new ShowControl(chartControl) { Dock = DockStyle.Top }, FileName = v.FileName };
+                }).ToArray();
         }
 
         private void ConfigToolStripMenuItem1_Click(object sender, EventArgs e)
