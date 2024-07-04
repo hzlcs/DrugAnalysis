@@ -13,5 +13,8 @@
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
-    <ScottPlot:WpfPlot x:Name="WpfPlot1" behavior:MouseDownBehavior.MouseDownCommand="{Binding MouseDownCommand, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
+    <StackPanel>
+        <behavior:ChartPlot></behavior:ChartPlot>
+    </StackPanel>
+    
 </UserControl>

@@ -13,15 +13,36 @@
     Height="450"
     d:DataContext="{d:DesignInstance vm:MainViewModel}"
     mc:Ignorable="d">
-    <Window.DataContext>
-        <vm:MainViewModel />
-    </Window.DataContext>
+
 
     <StackPanel>
-        <Label
-            behavior:LabelHelper.Title="111"
-            behavior:LabelHelper2.MyProperty="123"
-            Content="123" />
+        <Button Command="{Binding AddCommand}" Content="Add">
+            
+        </Button>
+        <ItemsControl ItemsSource="{Binding DataSources}">
+            <ItemsControl.Template>
+                <ControlTemplate>
+                    <ScrollViewer>
+                        <ItemsPresenter/>
+                    </ScrollViewer>
+                </ControlTemplate>
+            </ItemsControl.Template>
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel CanVerticallyScroll="True"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Vertical" CanVerticallyScroll="True">
+                        <TextBlock Text="{Binding ChartData.FileName}"></TextBlock>
+                        <Border BorderBrush="AliceBlue" Height="500" BorderThickness="2">
+                            <behavior:ChartPlot ChartControl="{Binding}"></behavior:ChartPlot>
+                        </Border>
+                    </StackPanel>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
 
     </StackPanel>
 

@@ -39,11 +39,6 @@ namespace ChartEditWinform.ChartCore
             {
                 chartControl = value;
                 chartControl.BindControl(chartPlot);
-                chartPlot.Menu.Add("Add Line", ChartControl.AddLineMenu);
-                chartPlot.Menu.Add("Remove Line", ChartControl.RemoveLineMenu);
-                chartPlot.Menu.Add("Clear These Line", ChartControl.ClearLineMenu);
-                chartPlot.Menu.Add("Save Data", ChartControl.SaveDataMenu);
-                chartPlot.Menu.Add("Set DP", ChartControl.SetDPMenu);
             }
         }
 

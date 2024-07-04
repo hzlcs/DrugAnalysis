@@ -25,9 +25,5 @@ namespace ChartEditWPF.Views
             InitializeComponent();
         }
 
-        private void WpfPlot1_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-
-        }
     }
 }

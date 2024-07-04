@@ -68,6 +68,12 @@ namespace ChartEditLibrary.Interfaces
             MyHighlightText = chartPlot.Plot.Add.Text("", 0, 0);
             MyHighlightText.IsVisible = false;
 
+            chartPlot.Menu.Add("Add Line", AddLineMenu);
+            chartPlot.Menu.Add("Remove Line", RemoveLineMenu);
+            chartPlot.Menu.Add("Clear These Line", ClearLineMenu);
+            chartPlot.Menu.Add("Save Data", SaveDataMenu);
+            chartPlot.Menu.Add("Set DP", SetDPMenu);
+
             var source = chartPlot.Plot.Add.ScatterPoints(ChartData.DataSource);
             source.Color = ScottPlot.Color.FromARGB((uint)System.Drawing.Color.SkyBlue.ToArgb());
             source.MarkerSize = 3;

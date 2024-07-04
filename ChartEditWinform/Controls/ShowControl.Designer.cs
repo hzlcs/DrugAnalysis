@@ -53,7 +53,6 @@
             // chartEditControl1
             // 
             chartEditControl1.Dock = DockStyle.Fill;
-            chartEditControl1.DragData = null;
             chartEditControl1.Location = new Point(853, 3);
             chartEditControl1.Name = "chartEditControl1";
             chartEditControl1.Size = new Size(644, 435);

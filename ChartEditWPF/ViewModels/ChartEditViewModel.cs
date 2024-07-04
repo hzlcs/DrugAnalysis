@@ -14,11 +14,5 @@ namespace ChartEditWPF.ViewModels
         IChartControl? chartControl;
         public IChartControl? ChartControl { get; set; }
 
-        [RelayCommand]
-        void MouseDown(object sender)
-        {
-            //throw new NotImplementedException();
-        }
-
     }
 }

@@ -247,13 +247,15 @@ namespace ChartEditLibrary.ViewModel
                 if (!region)
                 {
                     SplitLine nearest = SplitLines.MinBy(x => Math.Abs(x.Start.X - dataPoint.X))!;
-                    if (Math.Abs(nearest.Start.X - dataPoint.X) < Sensitivity.X
+                    if (nearest is not null)
+                    {
+                        if (Math.Abs(nearest.Start.X - dataPoint.X) < Sensitivity.X
                         && Math.Min(nearest.Start.Y, nearest.End.Y) < dataPoint.Y
                         && Math.Max(nearest.Start.Y, nearest.End.Y) > dataPoint.Y)
-                    {
-                        line = nearest;
+                        {
+                            line = nearest;
+                        }
                     }
-
                 }
                 else
                 {
