@@ -30,8 +30,8 @@ namespace ChartEditWPF.Behaviors
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
-            var point = e.GetPosition(this);
-            ChartControl.MouseDown(this, new System.Drawing.Point((int)point.X, (int)point.Y), e.LeftButton == MouseButtonState.Pressed);
+            var point = e.GetPosition((IInputElement)e.Source);
+            ChartControl.MouseDown(this, new System.Drawing.PointF((float)point.X * DisplayScale, (float)point.Y * DisplayScale), e.LeftButton == MouseButtonState.Pressed);
             base.OnMouseDown(e);
         }
 
@@ -44,7 +44,7 @@ namespace ChartEditWPF.Behaviors
         protected override void OnMouseMove(MouseEventArgs e)
         {
             var point = e.GetPosition(this);
-            ChartControl.MouseMove(this, new System.Drawing.Point((int)point.X, (int)point.Y));
+            ChartControl.MouseMove(this, new System.Drawing.PointF((float)point.X * DisplayScale, (float)point.Y *DisplayScale));
             base.OnMouseMove(e);
         }
 

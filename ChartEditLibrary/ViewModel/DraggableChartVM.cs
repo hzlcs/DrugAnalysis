@@ -392,8 +392,6 @@ namespace ChartEditLibrary.ViewModel
 
         }
 
-
-
         /// <summary>
         /// 移除分割线
         /// </summary>

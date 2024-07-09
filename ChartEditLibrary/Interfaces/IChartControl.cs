@@ -10,6 +10,7 @@ using ScottPlot.Plottables;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -23,9 +24,9 @@ namespace ChartEditLibrary.Interfaces
 
         DraggableChartVM ChartData { get; set; }
 
-        void MouseDown(object? sender, Point mousePoint, bool left);
+        void MouseDown(object? sender, PointF mousePoint, bool left);
 
-        void MouseMove(object? sender, Point mousePoint);
+        void MouseMove(object? sender, PointF mousePoint);
 
         void MouseUp(object? sender);
 
@@ -118,14 +119,14 @@ namespace ChartEditLibrary.Interfaces
         {
             return new Vector2d(PlotControl.Plot.Axes.Bottom.Width / 50, PlotControl.Plot.Axes.Left.Height / 50);
         }
-        public void MouseDown(object? sender, Point mousePoint, bool left)
+        public void MouseDown(object? sender, PointF mousePoint, bool left)
         {
             if (ChartData is null)
                 return;
 
             Pixel mousePixel = new(mousePoint.X, mousePoint.Y);
             mouseCoordinates = PlotControl.Plot.GetCoordinates(mousePixel);
-
+            Debug.WriteLine(mouseCoordinates);
             ChartData.Sensitivity = GetSensitivity();
 
 
@@ -181,7 +182,7 @@ namespace ChartEditLibrary.Interfaces
             }
         }
 
-        public void MouseMove(object? sender, Point mousePoint)
+        public void MouseMove(object? sender, PointF mousePoint)
         {
             if (ChartData is null)
                 return;

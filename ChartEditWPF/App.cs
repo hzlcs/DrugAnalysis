@@ -16,7 +16,7 @@ namespace ChartEditWPF
     {
         [STAThread]
         public static void Main(string[] args)
-        {
+       {
             using IHost host = CreateHostBuilder(args).Build();
             host.Start();
 
@@ -25,6 +25,7 @@ namespace ChartEditWPF
             app.MainWindow = host.Services.GetRequiredService<MainWindow>();
             app.MainWindow.DataContext = host.Services.GetRequiredService<MainViewModel>();
             app.MainWindow.Visibility = Visibility.Visible;
+            app.Resources.MergedDictionaries.Add(LoadComponent(new Uri("MyResource.xaml",UriKind.Relative)) as System.Windows.ResourceDictionary);
             app.Run();
         }
 

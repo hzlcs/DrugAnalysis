@@ -20,16 +20,17 @@ namespace ChartEditWPF.ViewModels
             this.serviceProvider = serviceProvider;
         }
 
-        public ObservableCollection<IChartControl> DataSources { get; set; } = [];
+        public ObservableCollection<ShowControlViewModel> DataSources { get; set; } = [];
 
         [RelayCommand]
         void Add()
         {
-            var vm = DraggableChartVM.CreateAsync(@"C:\Users\songfeifan\Documents\原研原始数据 新\9S361-1.csv", ChartEditLibrary.Entitys.ExportType.Enoxaparin).Result;
+            var vm = DraggableChartVM.CreateAsync(@"D:\DragAnalysis\原研\9S361-1.csv", ChartEditLibrary.Entitys.ExportType.Enoxaparin).Result;
             vm.InitSplitLine(null);
             IChartControl chartControl = serviceProvider.GetRequiredService<IChartControl>();
             chartControl.ChartData = vm;
-            DataSources.Add(chartControl);
+            ShowControlViewModel svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
+            DataSources.Add(svm);
         }
     }
 }

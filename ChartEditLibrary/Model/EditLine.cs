@@ -77,6 +77,7 @@ namespace ChartEditLibrary.Model
             {
                 return;
             }
+            OnPropertyChanged("Item[]");
             SplitLineMoved?.Invoke(line, oldValue, newValue);
         }
 
@@ -127,11 +128,11 @@ namespace ChartEditLibrary.Model
                 return index switch
                 {
                     0 => Index,
-                    1 => RT,    //RT
-                    2 => Area,  //面积
-                    3 => NextLine.Start.X,  //开始
-                    4 => Start.X,   //结束
-                    5 => AreaRatio * 100,
+                    1 => RT.ToString("0.000"),    //RT
+                    2 => Area.ToString("0.00"),  //面积
+                    3 => NextLine.Start.X.ToString("0.000"),  //开始
+                    4 => Start.X.ToString("0.000"),   //结束
+                    5 => (AreaRatio * 100).ToString("0.00"),
                     6 => DP ?? "",
                     _ => "",
                 };
@@ -155,6 +156,8 @@ namespace ChartEditLibrary.Model
         /// </summary>
         [ObservableProperty]
         private EditLineBase nextLine = null!;
+        private double area;
+        private double areaRatio;
 
         /// <summary>
         /// 设置左边的分割线（该线在最左边时为<see cref="BaseLine"/>）
@@ -162,12 +165,11 @@ namespace ChartEditLibrary.Model
         partial void OnNextLineChanged(EditLineBase? oldValue, EditLineBase newValue)
         {
             NextLineChanged?.Invoke(this, oldValue, newValue);
-            
         }
 
-        public double Area { get; set; }
+        public double Area { get => area; set { area = value; OnPropertyChanged("Item[]"); } }
 
-        public double AreaRatio { get; set; }
+        public double AreaRatio { get => areaRatio; set { areaRatio = value; OnPropertyChanged("Item[]"); } }
 
         public override string ToString()
         {

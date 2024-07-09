@@ -8,6 +8,7 @@
     xmlns:local="clr-namespace:ChartEditWPF"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
+    xmlns:v="clr-namespace:ChartEditWPF.Views"
     Title="MainWindow"
     Width="800"
     Height="450"
@@ -35,9 +36,9 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Vertical" CanVerticallyScroll="True">
-                        <TextBlock Text="{Binding ChartData.FileName}"></TextBlock>
+                        <TextBlock Text="{Binding DraggableChartVM.FileName}"></TextBlock>
                         <Border BorderBrush="AliceBlue" Height="500" BorderThickness="2">
-                            <behavior:ChartPlot ChartControl="{Binding}"></behavior:ChartPlot>
+                            <v:ShowControl DataContext="{Binding}"/>
                         </Border>
                     </StackPanel>
                 </DataTemplate>

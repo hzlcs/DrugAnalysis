@@ -9,12 +9,12 @@
     xmlns:local="clr-namespace:ChartEditWPF.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
-    d:DataContext="{d:DesignInstance vm:ChartEditViewModel}"
+    d:DataContext="{d:DesignInstance vm:ShowControlViewModel}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
-    <StackPanel>
-        <behavior:ChartPlot></behavior:ChartPlot>
-    </StackPanel>
-    
+
+    <behavior:ChartPlot ChartControl="{Binding ChartControl}" />
+
+
 </UserControl>
