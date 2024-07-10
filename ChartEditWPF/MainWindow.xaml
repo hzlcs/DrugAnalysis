@@ -8,6 +8,7 @@
     xmlns:local="clr-namespace:ChartEditWPF"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
+    xmlns:c="clr-namespace:ChartEditWPF.Controls"
     xmlns:v="clr-namespace:ChartEditWPF.Views"
     Title="MainWindow"
     Width="800"
@@ -15,8 +16,10 @@
     d:DataContext="{d:DesignInstance vm:MainViewModel}"
     mc:Ignorable="d">
 
-
     <StackPanel>
+        <c:GridSlim DataContext="{Binding DataTable}"/>
+    </StackPanel>
+    <!--<StackPanel>
         <Button Command="{Binding AddCommand}" Content="Add">
             
         </Button>
@@ -45,7 +48,7 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-    </StackPanel>
+    </StackPanel>-->
 
 
 

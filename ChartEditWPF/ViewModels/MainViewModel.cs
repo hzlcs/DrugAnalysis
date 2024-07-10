@@ -1,5 +1,7 @@
 ﻿using ChartEditLibrary.Interfaces;
 using ChartEditLibrary.ViewModel;
+using ChartEditWPF.Models;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -11,13 +13,17 @@ using System.Threading.Tasks;
 
 namespace ChartEditWPF.ViewModels
 {
-    internal partial class MainViewModel
+    internal partial class MainViewModel : ObservableObject
     {
+        [ObservableProperty]
+        private DataTableList dataTable;
+
         private readonly IServiceProvider serviceProvider;
 
         public MainViewModel(IServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
+            dataTable = new DataTableList(["col1", "col2"], ["row1", "row2", "row3", "row4", "row5", "row6", "row7", "row8", "row9"]);
         }
 
         public ObservableCollection<ShowControlViewModel> DataSources { get; set; } = [];
