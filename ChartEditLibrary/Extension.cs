@@ -13,7 +13,7 @@ namespace ChartEditLibrary
         public static LinePlot AddEditLine(this IPlotControl chart, EditLineBase line)
         {
             var linePlot = chart.Plot.Add.Line(line.Line);
-            linePlotWeakTable.TryAdd(line, linePlot);
+            linePlotWeakTable.AddOrUpdate(line, linePlot);
             line.PropertyChanged += OnLineChanged;
             return linePlot;
         }

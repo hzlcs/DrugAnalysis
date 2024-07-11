@@ -8,7 +8,8 @@ namespace ChartEditLibrary.Interfaces
 {
     public interface IFileDialog
     {
-        string FileName { get; set; }
+        string[]? FileNames { get; set; }
+        string? FileName { get; set; }
         bool ShowDialog();
     }
 }

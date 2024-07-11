@@ -17,16 +17,12 @@
             <ControlTemplate>
                 <StackPanel Orientation="Horizontal">
                     <StackPanel Orientation="Vertical">
-                        <CheckBox Margin="5" Command="{Binding SelectAllCommand}" 
-                                  CommandParameter="{Binding IsChecked, RelativeSource={RelativeSource Self}}"/>
+                        <CheckBox Margin="5,5,5,0" Command="{Binding SelectAllCommand}" 
+                                  CommandParameter="{Binding IsChecked, RelativeSource={RelativeSource Self}}" />
                         <ItemsControl ItemsSource="{Binding Rows}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <CheckBox IsChecked="{Binding Checked}" Margin="5" Height="25"/>
-                                        <TextBlock Text="{Binding Name}" Margin="5" Height="25"/>
-                                    </StackPanel>
-                                    
+                                    <CheckBox IsChecked="{Binding Checked}" Margin="5" Height="25"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

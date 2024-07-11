@@ -30,8 +30,11 @@ namespace ChartEditWPF.Models
         public IReadOnlyDictionary<string, object?> this[string rowName] => new ColCollection(colIndex, data[rowIndex[rowName]]);
         public object? this[string rowName, string columnName] => data[rowIndex[rowName]][colIndex[columnName]];
 
-        public DataTableList() { }
-        public DataTableList(IEnumerable<string> columns, IEnumerable<string> rows)
+        public DataTableList() 
+        {
+            AddColumn("-");
+        }
+        public DataTableList(IEnumerable<string> columns, IEnumerable<string> rows) : this()
         {
             foreach (var col in columns)
             {
@@ -75,6 +78,7 @@ namespace ChartEditWPF.Models
             if (data.Count >= rows.Count)
                 return;
             var newRow = Enumerable.Repeat(defaultCellValue, columns.Count).ToList();
+            newRow[0] = rowName;
             data.Add(newRow);
         }
 

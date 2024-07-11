@@ -14,18 +14,19 @@ namespace ChartEditWPF
 {
     public class App : Application
     {
+        public static IServiceProvider ServiceProvider { get; private set; } = null!;
         [STAThread]
         public static void Main(string[] args)
-       {
+        {
             using IHost host = CreateHostBuilder(args).Build();
             host.Start();
-
+            ServiceProvider = host.Services;
             App app = new();
             //app.InitializeComponent();
             app.MainWindow = host.Services.GetRequiredService<MainWindow>();
             app.MainWindow.DataContext = host.Services.GetRequiredService<MainViewModel>();
             app.MainWindow.Visibility = Visibility.Visible;
-            app.Resources.MergedDictionaries.Add(LoadComponent(new Uri("MyResource.xaml",UriKind.Relative)) as System.Windows.ResourceDictionary);
+            app.Resources.MergedDictionaries.Add(LoadComponent(new Uri("MyResource.xaml", UriKind.Relative)) as System.Windows.ResourceDictionary);
             app.Run();
         }
 
@@ -39,7 +40,7 @@ namespace ChartEditWPF
                 services.AddSingleton<IMessageBox, WPFMessageBox>();
                 services.AddSingleton<IInputForm, WPFInputForm>();
                 services.AddSingleton<IFileDialog, WPFFileDialog>();
-
+                services.AddSingleton<ISelectDialog, WPFSelectDialog>();
             });
     }
 }

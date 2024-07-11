@@ -15,40 +15,41 @@
     Height="450"
     d:DataContext="{d:DesignInstance vm:MainViewModel}"
     mc:Ignorable="d">
-
-    <StackPanel>
-        <c:GridSlim DataContext="{Binding DataTable}"/>
-    </StackPanel>
-    <!--<StackPanel>
-        <Button Command="{Binding AddCommand}" Content="Add">
-            
-        </Button>
-        <ItemsControl ItemsSource="{Binding DataSources}">
-            <ItemsControl.Template>
-                <ControlTemplate>
-                    <ScrollViewer>
-                        <ItemsPresenter/>
-                    </ScrollViewer>
-                </ControlTemplate>
-            </ItemsControl.Template>
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <StackPanel CanVerticallyScroll="True"/>
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Vertical" CanVerticallyScroll="True">
-                        <TextBlock Text="{Binding DraggableChartVM.FileName}"></TextBlock>
-                        <Border BorderBrush="AliceBlue" Height="500" BorderThickness="2">
-                            <v:ShowControl DataContext="{Binding}"/>
-                        </Border>
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Style.Setters>
+                <Setter Property="Command" Value="{Binding ButtonClickCommand}"/>
+                <Setter Property="CommandParameter" Value="{Binding Tag, RelativeSource={RelativeSource Self}}"/>
+            </Style.Setters>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <ScrollViewer HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" >
+            <StackPanel>
+                
+                
+                <Expander Header="积分">
+                    <StackPanel>
+                        <Button Content="垂直积分" Tag="VerticalIntegralPage.xaml"/>
                     </StackPanel>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-
-    </StackPanel>-->
+                </Expander>
+                <Expander Header="统计学评价">
+                    <StackPanel>
+                        <Button Content="质量范围" Tag="tcheckpage.xaml"/>
+                        <Button Content="t检验"/>
+                        <Button Content="PCA"/>
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
+            
+        </ScrollViewer>
+        <Frame Grid.Column="1" Source="{Binding Url}"/>
+    </Grid>
+    
 
 
 

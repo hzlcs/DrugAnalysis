@@ -9,7 +9,7 @@ using System.Windows.Data;
 
 namespace ChartEditWPF.ViewModels
 {
-    internal class ShowControlViewModel
+    public class ShowControlViewModel
     {
         public ShowControlViewModel(IChartControl chartControl, DraggableChartVM draggableChartVM)
         {

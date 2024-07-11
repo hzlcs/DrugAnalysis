@@ -18,6 +18,9 @@ namespace ChartEditWPF.ViewModels
         [ObservableProperty]
         private DataTableList dataTable;
 
+        [ObservableProperty]
+        private Uri url;
+
         private readonly IServiceProvider serviceProvider;
 
         public MainViewModel(IServiceProvider serviceProvider)
@@ -37,6 +40,12 @@ namespace ChartEditWPF.ViewModels
             chartControl.ChartData = vm;
             ShowControlViewModel svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
             DataSources.Add(svm);
+        }
+
+        [RelayCommand]
+        void ButtonClick(string tag)
+        {
+            Url = new Uri("/ChartEditWPF;component/pages/" + tag, UriKind.Relative);
         }
     }
 }

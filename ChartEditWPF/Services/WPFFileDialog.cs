@@ -1,4 +1,5 @@
 ﻿using ChartEditLibrary.Interfaces;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,11 +10,21 @@ namespace ChartEditWPF.Services
 {
     internal class WPFFileDialog : IFileDialog
     {
-        public string FileName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public string[]? FileNames { get; set; }
+        public string? FileName { get; set; }
 
         public bool ShowDialog()
         {
-            throw new NotImplementedException();
+            OpenFileDialog fileDialog = new()
+            {
+                Multiselect = true
+            };
+            if (fileDialog.ShowDialog() == true)
+            {
+                FileNames = fileDialog.FileNames;
+                return true;
+            }
+            return false;
         }
     }
 }
