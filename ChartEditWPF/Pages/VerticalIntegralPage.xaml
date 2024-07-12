@@ -6,13 +6,11 @@
       xmlns:local="clr-namespace:ChartEditWPF.Pages"
       xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
       xmlns:v="clr-namespace:ChartEditWPF.Views"
+      xmlns:hc="https://handyorg.github.io/handycontrol"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="VerticalIntegralPage"
       d:DataContext="{d:DesignInstance vm:VerticalIntegralViewModel}">
-    <Page.DataContext>
-        <vm:VerticalIntegralViewModel/>
-    </Page.DataContext>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -21,32 +19,35 @@
         <StackPanel Grid.Column="1">
             <Button Content="导入" Command="{Binding ImportCommand}"/>
         </StackPanel>
-        <StackPanel>
-            <ItemsControl ItemsSource="{Binding DataSources}">
-                <ItemsControl.Template>
-                    <ControlTemplate>
-                        <ScrollViewer>
-                            <ItemsPresenter/>
-                        </ScrollViewer>
-                    </ControlTemplate>
-                </ItemsControl.Template>
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel CanVerticallyScroll="True"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Vertical" CanVerticallyScroll="True">
-                            <TextBlock Text="{Binding DraggableChartVM.FileName}"></TextBlock>
-                            <Border BorderBrush="AliceBlue" Height="500" BorderThickness="2">
-                                <v:ShowControl DataContext="{Binding}"/>
-                            </Border>
-                        </StackPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+        <ScrollViewer>
+            <StackPanel>
+                <ItemsControl ItemsSource="{Binding DataSources}">
+                    <!--<ItemsControl.Template>
+                        <ControlTemplate>
+                            <ScrollViewer>
+                                <ItemsPresenter/>
+                            </ScrollViewer>
+                        </ControlTemplate>
+                    </ItemsControl.Template>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel CanVerticallyScroll="True"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>-->
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Vertical">
+                                <Border BorderBrush="AliceBlue" Height="500" BorderThickness="2">
+                                    <v:ShowControl DataContext="{Binding}"/>
+                                </Border>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
-        </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+
     </Grid>
 </Page>

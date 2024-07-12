@@ -8,46 +8,42 @@
     xmlns:local="clr-namespace:ChartEditWPF"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
+    xmlns:m="clr-namespace:ChartEditWPF.Models"
     xmlns:c="clr-namespace:ChartEditWPF.Controls"
     xmlns:v="clr-namespace:ChartEditWPF.Views"
+    xmlns:hc="https://handyorg.github.io/handycontrol"
     Title="MainWindow"
     Width="800"
     Height="450"
     d:DataContext="{d:DesignInstance vm:MainViewModel}"
     mc:Ignorable="d">
-    <Window.Resources>
-        <Style TargetType="Button">
-            <Style.Setters>
-                <Setter Property="Command" Value="{Binding ButtonClickCommand}"/>
-                <Setter Property="CommandParameter" Value="{Binding Tag, RelativeSource={RelativeSource Self}}"/>
-            </Style.Setters>
-        </Style>
-    </Window.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="150"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <ScrollViewer HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" >
-            <StackPanel>
-                
-                
-                <Expander Header="积分">
-                    <StackPanel>
-                        <Button Content="垂直积分" Tag="VerticalIntegralPage.xaml"/>
-                    </StackPanel>
-                </Expander>
-                <Expander Header="统计学评价">
-                    <StackPanel>
-                        <Button Content="质量范围" Tag="tcheckpage.xaml"/>
-                        <Button Content="t检验"/>
-                        <Button Content="PCA"/>
-                    </StackPanel>
-                </Expander>
-            </StackPanel>
-            
-        </ScrollViewer>
-        <Frame Grid.Column="1" Source="{Binding Url}"/>
+        <hc:SideMenu Grid.Column="0" BorderThickness="1" AutoSelect="False">
+            <hc:SideMenuItem Header="积分">
+                <hc:SideMenuItem Header="垂直积分" Margin="5,0,0,0" Command="{Binding ButtonClickCommand}" CommandParameter="{x:Static m:Pages.VerticalIntegral}">
+                    <hc:SideMenuItem.Icon>
+                        <TextBlock Text="&#xf2cb;"/>
+                    </hc:SideMenuItem.Icon>
+                </hc:SideMenuItem>
+            </hc:SideMenuItem>
+            <hc:SideMenuItem Header="统计学评价">
+                <hc:SideMenuItem Header="t检验" Margin="5,0,0,0" Command="{Binding ButtonClickCommand}" CommandParameter="{x:Static m:Pages.TCheck}">
+
+                </hc:SideMenuItem>
+                <hc:SideMenuItem Header="质量范围" Margin="5,0,0,0" Command="{Binding ButtonClickCommand}" CommandParameter="{x:Static m:Pages.QualityRange}">
+
+                </hc:SideMenuItem>
+            </hc:SideMenuItem>
+        </hc:SideMenu>
+        <Frame Grid.Column="2" x:Name="panel" Content="{Binding Content}">
+
+        </Frame>
+        
     </Grid>
     
 

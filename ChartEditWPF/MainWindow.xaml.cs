@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -21,5 +22,13 @@ namespace ChartEditWPF
             InitializeComponent();
         }
 
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            if(sender is Button button)
+            {
+                panel.Content = App.ServiceProvider.GetRequiredKeyedService<Page>(button.Tag);
+            }
+            
+        }
     }
 }

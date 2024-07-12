@@ -23,14 +23,6 @@ namespace ChartEditWPF.ViewModels
 
         public ObservableCollection<ShowControlViewModel> DataSources { get; set; } = [];
 
-        public VerticalIntegralViewModel()
-        {
-            foreach(var vm in vms)
-            {
-                DataSources.Add(vm);
-            }
-        }
-
         [RelayCommand]
         void Import()
         {

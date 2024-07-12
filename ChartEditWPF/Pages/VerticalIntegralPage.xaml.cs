@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ChartEditWPF.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +19,7 @@ namespace ChartEditWPF.Pages
     /// <summary>
     /// VerticalIntegralPage.xaml 的交互逻辑
     /// </summary>
-    public partial class VerticalIntegralPage : Page
+    public partial class VerticalIntegralPage : Page, IPage
     {
         public VerticalIntegralPage()
         {

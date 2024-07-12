@@ -10,6 +10,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 
 namespace ChartEditWPF.ViewModels
 {
@@ -19,7 +20,7 @@ namespace ChartEditWPF.ViewModels
         private DataTableList dataTable;
 
         [ObservableProperty]
-        private Uri url;
+        IPage? content;
 
         private readonly IServiceProvider serviceProvider;
 
@@ -43,9 +44,11 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        void ButtonClick(string tag)
+        void ButtonClick(object tag)
         {
-            Url = new Uri("/ChartEditWPF;component/pages/" + tag, UriKind.Relative);
+            if(tag is not null)
+                Content = serviceProvider.GetRequiredKeyedService<IPage>(tag);
         }
     }
+
 }

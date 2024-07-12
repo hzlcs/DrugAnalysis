@@ -1,4 +1,6 @@
 ﻿using ChartEditLibrary.Interfaces;
+using ChartEditWPF.Models;
+using ChartEditWPF.Pages;
 using ChartEditWPF.Services;
 using ChartEditWPF.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace ChartEditWPF
 {
@@ -41,6 +44,12 @@ namespace ChartEditWPF
                 services.AddSingleton<IInputForm, WPFInputForm>();
                 services.AddSingleton<IFileDialog, WPFFileDialog>();
                 services.AddSingleton<ISelectDialog, WPFSelectDialog>();
+
+                services.AddSingleton<VerticalIntegralViewModel>();
+                services.AddKeyedSingleton<IPage, VerticalIntegralPage>(Models.Pages.VerticalIntegral, (s, v) => new VerticalIntegralPage() { DataContext = s.GetRequiredService<VerticalIntegralViewModel>() });
+
+                services.AddSingleton<TCheckPageViewModel>();
+                services.AddKeyedSingleton<IPage, TCheckPage>(Models.Pages.TCheck, (s, v) => new TCheckPage() { DataContext = s.GetRequiredService<TCheckPageViewModel>() });
             });
     }
 }

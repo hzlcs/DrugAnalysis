@@ -8,48 +8,65 @@
     xmlns:local="clr-namespace:ChartEditWPF.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
+    xmlns:ini="clr-namespace:ChartEditWPF"
     d:DataContext="{d:DesignInstance vm:ShowControlViewModel}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
-    <StackPanel>
-        <DataGrid
-            b:DataGridTextColumnBehavior.Style="True"
-            AutoGenerateColumns="False"
-            CanUserAddRows="False"
-            CanUserDeleteRows="False"
-            CanUserReorderColumns="False"
-            CanUserResizeColumns="False"
-            CanUserSortColumns="False"
-            ColumnWidth="75"
-            ItemsSource="{Binding DraggableChartVM.SplitLines}"
-            RowHeight="25"
-            VerticalScrollBarVisibility="Visible">
-            <!--<DataGrid.CellStyle>
-                <Style TargetType="DataGridCell">
-                    <Style.Setters>
-                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                        <Setter Property="VerticalAlignment" Value="Center"/>
-                    </Style.Setters>
-                </Style>
-            </DataGrid.CellStyle>-->
-            <!--<DataGrid.ColumnHeaderStyle>
-                <Style TargetType="DataGridColumnHeader">
-                    <Setter Property="HorizontalAlignment" Value="Center"/>
-                </Style>
-            </DataGrid.ColumnHeaderStyle>-->
-            <DataGrid.Columns>
-                <DataGridTextColumn
-                    Width="60"
-                    Binding="{Binding Path=[0]}"
-                    Header="Index" />
-                <DataGridTextColumn Binding="{Binding Path=[1]}" Header="RT" />
-                <DataGridTextColumn Binding="{Binding Path=[2]}" Header="Area" />
-                <DataGridTextColumn Binding="{Binding Path=[3]}" Header="Start" />
-                <DataGridTextColumn Binding="{Binding Path=[4]}" Header="End" />
-                <DataGridTextColumn Binding="{Binding Path=[5]}" Header="Area%" />
-                <DataGridTextColumn Binding="{Binding Path=[6]}" Header="DP" />
-            </DataGrid.Columns>
-        </DataGrid>
-    </StackPanel>
+    <UserControl.Resources>
+        <ini:BindingProxy x:Key="bind" Data="{Binding}"/>
+
+    </UserControl.Resources>
+    <DataGrid 
+        b:DataGridTextColumnBehavior.Style="True"
+        AutoGenerateColumns="False"
+        CanUserAddRows="False"
+        CanUserDeleteRows="False"
+        CanUserReorderColumns="False"
+        CanUserResizeColumns="False"
+        CanUserSortColumns="False"
+        ColumnWidth="70"
+        ItemsSource="{Binding DraggableChartVM.SplitLines}"
+        RowHeight="25"
+        VerticalScrollBarVisibility="Visible"
+        SelectedItem="{Binding DraggedLine}">
+        <!--<DataGrid.CellStyle>
+            <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Foreground" Value="LightBlue"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </DataGrid.CellStyle>-->
+        <DataGrid.Columns>
+            <DataGridTextColumn
+                Width="60"
+                Binding="{Binding Path=[0]}"
+                Header="Index" />
+            <DataGridTextColumn Binding="{Binding Path=[1]}" Header="RT" />
+            <DataGridTextColumn Binding="{Binding Path=[2]}" Header="Area" />
+            <DataGridTextColumn Binding="{Binding Path=[3]}" Header="Start" />
+            <DataGridTextColumn Binding="{Binding Path=[4]}" Header="End" />
+            <DataGridTextColumn Binding="{Binding Path=[5]}" Header="Area%" />
+            <DataGridTextColumn Binding="{Binding Path=[6]}" Width="65">
+                <DataGridTextColumn.HeaderTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="DP" />
+                            <Button Width="15" Height="15" Margin="6,0,0,0" BorderThickness="0" 
+                                    Command="{Binding Source={StaticResource bind}, Path=Data.CopyDataCommand}">
+                                <Button.Background>
+                                    <ImageBrush ImageSource="/Resources/copy.png"/>
+                                </Button.Background>
+                            </Button>
+                        </StackPanel>
+                    </DataTemplate>
+                </DataGridTextColumn.HeaderTemplate>
+            </DataGridTextColumn>
+
+        </DataGrid.Columns>
+    </DataGrid>
+
+
 </UserControl>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
@@ -96,7 +97,7 @@ namespace ChartEditLibrary.Model
     /// <summary>
     /// 分割线
     /// </summary>
-    public partial class SplitLine : EditLineBase, IComparable<SplitLine>
+    public partial class SplitLine : EditLineBase, IComparable<SplitLine>, IEnumerable<string?>
     {
         public delegate void NextLineChangedEventHandler(SplitLine sender, EditLineBase? oldValue, EditLineBase newValue);
         public event NextLineChangedEventHandler? NextLineChanged;
@@ -230,6 +231,14 @@ namespace ChartEditLibrary.Model
                 sameLines[0].DP = dpValue.ToString();
             }
         }
+
+        IEnumerator<string?> IEnumerable<string?>.GetEnumerator()
+        {
+            for (int i = 0; i <= 6; ++i)
+                yield return this[i].ToString();
+        }
+
+        public IEnumerator GetEnumerator() => GetEnumerator();
     }
 
     /// <summary>

@@ -21,6 +21,8 @@ namespace ChartEditLibrary.ViewModel
 {
     public partial class DraggableChartVM : ObservableObject
     {
+        public event Action<SplitLine>? DraggedLineChanged;
+
         public double Unit { get; }
 
         /// <summary>
@@ -97,6 +99,7 @@ namespace ChartEditLibrary.ViewModel
                 {
                     draggedSplitLineIndex = SplitLines.IndexOf((SplitLine)newValue.Value.DraggedLine);
                     newValue.Value.DraggedLine.SplitLineMoving += OnLineMoving;
+                    DraggedLineChanged?.Invoke((SplitLine)newValue.Value.DraggedLine);
                 }
             }
         }

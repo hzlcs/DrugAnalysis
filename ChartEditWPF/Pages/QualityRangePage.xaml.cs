@@ -1,5 +1,4 @@
-﻿using ChartEditWPF.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,11 +16,11 @@ using System.Windows.Shapes;
 namespace ChartEditWPF.Pages
 {
     /// <summary>
-    /// TCheckPage.xaml 的交互逻辑
+    /// QualityRangePage.xaml 的交互逻辑
     /// </summary>
-    public partial class TCheckPage : Page, IPage
+    public partial class QualityRangePage : Page
     {
-        public TCheckPage()
+        public QualityRangePage()
         {
             InitializeComponent();
         }
