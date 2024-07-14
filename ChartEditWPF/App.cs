@@ -49,7 +49,12 @@ namespace ChartEditWPF
                 services.AddKeyedSingleton<IPage, VerticalIntegralPage>(Models.Pages.VerticalIntegral, (s, v) => new VerticalIntegralPage() { DataContext = s.GetRequiredService<VerticalIntegralViewModel>() });
 
                 services.AddSingleton<TCheckPageViewModel>();
-                services.AddKeyedSingleton<IPage, TCheckPage>(Models.Pages.TCheck, (s, v) => new TCheckPage() { DataContext = s.GetRequiredService<TCheckPageViewModel>() });
+                services.AddKeyedSingleton<IPage, TCheckPage>(Models.Pages.TCheck, (s, v) => new TCheckPage() 
+                { DataContext = s.GetRequiredService<TCheckPageViewModel>() });
+
+                services.AddSingleton<QualityRangeViewModel>();
+                services.AddKeyedSingleton<IPage, QualityRangePage>(Models.Pages.QualityRange, (s, v) => new QualityRangePage() 
+                { DataContext = s.GetRequiredService<QualityRangeViewModel>() });
             });
     }
 }

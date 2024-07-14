@@ -813,11 +813,26 @@ namespace ChartEditLibrary.ViewModel
         /// <returns></returns>
         public string GetSaveContent()
         {
-            string baseInfo = $"{FileName},{exportType},{BaseLine.Start.X},{BaseLine.Start.Y},{BaseLine.End.X},{BaseLine.End.Y}";
+            string baseInfo = $"{FileName},{exportType},{BaseLine.Start.X},{BaseLine.Start.Y},{BaseLine.End.X},{BaseLine.End.Y},";
             string title = "Peak,Start X,End X,Center X,Area,Area Sum %,DP";
             IEnumerable<string> lines = SplitLines.Select(x =>
             $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2},DP{x.DP}");
             return string.Join("\n", lines.Prepend(title).Prepend(baseInfo));
+        }
+
+        public SaveRow[] GetSaveRowContent()
+        {
+            SaveRow baseInfo = new("", $"{FileName},{exportType},{BaseLine.Start.X},{BaseLine.Start.Y},{BaseLine.End.X},{BaseLine.End.Y}");
+            SaveRow title = new("", "Peak,Start X,End X,Center X,Area,Area Sum %");
+            IEnumerable<SaveRow> lines = SplitLines.Select(x =>
+            new SaveRow(x.DP!, $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2}"));
+            return lines.Prepend(title).Prepend(baseInfo).ToArray();
+        }
+
+        public readonly struct SaveRow(string dp, string line)
+        {
+            public readonly string dp = dp;
+            public readonly string line = line;
         }
 
         internal void ApplyResult(string saveContent)

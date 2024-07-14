@@ -17,11 +17,11 @@ namespace ChartEditWPF.Windows
     /// <summary>
     /// SelectWindow.xaml 的交互逻辑
     /// </summary>
-    public partial class SelectWindow : Window
+    public partial class SelectOneWindow : Window
     {
         private readonly Action<object> callback;
 
-        public SelectWindow(string title, Array options, Action<object> callback)
+        public SelectOneWindow(string title, Array options, Action<object> callback)
         {
             InitializeComponent();
             Title = title;

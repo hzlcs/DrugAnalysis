@@ -18,6 +18,7 @@
         </Grid.ColumnDefinitions>
         <StackPanel Grid.Column="1">
             <Button Content="导入" Command="{Binding ImportCommand}"/>
+            <Button Content="导出" Command="{Binding ExportCommand}"/>
         </StackPanel>
         <ScrollViewer>
             <StackPanel>

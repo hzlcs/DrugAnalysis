@@ -9,17 +9,30 @@ namespace ChartEditWPF.Services
 {
     public interface ISelectDialog
     {
-        object ShowDialog(string title, Array options);
+        object ShowCombboxDialog(string title, Array options);
+        object[]? ShowListDialog(string title, string itemName, Array options);
     }
 
     public class WPFSelectDialog : ISelectDialog
     {
         object res = null!;
-        public object ShowDialog(string title, Array options)
+        object[]? objects;
+        public object ShowCombboxDialog(string title, Array options)
         {
-            new SelectWindow(title, options, Callback).ShowDialog();
-            
+            new SelectOneWindow(title, options, Callback).ShowDialog();
             return res;
+        }
+
+        public object[]? ShowListDialog(string title, string itemName, Array options)
+        {
+            objects = null;
+            new SelectMutiWindow(title, itemName, options, Callback).ShowDialog();
+            return objects;
+        }
+
+        void Callback(object[] objs)
+        {
+            objects = objs;
         }
 
         void Callback(object obj)

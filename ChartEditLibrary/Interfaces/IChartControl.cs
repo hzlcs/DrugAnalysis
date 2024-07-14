@@ -235,10 +235,9 @@ namespace ChartEditLibrary.Interfaces
 
         public void SaveDataMenu(IPlotControl control)
         {
-            _dialog.FileName = ChartData.FileName + ".csv";
-            if (_dialog.ShowDialog())
+            if (_dialog.ShowDialog(ChartData.FileName + ".csv", out var fileNames))
             {
-                string fileName = _dialog.FileName;
+                string fileName = fileNames[0];
                 if (File.Exists(fileName))
                 {
                     File.Delete(fileName);
