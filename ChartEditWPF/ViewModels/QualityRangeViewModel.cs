@@ -43,6 +43,24 @@ namespace ChartEditWPF.ViewModels
                 QualityRanges.Add(new QualityRangeControlViewModel(sampleAreas));
             }
         }
+
+        [RelayCommand]
+        void Import()
+        {
+
+        }
+
+        [RelayCommand]
+        void ViewChart()
+        {
+
+        }
+
+        [RelayCommand]
+        void ExportChart()
+        {
+
+        }
     }
 
 

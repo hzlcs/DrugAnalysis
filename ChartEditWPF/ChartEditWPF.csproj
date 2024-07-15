@@ -10,10 +10,12 @@
 
   <ItemGroup>
     <None Remove="Resources\copy.png" />
+    <None Remove="Resources\Import.png" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Resources\copy.png" />
+    <Resource Include="Resources\import.png" />
   </ItemGroup>
 
   <ItemGroup>

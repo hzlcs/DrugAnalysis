@@ -18,20 +18,26 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="150" />
         </Grid.ColumnDefinitions>
-        <ItemsControl ItemsSource="{Binding QualityRanges}">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <StackPanel Orientation="Horizontal" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <c:QualityRangeControl />
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+        <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding QualityRanges}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <c:QualityRangeControl />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+        
         <StackPanel Grid.Column="1">
             <Button Command="{Binding AddQualityRangeCommand}" Content="添加" />
+            <Button Command="{Binding ImportCommand}" Content="导入" />
+            <Button Command="{Binding ViewChartCommand}" Content="预览" />
+            <Button Command="{Binding ExportChartCommand}" Content="导出" />
         </StackPanel>
     </Grid>
 </Page>
