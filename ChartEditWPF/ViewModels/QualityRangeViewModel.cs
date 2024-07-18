@@ -1,4 +1,5 @@
 ﻿using ChartEditLibrary.Interfaces;
+using ChartEditLibrary.Model;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,42 +13,55 @@ using System.Threading.Tasks;
 
 namespace ChartEditWPF.ViewModels
 {
-    internal partial class QualityRangeViewModel : ObservableObject
+    internal partial class QualityRangeViewModel(IFileDialog _fileDialog, IMessageBox _messageBox) : ObservableObject
     {
-        readonly IFileDialog _fileDialog = App.ServiceProvider.GetRequiredService<IFileDialog>();
-
         public ObservableCollection<QualityRangeControlViewModel> QualityRanges { get; } = [];
 
         [RelayCommand]
-        void AddQualityRange()
+        async Task AddQualityRange()
         {
             if (!_fileDialog.ShowDialog(null, out var fileNames))
                 return;
+            string[]? dp = QualityRanges.FirstOrDefault()?.DP;
+            List<string[]> newDp = [];
             foreach (var fileName in fileNames)
             {
                 if (!File.Exists(fileName))
                     continue;
-                using StreamReader sr = new (File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-                string[][] text = sr.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
-                var title = text[0];
-                SampleArea[] sampleAreas = new SampleArea[(title.Length - 1) / 6];
-                for (int i = 0; i < sampleAreas.Length; ++i)
+                var sample = await SampleManager.GetSampleAreasAsync(fileName);
+                if (dp is not null)
+                    newDp.Add(sample[0].DP);
+                QualityRanges.Add(new QualityRangeControlViewModel(sample));
+            }
+            if (dp is not null)
+            {
+                dp = SampleManager.MergeDP(newDp.Prepend(dp));
+                foreach (var sample in QualityRanges)
                 {
-                    sampleAreas[i] = new SampleArea(title[1 + i * 7], text.Skip(2).Select(v => {
-                        string value = v[1 + i * 7 + 5];
-                        if (string.IsNullOrEmpty(value))
-                            return null;
-                        return new float?(float.Parse(value));
-                        }).ToArray());
+                    sample.ApplyDP(dp);
                 }
-                QualityRanges.Add(new QualityRangeControlViewModel(sampleAreas));
             }
         }
 
         [RelayCommand]
-        void Import()
+        async Task Import()
         {
-
+            if (!_fileDialog.ShowDialog(null, out var fileName))
+            {
+                return;
+            }
+            try
+            {
+                AreaDatabase database = await SampleManager.GetDatabaseAsync(fileName[0]);
+                foreach (var qualityRange in QualityRanges)
+                {
+                    qualityRange.Import(database);
+                }
+            }
+            catch (Exception ex)
+            {
+                _messageBox.Show(ex.Message);
+            }
         }
 
         [RelayCommand]

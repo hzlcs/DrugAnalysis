@@ -18,13 +18,11 @@ namespace ChartEditWPF.Controls
     /// <summary>
     /// QualityRangeControl.xaml 的交互逻辑
     /// </summary>
-    public partial class QualityRangeControl : UserControl
+    public partial class TCheckRangeControl : UserControl
     {
-        public QualityRangeControl()
+        public TCheckRangeControl()
         {
             InitializeComponent();
         }
-
-       
     }
 }

@@ -40,7 +40,7 @@
                 </hc:SideMenuItem>
             </hc:SideMenuItem>
         </hc:SideMenu>
-        <Frame Grid.Column="2" x:Name="panel" Content="{Binding Content}">
+        <Frame Grid.Column="2" x:Name="panel" Content="{Binding Content}" NavigationUIVisibility="Hidden">
 
         </Frame>
         
