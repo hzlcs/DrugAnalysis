@@ -12,6 +12,7 @@ namespace ChartEditWPF.Models
         VerticalIntegral,
         TCheck,
         PCA,
-        QualityRange
+        QualityRange,
+        VerticalIntegralConfig
     }
 }

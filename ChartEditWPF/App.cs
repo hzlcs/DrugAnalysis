@@ -55,6 +55,10 @@ namespace ChartEditWPF
                 services.AddSingleton<QualityRangeViewModel>();
                 services.AddKeyedSingleton<IPage, QualityRangePage>(Models.Pages.QualityRange, (s, v) => new QualityRangePage() 
                 { DataContext = s.GetRequiredService<QualityRangeViewModel>() });
+
+                services.AddSingleton<VerticalIntegralConfigViewModel>();
+                services.AddKeyedSingleton<IPage, VerticalIntegralConfigPage>(Models.Pages.VerticalIntegralConfig, (s, v) => new VerticalIntegralConfigPage()
+                { DataContext = s.GetRequiredService<VerticalIntegralConfigViewModel>() });
             });
     }
 }

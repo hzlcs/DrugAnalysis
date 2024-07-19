@@ -6,6 +6,7 @@
       xmlns:local="clr-namespace:ChartEditWPF"
       xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
       xmlns:c="clr-namespace:ChartEditWPF.Controls"
+      xmlns:hc="https://handyorg.github.io/handycontrol"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="TCheckPage"
@@ -58,7 +59,7 @@
         </ScrollViewer>
         
         <StackPanel Grid.Column="2">
-            <Button Command="{Binding AddSampleCommand}" Content="添加"/>
+            <Button Style="{StaticResource ButtonPrimary}" Command="{Binding AddSampleCommand}" Content="添加"/>
             <Button Command="{Binding ClearSamplesCommand}" Content="清空"/>
         </StackPanel>
     </Grid>

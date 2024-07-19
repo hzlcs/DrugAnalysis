@@ -32,12 +32,11 @@
                 </hc:SideMenuItem>
             </hc:SideMenuItem>
             <hc:SideMenuItem Header="统计学评价">
-                <hc:SideMenuItem Header="t检验" Margin="5,0,0,0" Command="{Binding ButtonClickCommand}" CommandParameter="{x:Static m:Pages.TCheck}">
-
-                </hc:SideMenuItem>
-                <hc:SideMenuItem Header="质量范围" Margin="5,0,0,0" Command="{Binding ButtonClickCommand}" CommandParameter="{x:Static m:Pages.QualityRange}">
-
-                </hc:SideMenuItem>
+                <hc:SideMenuItem Header="t检验" Margin="5,0,0,0" Command="{Binding ButtonClickCommand}" CommandParameter="{x:Static m:Pages.TCheck}"/>
+                <hc:SideMenuItem Header="质量范围" Margin="5,0,0,0" Command="{Binding ButtonClickCommand}" CommandParameter="{x:Static m:Pages.QualityRange}"/>
+            </hc:SideMenuItem>
+            <hc:SideMenuItem Header="配置">
+                <hc:SideMenuItem Header="垂直积分" Margin="5,0,0,0" Command="{Binding ButtonClickCommand}" CommandParameter="{x:Static m:Pages.VerticalIntegralConfig}"/>
             </hc:SideMenuItem>
         </hc:SideMenu>
         <Frame Grid.Column="2" x:Name="panel" Content="{Binding Content}" NavigationUIVisibility="Hidden">
