@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using ScottPlot;
+using ScottPlot.Palettes;
 using ScottPlot.Plottables;
 using System;
 using System.Collections.Generic;
@@ -47,6 +48,7 @@ namespace ChartEditLibrary.Interfaces
         byte[] GetImage();
 
         void BindControl(IPlotControl chartPlot);
+
     }
 
     public class ChartControl(IMessageBox messageBox, IFileDialog dialog, IInputForm inputForm) : IChartControl
@@ -93,8 +95,8 @@ namespace ChartEditLibrary.Interfaces
             chartPlot.Plot.Axes.AutoScale();
             chartPlot.Refresh();
 
-                
-            
+
+
         }
 
         private void VerticalLines_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -266,6 +268,28 @@ namespace ChartEditLibrary.Interfaces
                 if (!_messageBox.ConfirmOperation($"确认移除分割线：({line.End.X}, {line.End.Y})?"))
                     return;
                 ChartData.RemoveSplitLine(line);
+                if (!string.IsNullOrWhiteSpace(line.DP))
+                {
+                    string[] dps = line.DP.Split('-');
+                    if (dps.Length > 1 && int.TryParse(dps[0], out int dp) && int.TryParse(dps[1], out int index))
+                    {
+                        var lines = ChartData.SplitLines.Where(v => (v.DP?.StartsWith(dps[0])).GetValueOrDefault()).Reverse().ToArray();
+                        if(lines.Length == 1)
+                        {
+                            lines[0].DP = dps[0];
+                            lines[0].UpdateUI();
+                        }
+                        else
+                        {
+                            index = 0;
+                            foreach (var l in lines)
+                            {
+                                l.DP = $"{dp}-{++index}";
+                                l.UpdateUI();
+                            }
+                        }
+                    }
+                }
                 control.Refresh();
             }
         }
@@ -281,6 +305,33 @@ namespace ChartEditLibrary.Interfaces
             {
                 var line = ChartData.AddSplitLine(chartPoint.Value);
                 ChartData.DraggedLine = DraggableChartVM.GetFocusLineInfo(line);
+                var first = ChartData.SplitLines.FirstOrDefault(v => v.RTIndex > line.RTIndex);
+                if (first is not null && !string.IsNullOrWhiteSpace(first.DP))
+                {
+                    string[] dps = first.DP.Split('-');
+                    if (int.TryParse(dps[0], out int dp))
+                    {
+                        if (dps.Length == 1)
+                        {
+                            first.DP = dp + "-1";
+                            first.UpdateUI();
+                            line.DP = dp + "-2";
+                            line.UpdateUI();
+                        }
+                        else
+                        {
+                            int index = int.Parse(dps[1]);
+                            line.DP = $"{dp}-{++index}";
+                            line.UpdateUI();
+                            foreach (var l in ChartData.SplitLines.Reverse().Where(v => v.RTIndex < line.RTIndex &&
+                            (v.DP?.StartsWith(dp.ToString())).GetValueOrDefault()))
+                            {
+                                l.DP = $"{dp}-{++index}";
+                                l.UpdateUI();
+                            }
+                        }
+                    }
+                }
                 control.Refresh();
             }
         }

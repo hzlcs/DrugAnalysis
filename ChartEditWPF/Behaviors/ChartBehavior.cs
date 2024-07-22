@@ -11,11 +11,8 @@ namespace ChartEditWPF.Behaviors
 {
     internal class ChartPlot : ScottPlot.WPF.WpfPlot
     {
-        public ChartPlot()
-        {
 
-        }
-        private IChartControl chartControl;
+        private IChartControl chartControl = null!;
         public IChartControl ChartControl
         {
             get 

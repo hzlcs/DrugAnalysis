@@ -17,7 +17,12 @@ namespace ChartEditWPF.Services
             OpenFileDialog fileDialog = new()
             {
                 Multiselect = true,
-                FileName = fileName
+                FileName = fileName,
+                CheckFileExists = false,
+                CheckPathExists = true,
+                AddExtension = true,
+                DefaultExt = ".csv",
+                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
             };
             if (fileDialog.ShowDialog() == true)
             {

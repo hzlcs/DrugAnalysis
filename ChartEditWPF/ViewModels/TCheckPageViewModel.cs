@@ -28,25 +28,21 @@ namespace ChartEditWPF.ViewModels
                 return;
             string[]? dp = Samples.FirstOrDefault()?.DP;
             List<string[]> newDp = [];
+            if (dp is not null)
+                newDp.Add(dp);
             foreach (var fileName in fileNames)
             {
                 if (!File.Exists(fileName))
                     continue;
                 var sample = await SampleManager.GetSampleAreasAsync(fileName);
+                newDp.Add(sample[0].DP);
                 Samples.Add(new TCheckControlViewModel(sample));
-                if (dp != null)
-                    newDp.Add(sample[0].DP);
             }
-            if (dp != null)
+            dp = SampleManager.MergeDP(newDp);
+            foreach (var sample in Samples)
             {
-                dp = SampleManager.MergeDP(newDp.Prepend(dp));
-                foreach (var sample in Samples)
-                {
-                    sample.ApplyDP(dp);
-                }
+                sample.ApplyDP(dp);
             }
-            else
-                dp = Samples[0].DP;
             if (PValues.Count == 0)
             {
                 for (int i = 0; i < dp.Length; ++i)
@@ -84,7 +80,7 @@ namespace ChartEditWPF.ViewModels
                         continue;
                     }
                     float[] values = Samples.Select(v => v.Rows[i].Average).ToArray();
-                    PValues[i].Value = SampleManager.TCheck(values, row.Areas.Where(v => v.HasValue).Select(v => v.Value).ToArray());
+                    PValues[i].Value = SampleManager.TCheck(values, row.Areas.Where(v => v.HasValue).Select(v => v!.Value).ToArray());
                 }
 
             }

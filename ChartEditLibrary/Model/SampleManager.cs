@@ -17,7 +17,7 @@ namespace ChartEditLibrary.Model
             if (!File.Exists(fileName))
                 throw new FileNotFoundException("未找到样品文件", fileName);
             using StreamReader sr = new(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-            string[][] text = (await sr.ReadToEndAsync()).Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
+            string[][] text = (await sr.ReadToEndAsync()).Split(lineSeparator, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
             var title = text[0];
             SampleArea[] sampleAreas = new SampleArea[(title.Length - 1) / 6];
             string[] dps = text.Skip(2).Select(v => v[0][2..]).ToArray();
@@ -48,8 +48,8 @@ namespace ChartEditLibrary.Model
                 throw new FileNotFoundException("文件不存在", fileName);
             }
             using FileStream fileStream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using StreamReader reader = new(fileStream);
-            string text = await reader.ReadToEndAsync();
+            using StreamReader reader = new(fileStream, Encoding.UTF8);
+            string text = (await reader.ReadToEndAsync()).Replace("��n=3��", "(n=3)");
             try
             {
                 string[][] lines = text.Split(lineSeparator, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();

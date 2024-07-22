@@ -3,6 +3,7 @@ using ChartEditWPF.Models;
 using ChartEditWPF.Pages;
 using ChartEditWPF.Services;
 using ChartEditWPF.ViewModels;
+using ChartEditWPF.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -59,6 +60,8 @@ namespace ChartEditWPF
                 services.AddSingleton<VerticalIntegralConfigViewModel>();
                 services.AddKeyedSingleton<IPage, VerticalIntegralConfigPage>(Models.Pages.VerticalIntegralConfig, (s, v) => new VerticalIntegralConfigPage()
                 { DataContext = s.GetRequiredService<VerticalIntegralConfigViewModel>() });
+
+                services.AddTransient<QualityRangeChartWindow>();
             });
     }
 }

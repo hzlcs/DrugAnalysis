@@ -14,11 +14,13 @@ using System.Xml.Serialization;
 
 namespace ChartEditWPF.ViewModels
 {
-    internal partial class QualityRangeControlViewModel : ObservableObject
+    public partial class QualityRangeControlViewModel : ObservableObject
     {
         IFileDialog _fileDialog = App.ServiceProvider.GetRequiredService<IFileDialog>();
 
         IMessageBox _messageBox = App.ServiceProvider.GetRequiredService<IMessageBox>();
+
+        public string SampleName { get; }
 
         public string[] DP { get; private set; }
 
@@ -29,6 +31,7 @@ namespace ChartEditWPF.ViewModels
         public QualityRangeControlViewModel(SampleArea[] sampleAreas)
         {
             Columns = sampleAreas.Select(s => s.SampleName).ToArray();
+            SampleName = Columns[0][..Columns[0].LastIndexOf('-')];
             DP = sampleAreas[0].DP;
             for (int i = 0; i < DP.Length; i++)
             {

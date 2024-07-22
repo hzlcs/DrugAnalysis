@@ -24,10 +24,10 @@
             <DataGrid
                 x:Name="grid"
                 AutoGenerateColumns="False"
-                SelectionChanged="grid_SelectionChanged"
-                CanUserSortColumns="False"
                 CanUserAddRows="False"
-                CanUserDeleteRows="False">
+                CanUserDeleteRows="False"
+                CanUserSortColumns="False"
+                SelectionChanged="grid_SelectionChanged">
                 <DataGrid.Columns>
                     <DataGridCheckBoxColumn x:Name="checkBox" Width="50">
                         <DataGridCheckBoxColumn.Header>

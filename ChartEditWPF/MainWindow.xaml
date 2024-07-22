@@ -3,48 +3,69 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behavior="clr-namespace:ChartEditWPF.Behaviors"
+    xmlns:c="clr-namespace:ChartEditWPF.Controls"
+    xmlns:ch="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:hc="https://handyorg.github.io/handycontrol"
     xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:local="clr-namespace:ChartEditWPF"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
     xmlns:m="clr-namespace:ChartEditWPF.Models"
-    xmlns:c="clr-namespace:ChartEditWPF.Controls"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:v="clr-namespace:ChartEditWPF.Views"
-    xmlns:hc="https://handyorg.github.io/handycontrol"
+    xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
     Title="MainWindow"
     Width="800"
     Height="450"
     d:DataContext="{d:DesignInstance vm:MainViewModel}"
-    mc:Ignorable="d">
+    mc:Ignorable="d" WindowState="Maximized">
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="150"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <hc:SideMenu Grid.Column="0" BorderThickness="1" AutoSelect="False">
+        <hc:SideMenu
+            Grid.Column="0"
+            AutoSelect="False"
+            BorderThickness="1">
             <hc:SideMenuItem Header="积分">
-                <hc:SideMenuItem Header="垂直积分" Margin="5,0,0,0" Command="{Binding ButtonClickCommand}" CommandParameter="{x:Static m:Pages.VerticalIntegral}">
+                <hc:SideMenuItem
+                    Margin="5,0,0,0"
+                    Command="{Binding ButtonClickCommand}"
+                    CommandParameter="{x:Static m:Pages.VerticalIntegral}"
+                    Header="垂直积分">
                     <hc:SideMenuItem.Icon>
-                        <TextBlock Text="&#xf2cb;"/>
+                        <TextBlock Text="&#xf2cb;" />
                     </hc:SideMenuItem.Icon>
                 </hc:SideMenuItem>
             </hc:SideMenuItem>
             <hc:SideMenuItem Header="统计学评价">
-                <hc:SideMenuItem Header="t检验" Margin="5,0,0,0" Command="{Binding ButtonClickCommand}" CommandParameter="{x:Static m:Pages.TCheck}"/>
-                <hc:SideMenuItem Header="质量范围" Margin="5,0,0,0" Command="{Binding ButtonClickCommand}" CommandParameter="{x:Static m:Pages.QualityRange}"/>
+                <hc:SideMenuItem
+                    Margin="5,0,0,0"
+                    Command="{Binding ButtonClickCommand}"
+                    CommandParameter="{x:Static m:Pages.TCheck}"
+                    Header="t检验" />
+                <hc:SideMenuItem
+                    Margin="5,0,0,0"
+                    Command="{Binding ButtonClickCommand}"
+                    CommandParameter="{x:Static m:Pages.QualityRange}"
+                    Header="质量范围" />
             </hc:SideMenuItem>
             <hc:SideMenuItem Header="配置">
-                <hc:SideMenuItem Header="垂直积分" Margin="5,0,0,0" Command="{Binding ButtonClickCommand}" CommandParameter="{x:Static m:Pages.VerticalIntegralConfig}"/>
+                <hc:SideMenuItem
+                    Margin="5,0,0,0"
+                    Command="{Binding ButtonClickCommand}"
+                    CommandParameter="{x:Static m:Pages.VerticalIntegralConfig}"
+                    Header="垂直积分" />
             </hc:SideMenuItem>
         </hc:SideMenu>
-        <Frame Grid.Column="2" x:Name="panel" Content="{Binding Content}" NavigationUIVisibility="Hidden">
-
-        </Frame>
-        
+        <Frame
+            x:Name="panel"
+            Grid.Column="2"
+            Content="{Binding Content}"
+            NavigationUIVisibility="Hidden" />
     </Grid>
-    
+
 
 
 

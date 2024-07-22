@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using ScottPlot;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,10 +25,10 @@ namespace ChartEditWPF
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            if(sender is Button button)
-            {
-                panel.Content = App.ServiceProvider.GetRequiredKeyedService<Page>(button.Tag);
-            }
+            //if(sender is Button button)
+            //{
+            //    panel.Content = App.ServiceProvider.GetRequiredKeyedService<Page>(button.Tag);
+            //}
             
         }
     }

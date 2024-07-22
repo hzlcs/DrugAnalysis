@@ -12,20 +12,12 @@
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
-    <Page.Resources>
-        <Style TargetType="Button">
-            <Setter Property="Width" Value="130"/>
-            <Setter Property="Height" Value="35"/>
-            <Setter Property="Margin" Value="0,5,0,5"/>
-            <Setter Property="Background" Value="Transparent"/>
-        </Style>
-    </Page.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="150" />
         </Grid.ColumnDefinitions>
-        <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto">
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
             <ItemsControl ItemsSource="{Binding QualityRanges}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -41,10 +33,26 @@
         </ScrollViewer>
 
         <StackPanel Grid.Column="1">
-            <Button Command="{Binding AddQualityRangeCommand}" Content="添加"/>
-            <Button Command="{Binding ImportCommand}" Content="导入"/>
-            <Button Command="{Binding ViewChartCommand}" Content="预览"/>
-            <Button Command="{Binding ExportChartCommand}" Content="导出"/>
+            <Button
+                Width="130"
+                Margin="5"
+                Command="{Binding AddQualityRangeCommand}"
+                Content="添加样品" />
+            <Button
+                Width="130"
+                Margin="5"
+                Command="{Binding ImportCommand}"
+                Content="选择数据" />
+            <Button
+                Width="130"
+                Margin="5"
+                Command="{Binding ViewChartCommand}"
+                Content="预览图表" />
+            <Button
+                Width="130"
+                Margin="5"
+                Command="{Binding ExportResultCommand}"
+                Content="导出结果" />
         </StackPanel>
     </Grid>
 </Page>

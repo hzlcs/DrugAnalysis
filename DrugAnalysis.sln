@@ -5,9 +5,11 @@ VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChartEditWinform", "ChartEditWinform\ChartEditWinform.csproj", "{E1747FD0-8161-4889-8F51-395FF0F65248}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChartEditWPF", "ChartEditWPF\ChartEditWPF.csproj", "{C4EF6FC2-0187-402D-B931-E04B3474A6A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChartEditWPF", "ChartEditWPF\ChartEditWPF.csproj", "{C4EF6FC2-0187-402D-B931-E04B3474A6A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChartEditLibrary", "ChartEditLibrary\ChartEditLibrary.csproj", "{E3AD3A8C-ADE5-459C-BA72-0EF0C7693392}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChartEditLibrary", "ChartEditLibrary\ChartEditLibrary.csproj", "{E3AD3A8C-ADE5-459C-BA72-0EF0C7693392}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{0D9C5E04-226B-41A9-80DC-0D5269C79550}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{E3AD3A8C-ADE5-459C-BA72-0EF0C7693392}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E3AD3A8C-ADE5-459C-BA72-0EF0C7693392}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E3AD3A8C-ADE5-459C-BA72-0EF0C7693392}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D9C5E04-226B-41A9-80DC-0D5269C79550}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D9C5E04-226B-41A9-80DC-0D5269C79550}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D9C5E04-226B-41A9-80DC-0D5269C79550}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D9C5E04-226B-41A9-80DC-0D5269C79550}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

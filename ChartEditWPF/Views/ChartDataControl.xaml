@@ -5,19 +5,19 @@
     xmlns:b="clr-namespace:ChartEditWPF.Behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:hc="https://handyorg.github.io/handycontrol"
+    xmlns:ini="clr-namespace:ChartEditWPF"
     xmlns:local="clr-namespace:ChartEditWPF.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
-    xmlns:ini="clr-namespace:ChartEditWPF"
     d:DataContext="{d:DesignInstance vm:ShowControlViewModel}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
     <UserControl.Resources>
-        <ini:BindingProxy x:Key="bind" Data="{Binding}"/>
+        <ini:BindingProxy x:Key="bind" Data="{Binding}" />
 
     </UserControl.Resources>
-    <DataGrid 
+    <DataGrid
         b:DataGridTextColumnBehavior.Style="True"
         AutoGenerateColumns="False"
         CanUserAddRows="False"
@@ -26,10 +26,12 @@
         CanUserResizeColumns="False"
         CanUserSortColumns="False"
         ColumnWidth="70"
+        EnableRowVirtualization="True"
+        IsReadOnly="True"
         ItemsSource="{Binding DraggableChartVM.SplitLines}"
         RowHeight="25"
-        VerticalScrollBarVisibility="Visible"
-        SelectedItem="{Binding DraggedLine}">
+        SelectedItem="{Binding DraggedLine}"
+        VerticalScrollBarVisibility="Visible">
         <!--<DataGrid.CellStyle>
             <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource {x:Type DataGridCell}}">
                 <Style.Triggers>
@@ -41,23 +43,36 @@
         </DataGrid.CellStyle>-->
         <DataGrid.Columns>
             <DataGridTextColumn
-                Width="60"
-                Binding="{Binding Path=[0]}"
-                Header="Index" />
-            <DataGridTextColumn Binding="{Binding Path=[1]}" Header="RT" />
-            <DataGridTextColumn Binding="{Binding Path=[2]}" Header="Area" />
-            <DataGridTextColumn Binding="{Binding Path=[3]}" Header="Start" />
-            <DataGridTextColumn Binding="{Binding Path=[4]}" Header="End" />
-            <DataGridTextColumn Binding="{Binding Path=[5]}" Header="Area%" />
-            <DataGridTextColumn Binding="{Binding Path=[6]}" Width="65">
+                Width="55"
+                Binding="{Binding Path=[0], Mode=OneWay}"
+                Header="Peak" />
+            <DataGridTextColumn Binding="{Binding Path=[3], Mode=OneWay}" Header="Start X" />
+            <DataGridTextColumn
+                Width="75"
+                Binding="{Binding Path=[1]}"
+                Header="Center X" />
+            <DataGridTextColumn Binding="{Binding Path=[4], Mode=OneWay}" Header="End X" />
+            <DataGridTextColumn Binding="{Binding Path=[2], Mode=OneWay}" Header="Area" />
+            <DataGridTextColumn
+                Width="80"
+                Binding="{Binding Path=[5]}"
+                Header="Area Sum %" />
+            <DataGridTextColumn Width="65" Binding="{Binding Path=[6], Mode=OneWay}">
                 <DataGridTextColumn.HeaderTemplate>
                     <DataTemplate>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <StackPanel
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
                             <TextBlock Text="DP" />
-                            <Button Width="15" Height="15" Margin="6,0,0,0" BorderThickness="0" 
-                                    Command="{Binding Source={StaticResource bind}, Path=Data.CopyDataCommand}">
+                            <Button
+                                Width="15"
+                                Height="15"
+                                Margin="6,0,0,0"
+                                BorderThickness="0"
+                                Command="{Binding Source={StaticResource bind}, Path=Data.CopyDataCommand}">
                                 <Button.Background>
-                                    <ImageBrush ImageSource="/Resources/copy.png"/>
+                                    <ImageBrush ImageSource="/Resources/copy.png" />
                                 </Button.Background>
                             </Button>
                         </StackPanel>

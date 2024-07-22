@@ -616,20 +616,33 @@ namespace ChartEditLibrary.ViewModel
                 GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
                 for (int i = 0; i < _minDots.Length; ++i)
                 {
+                    int? add = null;
                     if (t[_maxDots[i]].Y < 2)
                     {
                         if ((endT - startT - _maxDots[i]) * Unit > 0.3)
                         {
-                            minDots.Add(startT + _maxDots[i]);
+                            add = startT + _maxDots[i];
                         }
                     }
                     else if (t[_minDots[i]].Y > -2.5)
                     {
-                        minDots.Add(startT + _minDots[i]);
+                        add = startT + _minDots[i];
+                    }
+
+                    if (add.HasValue)
+                    {
+                        if (minDots.Contains(add.Value))
+                            continue;
+                        minDots.Add(add.Value);
+                        ++endMin;
+                        if(add.Value > dp6Start)
+                        {
+                            dp6Start = add.Value;
+                        }
                     }
                 }
             }
-
+            minDots.Sort();
 
             //dp4
             startMin = endMin;
@@ -650,16 +663,21 @@ namespace ChartEditLibrary.ViewModel
                 GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
                 for (int i = 0; i < _minDots.Length; ++i)
                 {
-                    if (t[_maxDots[i]].Y < 0)
+                    if (t[_maxDots[i]].Y < 0 || t[_minDots[i]].Y > 0)
                     {
-                        minDots.Add(startT + _maxDots[i]);
-                    }
-                    else if (t[_minDots[i]].Y > 0)
-                    {
-                        minDots.Add(startT + _minDots[i]);
+                        int add = startT + _maxDots[i];
+                        if (minDots.Contains(add))
+                            continue;
+                        minDots.Add(add);
+                        ++endMin;
+                        if(add > dp4Start)
+                        {
+                            dp4Start = add;
+                        }
                     }
                 }
             }
+            minDots.Sort();
 
             //dp3
             startMin = endMin;
@@ -678,20 +696,34 @@ namespace ChartEditLibrary.ViewModel
                 GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
                 for (int i = 0; i < _minDots.Length; ++i)
                 {
-                    if (t[_maxDots[i]].Y < 0)
+                    if (t[_maxDots[i]].Y < 0 || t[_minDots[i]].Y > 0)
                     {
-                        minDots.Add(startT + _maxDots[i]);
-                        if (++peakCount == 2)
-                            break;
+                        int add = startT + _maxDots[i];
+                        if (minDots.Contains(add))
+                            continue;
+                        minDots.Add(add);
+                        ++endMin;
+                        if(add > dp3Start)
+                        {
+                            dp3Start = add;
+                        }
+                        break;
                     }
-                    else if (t[_minDots[i]].Y > 0)
-                    {
-                        minDots.Add(startT + _minDots[i]);
-                        if (++peakCount == 2)
-                            break;
-                    }
-
                 }
+            }
+            minDots.Sort();
+
+            //dp2
+            startMin = endMin;
+            endMin = minDots.Count - 1;
+            int dp2Start = minDots[endMin];
+            peakCount = endMin - startMin;
+            if (peakCount > 2)
+            {
+                minDots.RemoveAt(minDots.Count - 1);
+                maxDots.RemoveAt(maxDots.Count - 1);
+                --endMin;
+                dp2Start = minDots[endMin];
             }
 
             minDots.Sort();

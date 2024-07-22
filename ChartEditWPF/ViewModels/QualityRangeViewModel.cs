@@ -1,5 +1,6 @@
 ﻿using ChartEditLibrary.Interfaces;
 using ChartEditLibrary.Model;
+using ChartEditWPF.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace ChartEditWPF.ViewModels
 {
-    internal partial class QualityRangeViewModel(IFileDialog _fileDialog, IMessageBox _messageBox) : ObservableObject
+    public partial class QualityRangeViewModel(IFileDialog _fileDialog, IMessageBox _messageBox) : ObservableObject
     {
         public ObservableCollection<QualityRangeControlViewModel> QualityRanges { get; } = [];
 
@@ -67,13 +68,35 @@ namespace ChartEditWPF.ViewModels
         [RelayCommand]
         void ViewChart()
         {
-
+            App.ServiceProvider.GetRequiredService<QualityRangeChartWindow>().Show(QualityRanges);
         }
 
         [RelayCommand]
-        void ExportChart()
+        void ExportResult()
         {
-
+            if (QualityRanges.Count == 0)
+                return;
+            if (!_fileDialog.ShowDialog(null, out var fileNames))
+                return;
+            StringBuilder sb = new StringBuilder();
+            string[] dps = QualityRanges[0].DP;
+            sb.AppendLine($"DP," + string.Join(",,", QualityRanges.Select(v => string.Join(",", v.Columns) + ",AVG,SD,RSD%,质量范围")));
+            for (int i = 0; i < dps.Length; ++i)
+            {
+                sb.Append("DP" + dps[i] + ",");
+                foreach (var sample in QualityRanges)
+                {
+                    RangeRow row = sample.Rows[i];
+                    object?[] data = [row.Areas.ElementAtOrDefault(0), row.Areas.ElementAtOrDefault(1), row.Areas.ElementAtOrDefault(2), row.Average, row.StdDev, row.RSD, row.Range];
+                    sb.Append(string.Join(",", data));
+                    sb.Append(",,");
+                }
+                sb.Remove(sb.Length - 2, 2);
+                if (i != dps.Length - 1)
+                    sb.AppendLine();
+            }
+            File.WriteAllText(fileNames[0], sb.ToString(), Encoding.UTF8);
+            File.WriteAllBytes(fileNames[0][..^3] + "png", App.ServiceProvider.GetRequiredService<QualityRangeChartWindow>().GetImage(QualityRanges));
         }
     }
 

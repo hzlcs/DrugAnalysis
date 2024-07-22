@@ -25,5 +25,10 @@ namespace ChartEditWPF.Views
             InitializeComponent();
         }
 
+        protected override void OnMouseWheel(MouseWheelEventArgs e)
+        {
+            base.OnMouseWheel(e);
+            e.Handled = true;
+        }
     }
 }

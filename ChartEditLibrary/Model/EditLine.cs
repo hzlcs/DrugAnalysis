@@ -122,13 +122,13 @@ namespace ChartEditLibrary.Model
         /// 用于显示在DataGridView中的Columns
         /// </summary>
         /// <param name="index">列号</param>
-        public object this[int index]
+        public string this[int index]
         {
             get
             {
                 return index switch
                 {
-                    0 => Index,
+                    0 => Index.ToString(),
                     1 => RT.ToString("0.000"),    //RT
                     2 => Area.ToString("0.00"),  //面积
                     3 => NextLine.Start.X.ToString("0.000"),  //开始
@@ -140,12 +140,10 @@ namespace ChartEditLibrary.Model
             }
         }
 
-
         public SplitLine(CoordinateLine line) : base(line)
         {
             
         }
-
 
         public int CompareTo(SplitLine? other)
         {
@@ -210,6 +208,7 @@ namespace ChartEditLibrary.Model
 
             }
             DP = value;
+            OnPropertyChanged("Item[]");
             return true;
         }
 
@@ -234,11 +233,17 @@ namespace ChartEditLibrary.Model
 
         IEnumerator<string?> IEnumerable<string?>.GetEnumerator()
         {
-            for (int i = 0; i <= 6; ++i)
+            for (int i = 0; i <= 5; ++i)
                 yield return this[i].ToString();
+            yield return "DP" + DP;
         }
 
         public IEnumerator GetEnumerator() => GetEnumerator();
+
+        public void UpdateUI()
+        {
+            OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
+        }
     }
 
     /// <summary>

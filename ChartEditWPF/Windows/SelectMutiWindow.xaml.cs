@@ -36,7 +36,7 @@ namespace ChartEditWPF.Windows
             SelectItem[] items = new SelectItem[data.Length];
             for (int i = 0; i < data.Length; i++)
             {
-                items[i] = new SelectItem { Item = data.GetValue(i)! };
+                items[i] = new SelectItem(data.GetValue(i)!);
             }
             grid.ItemsSource = items;
             this.action = action;
@@ -44,7 +44,7 @@ namespace ChartEditWPF.Windows
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            action?.Invoke(grid.ItemsSource.Cast<SelectItem>().Select(v => v.Item).ToArray());
+            action?.Invoke(grid.ItemsSource.Cast<SelectItem>().Where(v => v.IsSelected).Select(v => v.Item).ToArray());
             DialogResult = true;
         }
 
@@ -52,6 +52,12 @@ namespace ChartEditWPF.Windows
         {
             [ObservableProperty]
             private bool isSelected;
+
+            public SelectItem(object item)
+            {
+                Item = item;
+            }
+
             public object Item { get; set; }
         }
 
@@ -60,9 +66,9 @@ namespace ChartEditWPF.Windows
         private void headerCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             editing = true;
-            foreach(var i in grid.ItemsSource)
+            foreach (var i in grid.ItemsSource)
             {
-                if(i is SelectItem item)
+                if (i is SelectItem item)
                 {
                     item.IsSelected = headerCheckBox.IsChecked.GetValueOrDefault();
                 }
@@ -74,7 +80,7 @@ namespace ChartEditWPF.Windows
         {
             if (editing)
                 return;
-            foreach(SelectItem i in e.AddedItems)
+            foreach (SelectItem i in e.AddedItems)
             {
                 i.IsSelected = !i.IsSelected;
             }
