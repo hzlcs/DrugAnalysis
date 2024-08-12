@@ -11,6 +11,13 @@ namespace ChartEditLibrary.Model
 {
     public class PCAManager
     {
+        public class SamplePCA(AreaDatabase database) : AreaDatabase(database)
+        {
+            public PointF[] Points { get; internal set; } = null!;
+            internal int ResultIndex { get; set; }
+        }
+
+
         public class PCAItem(string className, AreaDatabase areaDatabase)
         {
             public string ClassName { get; set; } = className;
@@ -19,25 +26,25 @@ namespace ChartEditLibrary.Model
         }
 
 
-        public static void Main(PCAItem[] items, out PointF[] result)
+        public static SamplePCA[] GetPCA(AreaDatabase[] databases)
         {
             List<double[]> dataX = new List<double[]>(); //All data of all classes together
             List<string> classes = new List<string>(); //List of classes
-
-            foreach (var item in items)
+            SamplePCA[] result = databases.Select(v => new SamplePCA(v)).ToArray(); //Result of PCA for each class 
+            foreach (var item in result)
             {
-                var sample = item.AreaDatabase;
-                item.ResultIndex = classes.Count;
+                var sample = item;
+                sample.ResultIndex = classes.Count;
                 for (int i = 0; i < sample.SampleNames.Length; ++i)
                 {
                     classes.Add(sample.SampleNames[i]);
                     dataX.Add(sample.Rows.Select(v => (double)v.Areas[i]!.Value).ToArray());
                 }
             }
-           
+
             int numOfDimensions = dataX[0].Length; //Number of input dimensions
             int newDimensions = 2; //Number of dimensions to be reduced to
-            int numberOfData = dataX.Count(); //Number of all data
+            int numberOfData = dataX.Count; //Number of all data
 
             //Calculate mean of all data
             double[] mi = Mi(dataX, numOfDimensions);
@@ -65,18 +72,14 @@ namespace ChartEditLibrary.Model
             List<double[]> z = new List<double[]>();
             for (int i = 0; i < numberOfData; i++)
                 z.Add(Matrix.Dot(Matrix.Transpose(W), Elementwise.Subtract(dataX[i], mi)));
-            result = z.Select(v=>new PointF((float)v[0], (float)v[1])).ToArray();
-            //Export reduced dataset with corresponding classes to the file
-            //FileStream stream = new FileStream("answer_data_pca.txt", FileMode.Create);
-            //StreamWriter file = new StreamWriter(stream);
-            //using (file)
-            //{
-            //    for (int i = 0; i < z.Count(); i++)
-            //        file.WriteLine("{0};{1};{2}", z[i][0], z[i][1], classes[i]);
-            //}
+            foreach(var item in result)
+            {
+                item.Points = z.GetRange(item.ResultIndex, item.SampleNames.Length).Select(v => new PointF((float)v[0], (float)v[1])).ToArray();
+            }
+            return result;
         }
 
-        public static double[] Mi(List<double[]> dataX, int pocetDimenzi)
+        private static double[] Mi(List<double[]> dataX, int pocetDimenzi)
         {
             double[] mi = new double[pocetDimenzi];
             for (int y = 0; y < dataX.Count; y++) //For every N
@@ -90,7 +93,7 @@ namespace ChartEditLibrary.Model
             return mi;
         }
 
-        public static double[] Variance(List<double[]> dataX, int dimensions, double[] mi)
+        private static double[] Variance(List<double[]> dataX, int dimensions, double[] mi)
         {
             double[] varOfEachColumn = new double[dimensions];
             for (int i = 0; i < dimensions; i++)
@@ -107,7 +110,7 @@ namespace ChartEditLibrary.Model
             return varOfEachColumn;
         }
 
-        public static double Coveriance(double[] dimenzeA, double meanA, double[] dimenzeB, double meanB, int numberOfData)
+        private static double Coveriance(double[] dimenzeA, double meanA, double[] dimenzeB, double meanB, int numberOfData)
         {
             double result = 0;
             for (int a = 0; a < dimenzeA.Length; a++) //Both dimensions are same length, so it doesnt matter which I put here
@@ -115,7 +118,7 @@ namespace ChartEditLibrary.Model
             return result / numberOfData;
         }
 
-        public static double[,] Covariance(List<double[]> dataX, int pocetDimenzi, double[] mi, double[] varKazdehoSloupce)
+        private static double[,] Covariance(List<double[]> dataX, int pocetDimenzi, double[] mi, double[] varKazdehoSloupce)
         {
             //Covariance (d*d matrix)
             double[,] coverianceMatrix = new double[pocetDimenzi, pocetDimenzi];

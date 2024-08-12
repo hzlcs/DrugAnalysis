@@ -65,7 +65,7 @@ namespace ChartEditWPF.Windows
                     {
                         Position = row * (colCount + 1) + col,
                         FillColor = palette.GetColor(col),
-                        Value = sample.Rows[row].Average,
+                        Value = sample.Rows[row].Average.GetValueOrDefault(),
                         Error = sample.Rows[row].StdDev,
                         BorderLineWidth = 0.3f,
                     };

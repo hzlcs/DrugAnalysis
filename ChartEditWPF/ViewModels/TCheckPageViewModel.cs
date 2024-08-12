@@ -79,7 +79,7 @@ namespace ChartEditWPF.ViewModels
                         PValues[i].Value = null;
                         continue;
                     }
-                    float[] values = Samples.Select(v => v.Rows[i].Average).ToArray();
+                    float[] values = Samples.Select(v => v.Rows[i].Average.GetValueOrDefault()).ToArray();
                     PValues[i].Value = SampleManager.TCheck(values, row.Areas.Where(v => v.HasValue).Select(v => v!.Value).ToArray());
                 }
 

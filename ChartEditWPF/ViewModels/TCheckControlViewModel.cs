@@ -16,14 +16,21 @@ namespace ChartEditWPF.ViewModels
 {
     internal partial class TCheckControlViewModel : ObservableObject
     {
+        public string SampleName { get; }
+
         public string[] DP { get; private set; }
 
         public string[] Columns { get; }
+
+        public SampleArea[] Samples { get; }
 
         public ObservableCollection<AreaDatabase.AreaRow> Rows { get; } = [];
 
         public TCheckControlViewModel(SampleArea[] sampleAreas)
         {
+            SampleName = sampleAreas[0].SampleName;
+            SampleName = SampleName[..SampleName.LastIndexOf('-')];
+            Samples = sampleAreas;
             Columns = sampleAreas.Select(s => s.SampleName).ToArray();
             DP = sampleAreas[0].DP;
             for (int i = 0; i < DP.Length; i++)

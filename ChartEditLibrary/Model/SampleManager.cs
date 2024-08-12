@@ -8,7 +8,7 @@ using static ChartEditLibrary.Model.AreaDatabase;
 
 namespace ChartEditLibrary.Model
 {
-    public class SampleManager
+    public static class SampleManager
     {
         private static readonly char[] lineSeparator = ['\n', '\r'];
 
@@ -68,7 +68,7 @@ namespace ChartEditLibrary.Model
                     }
                     rows[i] = new AreaRow(dps[i], areas);
                 }
-                return new AreaDatabase(sampleNames, dps, rows);
+                return new AreaDatabase(Path.GetFileNameWithoutExtension(fileName), sampleNames, dps, rows);
             }
             catch (Exception ex)
             {
@@ -106,11 +106,11 @@ namespace ChartEditLibrary.Model
 
         public static double TTest(float[] x, float[] y)
         {
-            if(x.Length == 1)
+            if (x.Length == 1)
             {
                 x = [x[0], x[0]];
             }
-            if(y.Length == 1)
+            if (y.Length == 1)
             {
                 y = [y[0], y[0]];
             }
@@ -219,6 +219,7 @@ namespace ChartEditLibrary.Model
 
     public class AreaDatabase
     {
+        public string ClassName { get; }
         public string[] SampleNames { get; }
         public string[] DP { get; }
         public AreaRow[] Rows { get; }
@@ -236,11 +237,20 @@ namespace ChartEditLibrary.Model
             }
         }
 
-        internal AreaDatabase(string[] sampleNames, string[] dps, AreaRow[] rows)
+        public AreaDatabase(string className, string[] sampleNames, string[] dps, AreaRow[] rows)
         {
+            this.ClassName = className;
             this.SampleNames = sampleNames;
             this.DP = dps;
             this.Rows = rows;
+        }
+
+        protected AreaDatabase(AreaDatabase database)
+        {
+            ClassName = database.ClassName;
+            SampleNames = database.SampleNames;
+            DP = database.DP;
+            Rows = database.Rows;
         }
 
         public bool TryGetRow(string dp, [MaybeNullWhen(false)] out AreaRow row)
@@ -255,13 +265,13 @@ namespace ChartEditLibrary.Model
             return true;
         }
 
-        
+
 
         public class AreaRow
         {
             public string DP { get; }
             public float?[] Areas { get; }
-            public float Average { get; }
+            public float? Average { get; }
             public double StdDev { get; }
             public double RSD { get; }
 
@@ -274,7 +284,7 @@ namespace ChartEditLibrary.Model
                 {
                     Average = values.Average();
                     StdDev = CalculateStdDev(values);
-                    RSD = StdDev / Average;
+                    RSD = StdDev / Average.Value;
                 }
             }
         }

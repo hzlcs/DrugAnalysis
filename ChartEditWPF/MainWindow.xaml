@@ -17,7 +17,8 @@
     Width="800"
     Height="450"
     d:DataContext="{d:DesignInstance vm:MainViewModel}"
-    mc:Ignorable="d" WindowState="Maximized">
+    WindowState="Maximized"
+    mc:Ignorable="d">
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -50,6 +51,11 @@
                     Command="{Binding ButtonClickCommand}"
                     CommandParameter="{x:Static m:Pages.QualityRange}"
                     Header="质量范围" />
+                <hc:SideMenuItem
+                    Margin="5,0,0,0"
+                    Command="{Binding ButtonClickCommand}"
+                    CommandParameter="{x:Static m:Pages.PCA}"
+                    Header="PCA" />
             </hc:SideMenuItem>
             <hc:SideMenuItem Header="配置">
                 <hc:SideMenuItem

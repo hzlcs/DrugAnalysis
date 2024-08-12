@@ -1,11 +1,15 @@
 ﻿using ChartEditLibrary.Interfaces;
+using ScottPlot.Plottables;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using static ChartEditLibrary.Model.PCAManager;
 
 namespace ChartEditWPF.Behaviors
 {
@@ -64,7 +68,54 @@ namespace ChartEditWPF.Behaviors
                 chartControl.BindControl(chartPlot);
             }
         }
-
-        
     }
+
+    internal class PCAChartPlot : ScottPlot.WPF.WpfPlot 
+    {
+
+        public SamplePCA[] Samples
+        {
+            get { return (SamplePCA[])GetValue(SamplesProperty); }
+            set { SetValue(SamplesProperty, value); }
+        }
+
+        public PCAChartPlot()
+        {
+            Plot.HideGrid();
+
+            Plot.Legend.IsVisible = true;
+            Plot.Font.Automatic();
+        }
+
+        // Using a DependencyProperty as the backing store for SamplesProperty.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty SamplesProperty =
+            DependencyProperty.Register("Samples", typeof(SamplePCA[]), typeof(PCAChartPlot), new PropertyMetadata(null, SampleChanged));
+
+        private static void SampleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (e.NewValue is not SamplePCA[] samples)
+                return;
+            if (d is not PCAChartPlot chart)
+                return;
+            chart.Plot.Clear();
+            var plot = chart.Plot;
+            plot.Add.Line(-2, 0, 2, 0);
+            plot.Add.Line(0, -2, 0, 2);
+            ScottPlot.Palettes.Category10 palette = new();
+            int index = 0;
+            foreach (var sample in samples)
+            {
+                plot.Legend.ManualItems.Add(new ScottPlot.LegendItem() { LabelText = sample.ClassName, FillColor = palette.GetColor(index) });
+                for(int i=0;i<sample.Points.Length;++i)
+                {
+                    plot.Add.Marker(sample.Points[i].X, sample.Points[i].Y, color: palette.GetColor(index));
+                    plot.Add.Text(sample.SampleNames[i], sample.Points[i].X, sample.Points[i].Y);
+
+                }
+                ++index;
+            }
+
+        }
+    }
+
 }
