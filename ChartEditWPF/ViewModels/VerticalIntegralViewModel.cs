@@ -68,6 +68,7 @@ namespace ChartEditWPF.ViewModels
                 var vm = v.DraggableChartVM;
                 CacheContent cache = new CacheContent()
                 {
+                    FilePath = vm.FilePath,
                     FileName = vm.FileName,
                     X = vm.DataSource.Select(v => v.X).ToArray(),
                     Y = vm.DataSource.Select(v => v.Y).ToArray(),
@@ -108,12 +109,15 @@ namespace ChartEditWPF.ViewModels
             {
                 string fileName = (string)obj;
                 var vm = DataSources.First(v => v.DraggableChartVM.FileName == fileName);
+                _ = vm.DraggableChartVM.SaveToFile();
                 var bytes = vm.ChartControl.GetImage();
                 File.WriteAllBytes(System.IO.Path.Combine(folderName, fileName + ".png"), bytes);
+
                 string fileKey = fileName[..fileName.LastIndexOf('-')];
                 if (!contents.ContainsKey(fileKey))
                     contents[fileKey] = new List<SaveRow[]>();
-                contents[fileKey].Add(vm.DraggableChartVM.GetSaveRowContent());
+                var saveRow = vm.DraggableChartVM.GetSaveRow();
+                contents[fileKey].Add(saveRow);
 
             }
             foreach (var content in contents)
@@ -184,20 +188,11 @@ namespace ChartEditWPF.ViewModels
             }
         }
 
-        static int DPCompare(string l, string r)
+        [RelayCommand]
+        async Task SaveResult()
         {
-            int[] ls = l.Split('-').Select(int.Parse).ToArray();
-            int[] rs = r.Split('-').Select(int.Parse).ToArray();
-            if (ls[0] != rs[0])
-                return rs[0] - ls[0];
-            if (ls.Length == rs.Length && ls.Length == 2)
-            {
-                return rs[1] - ls[1];
-            }
-            if (ls.Length == 1)
-                return 1;
-            return -1;
+            foreach(var i in DataSources)
+                await i.DraggableChartVM.SaveToFile();
         }
-
     }
 }

@@ -7,6 +7,7 @@
     xmlns:local="clr-namespace:ChartEditWPF.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
+    xmlns:b="clr-namespace:ChartEditWPF.Behaviors"
     Title="QualityRangePage"
     d:DataContext="{d:DesignInstance vm:QualityRangeViewModel}"
     d:DesignHeight="450"
@@ -18,18 +19,25 @@
             <ColumnDefinition Width="150" />
         </Grid.ColumnDefinitions>
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-            <ItemsControl ItemsSource="{Binding QualityRanges}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <c:QualityRangeControl />
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <StackPanel Orientation="Horizontal">
+                <DataGrid ItemsSource="{Binding Dp}" b:ReadonlyDataGrid.Default="True" RowHeight="30">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="DP" Binding="{Binding}" Width="50"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <ItemsControl ItemsSource="{Binding QualityRanges}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <c:QualityRangeControl />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
         </ScrollViewer>
 
         <StackPanel Grid.Column="1">

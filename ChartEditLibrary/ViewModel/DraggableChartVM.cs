@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenTK.Mathematics;
 using ScottPlot.Colormaps;
+using Accord.Math.Geometry;
 
 namespace ChartEditLibrary.ViewModel
 {
@@ -31,6 +32,8 @@ namespace ChartEditLibrary.ViewModel
         public event Action? OnBaseLineChanged;
 
         public string FileName { get; init; }
+
+        public string FilePath { get; init; }
 
         [ObservableProperty]
         private DraggedLineInfo? draggedLine;
@@ -58,8 +61,11 @@ namespace ChartEditLibrary.ViewModel
 
         private readonly int heighestIndex;
 
+        private bool inited = false;
+
         private DraggableChartVM(string filePath, Coordinates[] dataSource, ExportType exportType)
         {
+            this.FilePath = filePath;
             this.FileName = Path.GetFileNameWithoutExtension(filePath);
             this.exportType = exportType;
             this.DataSource = dataSource;
@@ -483,6 +489,9 @@ namespace ChartEditLibrary.ViewModel
 
         public void InitSplitLine(object? tag)
         {
+            if (inited)
+                return;
+            inited = true;
             switch (exportType)
             {
                 case ExportType.Enoxaparin:
@@ -635,7 +644,7 @@ namespace ChartEditLibrary.ViewModel
                             continue;
                         minDots.Add(add.Value);
                         ++endMin;
-                        if(add.Value > dp6Start)
+                        if (add.Value > dp6Start)
                         {
                             dp6Start = add.Value;
                         }
@@ -670,7 +679,7 @@ namespace ChartEditLibrary.ViewModel
                             continue;
                         minDots.Add(add);
                         ++endMin;
-                        if(add > dp4Start)
+                        if (add > dp4Start)
                         {
                             dp4Start = add;
                         }
@@ -703,7 +712,7 @@ namespace ChartEditLibrary.ViewModel
                             continue;
                         minDots.Add(add);
                         ++endMin;
-                        if(add > dp3Start)
+                        if (add > dp3Start)
                         {
                             dp3Start = add;
                         }
@@ -826,50 +835,16 @@ namespace ChartEditLibrary.ViewModel
 
         public static async Task<DraggableChartVM> CreateAsync(string filePath, ExportType exportType)
         {
-            var dataSource = await Utility.ReadCsv(filePath, 1).ConfigureAwait(false);
+            var (dataSource, saveLine) = await ReadCsv(filePath).ConfigureAwait(false);
 
-            return new DraggableChartVM(filePath, dataSource, exportType);
+            var res = new DraggableChartVM(filePath, dataSource, exportType);
+            if (saveLine != null)
+                res.ApplyResult(saveLine);
+            return res;
         }
 
-        public static DraggableChartVM Create(CacheContent cache)
+        private void ApplyResult(string[] lines)
         {
-            Coordinates[] dataSource = Enumerable.Range(0, cache.X.Length).Select(i => new Coordinates(cache.X[i], cache.Y[i])).ToArray();
-            var vm = new DraggableChartVM(cache.FileName, dataSource, ExportType.None);
-            vm.ApplyResult(cache.SaveContent);
-            return vm;
-        }
-
-        /// <summary>
-        /// 获取保存于文件的内容
-        /// </summary>
-        /// <returns></returns>
-        public string GetSaveContent()
-        {
-            string baseInfo = $"{FileName},{exportType},{BaseLine.Start.X},{BaseLine.Start.Y},{BaseLine.End.X},{BaseLine.End.Y},";
-            string title = "Peak,Start X,End X,Center X,Area,Area Sum %,DP";
-            IEnumerable<string> lines = SplitLines.Select(x =>
-            $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2},DP{x.DP}");
-            return string.Join("\n", lines.Prepend(title).Prepend(baseInfo));
-        }
-
-        public SaveRow[] GetSaveRowContent()
-        {
-            SaveRow baseInfo = new("", $"{FileName},{exportType},{BaseLine.Start.X},{BaseLine.Start.Y},{BaseLine.End.X},{BaseLine.End.Y}");
-            SaveRow title = new("", "Peak,Start X,End X,Center X,Area,Area Sum %");
-            IEnumerable<SaveRow> lines = SplitLines.Select(x =>
-            new SaveRow(x.DP!, $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2}"));
-            return lines.Prepend(title).Prepend(baseInfo).ToArray();
-        }
-
-        public readonly struct SaveRow(string dp, string line)
-        {
-            public readonly string dp = dp;
-            public readonly string line = line;
-        }
-
-        internal void ApplyResult(string saveContent)
-        {
-            string[] lines = saveContent.Split('\n');
             string[] baseInfo = lines[0].Split(',');
             exportType = Enum.Parse<ExportType>(baseInfo[1]);
             BaseLine.Start = new Coordinates(double.Parse(baseInfo[2]), double.Parse(baseInfo[3]));
@@ -882,7 +857,76 @@ namespace ChartEditLibrary.ViewModel
                 if (point.HasValue)
                     AddSplitLine(point.Value).DP = data[6].Substring(2);
             }
+            inited = true;
+        }
 
+        public static DraggableChartVM Create(CacheContent cache)
+        {
+            Coordinates[] dataSource = Enumerable.Range(0, cache.X.Length).Select(i => new Coordinates(cache.X[i], cache.Y[i])).ToArray();
+            var vm = new DraggableChartVM(cache.FilePath, dataSource, ExportType.None);
+            vm.ApplyResult(cache.SaveContent);
+            return vm;
+        }
+
+        /// <summary>
+        /// 获取保存于文件的内容
+        /// </summary>
+        /// <returns></returns>
+        public string GetSaveContent()
+        {
+            return string.Join("\n", GetSaveRowContent());
+        }
+
+        private string[] GetSaveRowContent()
+        {
+            string baseInfo = $"{FileName},{exportType},{BaseLine.Start.X},{BaseLine.Start.Y},{BaseLine.End.X},{BaseLine.End.Y},";
+            string title = "Peak,Start X,End X,Center X,Area,Area Sum %,DP";
+            IEnumerable<string> lines = SplitLines.Select(x =>
+            $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2},DP{x.DP}");
+            return lines.Prepend(title).Prepend(baseInfo).ToArray();
+        }
+
+        public SaveRow[] GetSaveRow()
+        {
+            SaveRow baseInfo = new("", $"{FileName},{exportType},{BaseLine.Start.X},{BaseLine.Start.Y},{BaseLine.End.X},{BaseLine.End.Y}");
+            SaveRow title = new("", "Peak,Start X,End X,Center X,Area,Area Sum %");
+            IEnumerable<SaveRow> lines = SplitLines.Select(x =>
+            new SaveRow(x.DP!, $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2}"));
+            return lines.Prepend(title).Prepend(baseInfo).ToArray();
+        }
+
+        public async Task SaveToFile()
+        {
+            try
+            {
+                string[] save = GetSaveRowContent();
+                string[] datas = File.ReadAllLines(FilePath);
+                File.Delete(FilePath);
+                using StreamWriter writer = new(File.Create(FilePath));
+                for (int i = 0; i < datas.Length; ++i)
+                {
+                    string line = datas[i];
+                    if (i < save.Length)
+                        line += ",," + save[i];
+                    await writer.WriteLineAsync(line);
+                }
+            }
+            catch
+            {
+
+            }
+        }
+
+        public readonly struct SaveRow(string dp, string line)
+        {
+            public readonly string dp = dp;
+            public readonly string line = line;
+        }
+
+        internal void ApplyResult(string saveContent)
+        {
+            string[] lines = saveContent.Split('\n');
+            ApplyResult(lines);
         }
 
         private void OnLineMoved(EditLineBase mover, CoordinateLine oldValue, CoordinateLine newValue)
@@ -982,6 +1026,65 @@ namespace ChartEditLibrary.ViewModel
             //    old.SplitLineMoved -= OnLineMoved;
             //if (newValue is SplitLine newLine)
             //    newLine.SplitLineMoved += OnLineMoved;
+        }
+
+        private static async Task<(Coordinates[], string[]?)> ReadCsv(string path)
+        {
+            char[] separator = ['\n'];
+            char[] spe = [',', '\t'];
+            string[] data;
+            bool hasResult = false;
+            string fileName = Path.GetFileNameWithoutExtension(path);
+            List<string> saveContent = new List<string>();
+            static string? GetSaveLine(string line)
+            {
+                int index = 0;
+                for (int i = 0; i < 4; ++i)
+                {
+                    index = line.IndexOf(',', index) + 1;
+                    if (index == 0)
+                        return null;
+                }
+                return line[index..];
+            }
+            using (StreamReader sr = new(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
+            {
+                string? first = sr.ReadLine();
+                if (first is not null)
+                {
+                    string? temp = GetSaveLine(first);
+                    if (temp is not null)
+                    {
+                        saveContent.Add(temp);
+                        hasResult = true;
+                    }
+                }
+                string? second = sr.ReadLine();
+                if (hasResult && second != null)
+                    saveContent.Add(GetSaveLine(second)!);
+                data = (await sr.ReadToEndAsync().ConfigureAwait(false)).Split(separator, StringSplitOptions.RemoveEmptyEntries);
+                if (hasResult)
+                {
+                    for (int i = 0; i < data.Length; ++i)
+                    {
+                        string? temp = GetSaveLine(data[i]);
+                        if (temp is null)
+                            break;
+                        saveContent.Add(temp);
+                    }
+                }
+            }
+            try
+            {
+                double[][] temp = data.Select(v => v.Split(spe).Skip(1).Take(2).Select(v1 => double.Parse(v1)).ToArray())
+                .Where(v => v[0] >= 20 && v[0] <= 60).ToArray();
+                return (temp.Select(v => new Coordinates(v[0], v[1])).ToArray(), hasResult ? saveContent.ToArray() : null);
+            }
+            catch
+            {
+                throw new Exception(Path.GetFileNameWithoutExtension(path) + "数据格式错误");
+            }
+
         }
     }
 

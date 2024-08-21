@@ -16,7 +16,12 @@ namespace ChartEditWPF.ViewModels
 {
     public partial class QualityRangeViewModel(IFileDialog _fileDialog, IMessageBox _messageBox) : ObservableObject
     {
+        [ObservableProperty]
+        private string[] dp = [];
+
         public ObservableCollection<QualityRangeControlViewModel> QualityRanges { get; } = [];
+
+
 
         [RelayCommand]
         async Task AddQualityRange()
@@ -27,12 +32,19 @@ namespace ChartEditWPF.ViewModels
             List<string[]> newDp = [];
             foreach (var fileName in fileNames)
             {
-                if (!File.Exists(fileName))
-                    continue;
-                var sample = await SampleManager.GetSampleAreasAsync(fileName);
-                if (dp is not null)
-                    newDp.Add(sample[0].DP);
-                QualityRanges.Add(new QualityRangeControlViewModel(sample));
+                try
+                {
+                    if (!File.Exists(fileName))
+                        continue;
+                    var sample = await SampleManager.GetSampleAreasAsync(fileName);
+                    if (dp is not null)
+                        newDp.Add(sample[0].DP);
+                    QualityRanges.Add(new QualityRangeControlViewModel(sample));
+                }
+                catch(Exception ex)
+                {
+                    _messageBox.Show(ex.Message);
+                }
             }
             if (dp is not null)
             {
@@ -41,7 +53,10 @@ namespace ChartEditWPF.ViewModels
                 {
                     sample.ApplyDP(dp);
                 }
+                Dp = dp;
             }
+            Dp = QualityRanges[0].DP;
+
         }
 
         [RelayCommand]

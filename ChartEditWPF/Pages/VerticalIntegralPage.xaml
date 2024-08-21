@@ -27,6 +27,11 @@
             <Button
                 Width="130"
                 Margin="5"
+                Command="{Binding SaveResultCommand}"
+                Content="保存结果" />
+            <Button
+                Width="130"
+                Margin="5"
                 Command="{Binding ExportCommand}"
                 Content="导出结果" />
             <Button

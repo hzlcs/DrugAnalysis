@@ -45,7 +45,8 @@
             Grid.Row="1"
             Click="Button_Click"
             Content="确定"
-            Grid.IsSharedSizeScope="True" />
+            Grid.IsSharedSizeScope="True" 
+            Width="150"/>
     </Grid>
 
 </Window>
