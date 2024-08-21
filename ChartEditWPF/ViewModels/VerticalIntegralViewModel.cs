@@ -43,7 +43,7 @@ namespace ChartEditWPF.ViewModels
                 if (temp is null || temp.Length == 0)
                     return;
                 cacheContents = temp;
-                var t = cacheContents!.Select(v => DraggableChartVM.Create(v)).ToArray();
+                var t = cacheContents.Where(v => !string.IsNullOrEmpty(v.FilePath)).Select(Create).ToArray();
                 foreach (var vm in t)
                 {
                     IChartControl chartControl = App.ServiceProvider.GetRequiredService<IChartControl>();
@@ -144,7 +144,7 @@ namespace ChartEditWPF.ViewModels
                     })));
                     sb.AppendLine();
                 }
-                
+
                 File.WriteAllText(path, sb.ToString(0, sb.Length - Environment.NewLine.Length));
             }
         }
@@ -191,7 +191,7 @@ namespace ChartEditWPF.ViewModels
         [RelayCommand]
         async Task SaveResult()
         {
-            foreach(var i in DataSources)
+            foreach (var i in DataSources)
                 await i.DraggableChartVM.SaveToFile();
         }
     }
