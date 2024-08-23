@@ -49,6 +49,11 @@
             <Button
                 Width="130"
                 Margin="5"
+                Command="{Binding RemoveCommand}"
+                Content="移除样品" />
+            <Button
+                Width="130"
+                Margin="5"
                 Command="{Binding ImportCommand}"
                 Content="选择数据" />
             <Button

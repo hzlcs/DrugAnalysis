@@ -81,13 +81,13 @@ namespace ChartEditWPF.ViewModels
                     row.Range = "-";
                     continue;
                 }
-                double _range = (row.Average.GetValueOrDefault() - datarow.Average.GetValueOrDefault()) / datarow.StdDev;
+                double _range = Math.Round((row.Average.GetValueOrDefault() - datarow.Average.GetValueOrDefault()) / datarow.StdDev, 3);
                 int range = 0;
-                if(_range > 0)
+                if (_range > 0)
                     range = (int)Math.Ceiling(_range);
-                else if(range < 0)
-                    range = (int)Math.Floor(_range);    
-                row.Range = "AVG" + (range >= 0 ? "+" : "-") + range + "SD";
+                else if (_range < 0)
+                    range = (int)Math.Floor(_range);
+                row.Range = "AVG" + (range >= 0 ? "+" : "") + range + "SD";
             }
         }
 

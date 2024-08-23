@@ -899,6 +899,17 @@ namespace ChartEditLibrary.ViewModel
         {
             try
             {
+                static string GetDataLine(string line)
+                {
+                    int index = 0;
+                    for (int i = 0; i < 3; ++i)
+                    {
+                        index = line.IndexOf(',', index) + 1;
+                        if (index == 0)
+                            return line;
+                    }
+                    return line[0..(index - 1)];
+                }
                 string[] save = GetSaveRowContent();
                 string[] datas = File.ReadAllLines(FilePath);
                 File.Delete(FilePath);
@@ -907,7 +918,9 @@ namespace ChartEditLibrary.ViewModel
                 {
                     string line = datas[i];
                     if (i < save.Length)
-                        line += ",," + save[i];
+                    {
+                        line = GetDataLine(line) + ",," + save[i];
+                    }
                     await writer.WriteLineAsync(line);
                 }
             }

@@ -282,7 +282,7 @@ namespace ChartEditLibrary.Model
                 float[] values = areas.Where(v => v.HasValue).Select(v => v!.Value).ToArray();
                 if (values.Length > 0)
                 {
-                    Average = values.Average();
+                    Average = (float)Math.Round(values.Average(),2);
                     StdDev = CalculateStdDev(values);
                     RSD = StdDev / Average.Value;
                 }
@@ -305,7 +305,7 @@ namespace ChartEditLibrary.Model
                 //  计算各数值与平均数的差值的平方，然后求和 
                 double sum = values.Sum(d => Math.Pow(d - avg, 2));
                 //  除以数量，然后开方
-                ret = Math.Sqrt(sum / values.Length);
+                ret = Math.Round(Math.Sqrt(sum / (values.Length - 1)),2);
             }
             return ret;
         }

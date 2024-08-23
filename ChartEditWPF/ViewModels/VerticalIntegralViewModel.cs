@@ -152,7 +152,7 @@ namespace ChartEditWPF.ViewModels
         [RelayCommand]
         void Remove()
         {
-            object[]? objs = selectDialog.ShowListDialog("选择导出数据", "样品", DataSources.Select(v => v.DraggableChartVM.FileName).ToArray());
+            object[]? objs = selectDialog.ShowListDialog("选择移除数据", "样品", DataSources.Select(v => v.DraggableChartVM.FileName).ToArray());
             if (objs is null)
                 return;
             foreach (var obj in objs)

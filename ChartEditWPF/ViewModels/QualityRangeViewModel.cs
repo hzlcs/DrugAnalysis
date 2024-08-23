@@ -1,5 +1,6 @@
 ﻿using ChartEditLibrary.Interfaces;
 using ChartEditLibrary.Model;
+using ChartEditWPF.Services;
 using ChartEditWPF.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -14,10 +15,10 @@ using System.Threading.Tasks;
 
 namespace ChartEditWPF.ViewModels
 {
-    public partial class QualityRangeViewModel(IFileDialog _fileDialog, IMessageBox _messageBox) : ObservableObject
+    public partial class QualityRangeViewModel(IFileDialog _fileDialog, IMessageBox _messageBox,ISelectDialog _selectDialog) : ObservableObject
     {
         [ObservableProperty]
-        private string[] dp = [];
+        private string[]? dp = [];
 
         public ObservableCollection<QualityRangeControlViewModel> QualityRanges { get; } = [];
 
@@ -84,6 +85,17 @@ namespace ChartEditWPF.ViewModels
         void ViewChart()
         {
             App.ServiceProvider.GetRequiredService<QualityRangeChartWindow>().Show(QualityRanges);
+        }
+
+        [RelayCommand]
+        void Remove()
+        {
+            object[]? objs = _selectDialog.ShowListDialog("选择移除数据", "样品", QualityRanges.Select(v => v.SampleName).ToArray());
+            if (objs is null)
+                return;
+            foreach (var obj in objs)
+                QualityRanges.Remove(QualityRanges.First(v => v.SampleName == (string)obj));
+            Dp = QualityRanges.FirstOrDefault()?.DP;
         }
 
         [RelayCommand]
