@@ -67,7 +67,7 @@ namespace ChartEditWPF.Windows
                         FillColor = palette.GetColor(col),
                         Value = sample.Rows[row].Average.GetValueOrDefault(),
                         Error = sample.Rows[row].StdDev,
-                        BorderLineWidth = 0.3f,
+                        BorderLineWidth = 1f,
                     };
                     bars.Add(bar);
                 }

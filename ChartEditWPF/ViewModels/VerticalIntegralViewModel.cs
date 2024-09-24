@@ -100,7 +100,7 @@ namespace ChartEditWPF.ViewModels
 
         int i = 0;
         [RelayCommand]
-        void Import()
+        async Task Import()
         {
             ExportType type = (ExportType)_selectDialog.ShowCombboxDialog("选择导入类型", exportTypes);
             if (!_fileDialog.ShowDialog(null, out var fileNames))
@@ -110,7 +110,7 @@ namespace ChartEditWPF.ViewModels
             {
                 try
                 {
-                    var vm = DraggableChartVM.CreateAsync(file, type).Result;
+                    var vm = await DraggableChartVM.CreateAsync(file, type);
                     vm.InitSplitLine(null);
                     IChartControl chartControl = App.ServiceProvider.GetRequiredService<IChartControl>();
                     chartControl.ChartData = vm;

@@ -76,7 +76,7 @@
                 </ItemsControl>
             </Popup>
         </Border>
-        <c:LoadingControl Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding LoadingVisible}"/>
+        <c:LoadingControl Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding LoadingVisible}" Panel.ZIndex="4"/>
         <Frame
             x:Name="panel"
             Grid.Column="1"

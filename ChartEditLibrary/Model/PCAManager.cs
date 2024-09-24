@@ -209,6 +209,7 @@ namespace ChartEditLibrary.Model
                 for (int j = 0; j < reduced[i].Length; j++)
                 {
                     reducedF[c++] = (float)reduced[i][j];
+                    reduced[i][j] = -reduced[i][j];
                 }
             }
             //for (int i = 0; i < reduced.Length; ++i)
