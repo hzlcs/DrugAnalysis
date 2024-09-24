@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -350,7 +351,7 @@ namespace ChartEditLibrary.Interfaces
             else
             {
                 SplitLine line = (SplitLine)lineInfo.Value.DraggedLine;
-                if (_inputForm.TryGetInput(line.DP, out string value))
+                if (_inputForm.TryGetInput(line.DP,out string? value))
                 {
                     if (!line.TrySetDPIndex(value, ChartData.SplitLines))
                     {

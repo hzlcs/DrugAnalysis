@@ -6,6 +6,7 @@ using ChartEditWPF.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -20,9 +21,10 @@ namespace ChartEditWPF.ViewModels
 {
     public partial class VerticalIntegralViewModel : ObservableObject
     {
-        readonly ISelectDialog selectDialog = App.ServiceProvider.GetRequiredService<ISelectDialog>();
-        readonly IFileDialog fileDialog = App.ServiceProvider.GetRequiredService<IFileDialog>();
-        readonly IMessageBox messageBox = App.ServiceProvider.GetRequiredService<IMessageBox>();
+        readonly ISelectDialog _selectDialog;
+        readonly IFileDialog _fileDialog;
+        readonly IMessageBox _messageBox;
+        readonly ILogger logger;
 
         readonly ExportType[] exportTypes = Enum.GetValues<ExportType>();
 
@@ -31,9 +33,13 @@ namespace ChartEditWPF.ViewModels
         [ObservableProperty]
         private string hideButtonText = "隐藏数据";
 
-        public VerticalIntegralViewModel()
+        public VerticalIntegralViewModel(ISelectDialog selectDialog, IFileDialog fileDialog, IMessageBox messageBox, ILogger<VerticalIntegralViewModel> logger)
         {
-            App.Current.Deactivated += Current_Exit;
+            _selectDialog = selectDialog;
+            _fileDialog = fileDialog;
+            _messageBox = messageBox;
+            this.logger = logger;
+            App.Current.Exit += Current_Exit;
             if (!File.Exists(CacheContent.cacheFile))
                 return;
             CacheContent[] cacheContents = null!;
@@ -52,8 +58,9 @@ namespace ChartEditWPF.ViewModels
                     DataSources.Add(svm);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                logger.LogError(ex, "缓存文件加载失败");
                 messageBox.Show("缓存文件加载失败");
             }
 
@@ -61,98 +68,135 @@ namespace ChartEditWPF.ViewModels
 
         private void Current_Exit(object? sender, EventArgs e)
         {
-            if (!Directory.Exists(Path.GetDirectoryName(CacheContent.cacheFile)))
-                Directory.CreateDirectory(Path.GetDirectoryName(CacheContent.cacheFile)!);
-            var contenets = DataSources.Select(v =>
+            try
             {
-                var vm = v.DraggableChartVM;
-                CacheContent cache = new CacheContent()
+                if (!Directory.Exists(Path.GetDirectoryName(CacheContent.cacheFile)))
+                    Directory.CreateDirectory(Path.GetDirectoryName(CacheContent.cacheFile)!);
+                var contenets = DataSources.Select(v =>
                 {
-                    FilePath = vm.FilePath,
-                    FileName = vm.FileName,
-                    X = vm.DataSource.Select(v => v.X).ToArray(),
-                    Y = vm.DataSource.Select(v => v.Y).ToArray(),
-                    SaveContent = vm.GetSaveContent()
-                };
-                return cache;
-            });
-            File.WriteAllText(CacheContent.cacheFile, JsonConvert.SerializeObject(contenets));
+                    var vm = v.DraggableChartVM;
+                    CacheContent cache = new CacheContent()
+                    {
+                        FilePath = vm.FilePath,
+                        FileName = vm.FileName,
+                        X = vm.DataSource.Select(v => v.X).ToArray(),
+                        Y = vm.DataSource.Select(v => v.Y).ToArray(),
+                        SaveContent = vm.GetSaveContent()
+                    };
+                    return cache;
+                });
+                File.WriteAllText(CacheContent.cacheFile, JsonConvert.SerializeObject(contenets));
+                
+            }
+            catch(Exception ex)
+            {
+                logger.LogError(ex, "缓存文件保存失败");
+            }
+            finally
+            {
+                DataSources.Clear();
+            }
         }
 
+        int i = 0;
         [RelayCommand]
         void Import()
         {
-            ExportType type = (ExportType)selectDialog.ShowCombboxDialog("选择导入类型", exportTypes);
-            if (!fileDialog.ShowDialog(null, out var fileNames))
+            ExportType type = (ExportType)_selectDialog.ShowCombboxDialog("选择导入类型", exportTypes);
+            if (!_fileDialog.ShowDialog(null, out var fileNames))
                 return;
+            using var _ = _messageBox.ShowLoading("正在导入数据...");
             foreach (var file in fileNames)
             {
-                var vm = DraggableChartVM.CreateAsync(file, type).Result;
-                vm.InitSplitLine(null);
-                IChartControl chartControl = App.ServiceProvider.GetRequiredService<IChartControl>();
-                chartControl.ChartData = vm;
-                ShowControlViewModel svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
-                DataSources.Add(svm);
+                try
+                {
+                    var vm = DraggableChartVM.CreateAsync(file, type).Result;
+                    vm.InitSplitLine(null);
+                    IChartControl chartControl = App.ServiceProvider.GetRequiredService<IChartControl>();
+                    chartControl.ChartData = vm;
+                    ShowControlViewModel svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
+                    DataSources.Add(svm);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "{file}导入失败", file);
+                    _messageBox.Popup(Path.GetFileNameWithoutExtension(file) + "导入失败", NotificationType.Error);
+                }
             }
-
+            _messageBox.Popup("导入完成", NotificationType.Success);
         }
         [RelayCommand]
         void Export()
         {
-            object[]? objs = selectDialog.ShowListDialog("选择导出数据", "样品", DataSources.Select(v => v.DraggableChartVM.FileName).ToArray());
+            if (DataSources.Count == 0)
+                return;
+            object[]? objs = _selectDialog.ShowListDialog("选择导出数据", "样品", DataSources.Select(v => v.DraggableChartVM.FileName).ToArray());
             if (objs is null || objs.Length == 0)
                 return;
-            if (!fileDialog.ShowDirectoryDialog(out string? folderName))
+            if (!_fileDialog.ShowDirectoryDialog(out string? folderName))
                 return;
-            Dictionary<string, List<SaveRow[]>> contents = new Dictionary<string, List<SaveRow[]>>();
-            foreach (var obj in objs)
-            {
-                string fileName = (string)obj;
-                var vm = DataSources.First(v => v.DraggableChartVM.FileName == fileName);
-                _ = vm.DraggableChartVM.SaveToFile();
-                var bytes = vm.ChartControl.GetImage();
-                File.WriteAllBytes(System.IO.Path.Combine(folderName, fileName + ".png"), bytes);
-
-                string fileKey = fileName[..fileName.LastIndexOf('-')];
-                if (!contents.ContainsKey(fileKey))
-                    contents[fileKey] = new List<SaveRow[]>();
-                var saveRow = vm.DraggableChartVM.GetSaveRow();
-                contents[fileKey].Add(saveRow);
-
-            }
-            foreach (var content in contents)
+            using var _ = _messageBox.ShowLoading("正在导出数据...");
+            try
             {
 
-                string path = System.IO.Path.Combine(folderName, content.Key + ".csv");
-                StringBuilder sb = new StringBuilder();
-                sb.AppendLine("," + string.Join(",,", content.Value.Select(v => v[0].line)));
-                sb.AppendLine("DP," + string.Join(",,", content.Value.Select(v => v[1].line)));
-                string[] dps = SampleManager.MergeDP(content.Value.Select(v => v.Skip(2).Select(x => x.dp).ToArray()));
-                int count = content.Value[0][0].line.AsSpan().Count(",");
-                string emptyLine = new string(Enumerable.Repeat(',', count).ToArray());
-                foreach (var dp in dps)
+
+                Dictionary<string, List<SaveRow[]>> contents = new Dictionary<string, List<SaveRow[]>>();
+                foreach (var obj in objs)
                 {
-                    sb.Append($"DP{dp},");
-                    sb.Append(string.Join(",,", content.Value.Select(row =>
-                    {
-                        var r = row.FirstOrDefault(v => v.dp == dp);
-                        if (r.dp is null)
-                            return emptyLine;
-                        else
-                            return r.line;
+                    string fileName = (string)obj;
+                    var vm = DataSources.First(v => v.DraggableChartVM.FileName == fileName);
+                    vm.DraggableChartVM.SaveToFile().ContinueWith(v => v.Result.IfFail(e => _messageBox.Show(e.Message)));
+                    var bytes = vm.ChartControl.GetImage();
+                    File.WriteAllBytes(System.IO.Path.Combine(folderName, fileName + ".png"), bytes);
 
-                    })));
-                    sb.AppendLine();
+                    string fileKey = fileName[..fileName.LastIndexOf('-')];
+                    if (!contents.ContainsKey(fileKey))
+                        contents[fileKey] = new List<SaveRow[]>();
+                    var saveRow = vm.DraggableChartVM.GetSaveRow();
+                    contents[fileKey].Add(saveRow);
                 }
+                foreach (var content in contents)
+                {
 
-                File.WriteAllText(path, sb.ToString(0, sb.Length - Environment.NewLine.Length));
+                    string path = System.IO.Path.Combine(folderName, content.Key + ".csv");
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine("," + string.Join(",,", content.Value.Select(v => v[0].line)));
+                    sb.AppendLine("DP," + string.Join(",,", content.Value.Select(v => v[1].line)));
+                    string[] dps = SampleManager.MergeDP(content.Value.Select(v => v.Skip(2).Select(x => x.dp).ToArray()));
+                    int count = content.Value[0][0].line.AsSpan().Count(",");
+                    string emptyLine = new string(Enumerable.Repeat(',', count).ToArray());
+                    foreach (var dp in dps)
+                    {
+                        sb.Append($"DP{dp},");
+                        sb.Append(string.Join(",,", content.Value.Select(row =>
+                        {
+                            var r = row.FirstOrDefault(v => v.dp == dp);
+                            if (r.dp is null)
+                                return emptyLine;
+                            else
+                                return r.line;
+
+                        })));
+                        sb.AppendLine();
+                    }
+
+                    File.WriteAllText(path, sb.ToString(0, sb.Length - Environment.NewLine.Length));
+                }
+                _messageBox.Popup("导出成功", NotificationType.Success);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "导出失败");
+                _messageBox.Popup("导出失败", NotificationType.Error);
             }
         }
 
         [RelayCommand]
         void Remove()
         {
-            object[]? objs = selectDialog.ShowListDialog("选择移除数据", "样品", DataSources.Select(v => v.DraggableChartVM.FileName).ToArray());
+            if (DataSources.Count == 0)
+                return;
+            object[]? objs = _selectDialog.ShowListDialog("选择移除数据", "样品", DataSources.Select(v => v.DraggableChartVM.FileName).ToArray());
             if (objs is null)
                 return;
             foreach (var obj in objs)
@@ -192,7 +236,17 @@ namespace ChartEditWPF.ViewModels
         async Task SaveResult()
         {
             foreach (var i in DataSources)
-                await i.DraggableChartVM.SaveToFile();
+            {
+                try
+                {
+                    var res = await i.DraggableChartVM.SaveToFile();
+                    res.IfFail(v => _messageBox.Show(v.Message));
+                }
+                catch(Exception ex)
+                {
+                    logger.LogError(ex, "保存失败");
+                }
+            }
         }
     }
 }

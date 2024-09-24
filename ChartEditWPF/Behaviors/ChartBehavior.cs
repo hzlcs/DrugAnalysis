@@ -19,7 +19,7 @@ namespace ChartEditWPF.Behaviors
         private IChartControl chartControl = null!;
         public IChartControl ChartControl
         {
-            get 
+            get
             {
                 return chartControl;
             }
@@ -45,7 +45,7 @@ namespace ChartEditWPF.Behaviors
         protected override void OnMouseMove(MouseEventArgs e)
         {
             var point = e.GetPosition(this);
-            ChartControl.MouseMove(this, new System.Drawing.PointF((float)point.X * DisplayScale, (float)point.Y *DisplayScale));
+            ChartControl.MouseMove(this, new System.Drawing.PointF((float)point.X * DisplayScale, (float)point.Y * DisplayScale));
             base.OnMouseMove(e);
         }
 
@@ -62,7 +62,7 @@ namespace ChartEditWPF.Behaviors
         private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             ChartPlot chartPlot = (ChartPlot)d;
-            if(e.NewValue is IChartControl chartControl)
+            if (e.NewValue is IChartControl chartControl)
             {
                 chartPlot.chartControl = chartControl;
                 chartControl.BindControl(chartPlot);
@@ -70,8 +70,10 @@ namespace ChartEditWPF.Behaviors
         }
     }
 
-    internal class PCAChartPlot : ScottPlot.WPF.WpfPlot 
+    internal class PCAChartPlot : ScottPlot.WPF.WpfPlot
     {
+
+        public double[] SingularValues { get; set; } = null!;
 
         public SamplePCA[] Samples
         {
@@ -82,7 +84,6 @@ namespace ChartEditWPF.Behaviors
         public PCAChartPlot()
         {
             Plot.HideGrid();
-
             Plot.Legend.IsVisible = true;
             Plot.Font.Automatic();
         }
@@ -99,14 +100,16 @@ namespace ChartEditWPF.Behaviors
                 return;
             chart.Plot.Clear();
             var plot = chart.Plot;
-            plot.Add.Line(-2, 0, 2, 0);
-            plot.Add.Line(0, -2, 0, 2);
+            int xMax = (int)Math.Ceiling(chart.SingularValues[0]) + 1;
+            int yMax = (int)Math.Ceiling(chart.SingularValues[1]) + 1;
+            plot.Add.Line(-xMax, 0, xMax, 0);
+            plot.Add.Line(0, -yMax, 0, yMax);
             ScottPlot.Palettes.Category10 palette = new();
             int index = 0;
             foreach (var sample in samples)
             {
                 plot.Legend.ManualItems.Add(new ScottPlot.LegendItem() { LabelText = sample.ClassName, FillColor = palette.GetColor(index) });
-                for(int i=0;i<sample.Points.Length;++i)
+                for (int i = 0; i < sample.Points.Length; ++i)
                 {
                     plot.Add.Marker(sample.Points[i].X, sample.Points[i].Y, color: palette.GetColor(index));
                     plot.Add.Text(sample.SampleNames[i], sample.Points[i].X, sample.Points[i].Y);
@@ -114,6 +117,7 @@ namespace ChartEditWPF.Behaviors
                 }
                 ++index;
             }
+            plot.Add.Ellipse(0, 0, chart.SingularValues[0], chart.SingularValues[1]);
 
         }
     }

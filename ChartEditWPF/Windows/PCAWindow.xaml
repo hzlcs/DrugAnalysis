@@ -11,6 +11,26 @@
     Height="450"
     mc:Ignorable="d">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="70" />
+        </Grid.RowDefinitions>
         <b:PCAChartPlot x:Name="chart" />
+        <Grid Grid.Row="1" VerticalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="65" />
+                <ColumnDefinition Width="100" />
+                <ColumnDefinition Width="65" />
+                <ColumnDefinition Width="100" />
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="1" FontSize="15" Text="R2x[1] = "/>
+            <TextBlock Grid.Column="2" FontSize="15" x:Name="r2x1" Text="0.831"/>
+            <TextBlock Grid.Column="3" FontSize="15" Text="R2x[2 = "/>
+            <TextBlock Grid.Column="4" FontSize="15" x:Name="r2x2" Text="0.126"/>
+            <TextBlock Grid.Column="5" FontSize="15" Text="Ellipse: Hotelling's T2 (95%)"/>
+        </Grid>
     </Grid>
 </Window>

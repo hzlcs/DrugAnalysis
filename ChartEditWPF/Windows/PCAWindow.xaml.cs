@@ -20,13 +20,17 @@ namespace ChartEditWPF.Windows
     /// </summary>
     public partial class PCAWindow : Window
     {
+
         public PCAWindow()
         {
-            InitializeComponent();
+            InitializeComponent(); 
         }
 
-        public PCAWindow(SamplePCA[] data) :this()
+        public PCAWindow(SamplePCA[] data, double[] singularValues, double[] eigenVectors) :this()
         {
+            r2x1.Text = eigenVectors[0].ToString("F3");
+            r2x2.Text = eigenVectors[1].ToString("F3");
+            chart.SingularValues = singularValues;
             chart.Samples = data;
         }
     }

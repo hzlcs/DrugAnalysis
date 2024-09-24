@@ -65,9 +65,21 @@
                     Header="垂直积分" />
             </hc:SideMenuItem>
         </hc:SideMenu>
+        <Border Grid.Column="1" Panel.ZIndex="5" Background="Transparent" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="340">
+            <Popup IsOpen="{Binding PopupVisible}" Placement="Top">
+                <ItemsControl ItemsSource="{Binding Notifications}" Background="White">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <c:NotificationCard DataContext="{Binding}" Margin="0,5,0,0"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Popup>
+        </Border>
+        <c:LoadingControl Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding LoadingVisible}"/>
         <Frame
             x:Name="panel"
-            Grid.Column="2"
+            Grid.Column="1"
             Content="{Binding Content}"
             NavigationUIVisibility="Hidden" />
     </Grid>

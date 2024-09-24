@@ -81,7 +81,7 @@ namespace ChartEditWPF.ViewModels
                     row.Range = "-";
                     continue;
                 }
-                double _range = Math.Round((row.Average.GetValueOrDefault() - datarow.Average.GetValueOrDefault()) / datarow.StdDev, 3);
+                double _range = Math.Round((row.Average.GetValueOrDefault() - datarow.Average.GetValueOrDefault()) / datarow.StdDev, 2);
                 int range = 0;
                 if (_range > 0)
                     range = (int)Math.Ceiling(_range);

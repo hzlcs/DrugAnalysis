@@ -1,0 +1,17 @@
+﻿<UserControl x:Class="ChartEditWPF.Controls.LoadingControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:ChartEditWPF.Controls"
+             xmlns:hc="https://handyorg.github.io/handycontrol"
+             mc:Ignorable="d" 
+             d:DesignHeight="75" d:DesignWidth="75">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="75" />
+        </Grid.ColumnDefinitions>
+        <hc:LoadingCircle Grid.Column="0" Width="75" Height="75" DotDiameter="10" DotInterval="15" DotSpeed="5" DotCount="4"/>
+        <TextBlock Text="Loading" VerticalAlignment="Center" HorizontalAlignment="Center" FontFamily="Times New Roman"/>
+    </Grid>
+</UserControl>

@@ -5,6 +5,7 @@ using ChartEditWPF.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -15,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace ChartEditWPF.ViewModels
 {
-    public partial class QualityRangeViewModel(IFileDialog _fileDialog, IMessageBox _messageBox,ISelectDialog _selectDialog) : ObservableObject
+    public partial class QualityRangeViewModel(IFileDialog _fileDialog, IMessageBox _messageBox, ISelectDialog _selectDialog, ILogger<QualityRangeViewModel> logger) : ObservableObject
     {
         [ObservableProperty]
         private string[]? dp = [];
@@ -29,6 +30,7 @@ namespace ChartEditWPF.ViewModels
         {
             if (!_fileDialog.ShowDialog(null, out var fileNames))
                 return;
+            using var _ = _messageBox.ShowLoading("正在导入样品...");
             string[]? dp = QualityRanges.FirstOrDefault()?.DP;
             List<string[]> newDp = [];
             foreach (var fileName in fileNames)
@@ -42,22 +44,31 @@ namespace ChartEditWPF.ViewModels
                         newDp.Add(sample[0].DP);
                     QualityRanges.Add(new QualityRangeControlViewModel(sample));
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    _messageBox.Show(ex.Message);
+                    logger.LogError(ex, "AddQualityRange:{fileName}", fileName);
+                    _messageBox.Popup(Path.GetFileNameWithoutExtension(fileName) + "导入失败", NotificationType.Error);
                 }
             }
             if (dp is not null)
             {
-                dp = SampleManager.MergeDP(newDp.Prepend(dp));
-                foreach (var sample in QualityRanges)
+                try
                 {
-                    sample.ApplyDP(dp);
+                    dp = SampleManager.MergeDP(newDp.Prepend(dp));
+                    foreach (var sample in QualityRanges)
+                    {
+                        sample.ApplyDP(dp);
+                    }
+                    Dp = dp;
                 }
-                Dp = dp;
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "MergeDP");
+                    _messageBox.Popup("合并DP失败", NotificationType.Error);
+                }
             }
             Dp = QualityRanges[0].DP;
-
+            _messageBox.Popup("样品导入成功", NotificationType.Success);
         }
 
         [RelayCommand]
@@ -69,15 +80,18 @@ namespace ChartEditWPF.ViewModels
             }
             try
             {
+                using var _ = _messageBox.ShowLoading("正在导入数据...");
                 AreaDatabase database = await SampleManager.GetDatabaseAsync(fileName[0]);
                 foreach (var qualityRange in QualityRanges)
                 {
                     qualityRange.Import(database);
                 }
+                _messageBox.Popup("数据库导入成功", NotificationType.Success);
             }
             catch (Exception ex)
             {
-                _messageBox.Show(ex.Message);
+                logger.LogError(ex, "Import");
+                _messageBox.Popup("数据库导入失败", NotificationType.Error);
             }
         }
 
@@ -105,25 +119,35 @@ namespace ChartEditWPF.ViewModels
                 return;
             if (!_fileDialog.ShowDialog(null, out var fileNames))
                 return;
-            StringBuilder sb = new StringBuilder();
-            string[] dps = QualityRanges[0].DP;
-            sb.AppendLine($"DP," + string.Join(",,", QualityRanges.Select(v => string.Join(",", v.Columns) + ",AVG,SD,RSD%,质量范围")));
-            for (int i = 0; i < dps.Length; ++i)
+            using var _ = _messageBox.ShowLoading("正在导出结果...");
+            try
             {
-                sb.Append("DP" + dps[i] + ",");
-                foreach (var sample in QualityRanges)
+                StringBuilder sb = new StringBuilder();
+                string[] dps = QualityRanges[0].DP;
+                sb.AppendLine($"DP," + string.Join(",,", QualityRanges.Select(v => string.Join(",", v.Columns) + ",AVG,SD,RSD%,质量范围")));
+                for (int i = 0; i < dps.Length; ++i)
                 {
-                    RangeRow row = sample.Rows[i];
-                    object?[] data = [row.Areas.ElementAtOrDefault(0), row.Areas.ElementAtOrDefault(1), row.Areas.ElementAtOrDefault(2), row.Average, row.StdDev, row.RSD, row.Range];
-                    sb.Append(string.Join(",", data));
-                    sb.Append(",,");
+                    sb.Append("DP" + dps[i] + ",");
+                    foreach (var sample in QualityRanges)
+                    {
+                        RangeRow row = sample.Rows[i];
+                        object?[] data = [row.Areas.ElementAtOrDefault(0), row.Areas.ElementAtOrDefault(1), row.Areas.ElementAtOrDefault(2), row.Average, row.StdDev, row.RSD, row.Range];
+                        sb.Append(string.Join(",", data));
+                        sb.Append(",,");
+                    }
+                    sb.Remove(sb.Length - 2, 2);
+                    if (i != dps.Length - 1)
+                        sb.AppendLine();
                 }
-                sb.Remove(sb.Length - 2, 2);
-                if (i != dps.Length - 1)
-                    sb.AppendLine();
+                File.WriteAllText(fileNames[0], sb.ToString(), Encoding.UTF8);
+                File.WriteAllBytes(fileNames[0][..^3] + "png", App.ServiceProvider.GetRequiredService<QualityRangeChartWindow>().GetImage(QualityRanges));
+                _messageBox.Popup("导出成功", NotificationType.Success);
             }
-            File.WriteAllText(fileNames[0], sb.ToString(), Encoding.UTF8);
-            File.WriteAllBytes(fileNames[0][..^3] + "png", App.ServiceProvider.GetRequiredService<QualityRangeChartWindow>().GetImage(QualityRanges));
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "ExportResult");
+                _messageBox.Popup("导出失败", NotificationType.Error);
+            }
         }
     }
 

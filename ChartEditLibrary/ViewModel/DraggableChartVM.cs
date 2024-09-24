@@ -16,7 +16,8 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenTK.Mathematics;
 using ScottPlot.Colormaps;
-using Accord.Math.Geometry;
+using LanguageExt.Common;
+using LanguageExt;
 
 namespace ChartEditLibrary.ViewModel
 {
@@ -855,7 +856,7 @@ namespace ChartEditLibrary.ViewModel
                 double x = double.Parse(data[1]);
                 Coordinates? point = GetChartPoint(x);
                 if (point.HasValue)
-                    AddSplitLine(point.Value).DP = data[6].Substring(2);
+                    AddSplitLine(point.Value).DP = data[6][2..].TrimEnd('\r');
             }
             inited = true;
         }
@@ -874,7 +875,7 @@ namespace ChartEditLibrary.ViewModel
         /// <returns></returns>
         public string GetSaveContent()
         {
-            return string.Join("\n", GetSaveRowContent());
+            return string.Join(Environment.NewLine, GetSaveRowContent());
         }
 
         private string[] GetSaveRowContent()
@@ -895,7 +896,7 @@ namespace ChartEditLibrary.ViewModel
             return lines.Prepend(title).Prepend(baseInfo).ToArray();
         }
 
-        public async Task SaveToFile()
+        public async Task<Result<bool>> SaveToFile()
         {
             try
             {
@@ -923,10 +924,15 @@ namespace ChartEditLibrary.ViewModel
                     }
                     await writer.WriteLineAsync(line);
                 }
+                return new Result<bool>(true);
             }
-            catch
+            catch (UnauthorizedAccessException ue)
             {
-
+                return new Result<bool>(new UnauthorizedAccessException($"无法修改只读的源文件:'{FilePath}'", ue));
+            }
+            catch (IOException e)
+            {
+                return new Result<bool>(new IOException($"文件'{FilePath}'已被占用，请先关闭文件", e));
             }
         }
 
@@ -938,7 +944,7 @@ namespace ChartEditLibrary.ViewModel
 
         internal void ApplyResult(string saveContent)
         {
-            string[] lines = saveContent.Split('\n');
+            string[] lines = saveContent.Split(Environment.NewLine);
             ApplyResult(lines);
         }
 
@@ -1043,7 +1049,6 @@ namespace ChartEditLibrary.ViewModel
 
         private static async Task<(Coordinates[], string[]?)> ReadCsv(string path)
         {
-            char[] separator = ['\n'];
             char[] spe = [',', '\t'];
             string[] data;
             bool hasResult = false;
@@ -1075,7 +1080,7 @@ namespace ChartEditLibrary.ViewModel
                 string? second = sr.ReadLine();
                 if (hasResult && second != null)
                     saveContent.Add(GetSaveLine(second)!);
-                data = (await sr.ReadToEndAsync().ConfigureAwait(false)).Split(separator, StringSplitOptions.RemoveEmptyEntries);
+                data = (await sr.ReadToEndAsync().ConfigureAwait(false)).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
                 if (hasResult)
                 {
                     for (int i = 0; i < data.Length; ++i)

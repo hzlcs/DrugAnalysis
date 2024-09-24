@@ -10,14 +10,13 @@ namespace ChartEditLibrary.Model
 {
     public static class SampleManager
     {
-        private static readonly char[] lineSeparator = ['\n', '\r'];
 
         public static async Task<SampleArea[]> GetSampleAreasAsync(string fileName)
         {
             if (!File.Exists(fileName))
                 throw new FileNotFoundException("未找到样品文件", fileName);
             using StreamReader sr = new(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-            string[][] text = (await sr.ReadToEndAsync()).Split(lineSeparator, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
+            string[][] text = (await sr.ReadToEndAsync()).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
             var title = text[0];
             SampleArea[] sampleAreas = new SampleArea[(title.Length - 1) / 6];
             string[] dps = text.Skip(2).Select(v => v[0][2..]).ToArray();
@@ -52,7 +51,7 @@ namespace ChartEditLibrary.Model
             string text = (await reader.ReadToEndAsync()).Replace("��n=3��", "(n=3)");
             try
             {
-                string[][] lines = text.Split(lineSeparator, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
+                string[][] lines = text.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
                 string[] sampleNames = lines[0].Skip(1).ToArray();
                 string[] dps = lines.Skip(1).Select(v => v[0][2..]).ToArray();
                 AreaRow[] rows = new AreaRow[dps.Length];
@@ -101,19 +100,13 @@ namespace ChartEditLibrary.Model
 
         public static double TCheck(float[] left, float[] right)
         {
+            if (left.Length <= 1 || right.Length <= 1)
+                return 0;
             return TTest(left, right);
         }
 
         public static double TTest(float[] x, float[] y)
         {
-            if (x.Length == 1)
-            {
-                x = [x[0], x[0]];
-            }
-            if (y.Length == 1)
-            {
-                y = [y[0], y[0]];
-            }
             double sumX = 0.0;
             double sumY = 0.0;
             for (int i = 0; i < x.Length; ++i)
@@ -140,7 +133,8 @@ namespace ChartEditLibrary.Model
             double denomRight = ((varY / n2) * (varY / n2)) / (n2 - 1);
             double denom = denomLeft + denomRight;
             double df = num / denom;
-            double p = Student(t, 8); // Cumulative two-tail density
+            df = x.Length + y.Length - 2;
+            double p = Student(t, df); // Cumulative two-tail density 
             return p;
             //Console.WriteLine("mean of x = " + meanX.ToString("F3"));
             //Console.WriteLine("mean of y = " + meanY.ToString("F3"));
@@ -282,7 +276,7 @@ namespace ChartEditLibrary.Model
                 float[] values = areas.Where(v => v.HasValue).Select(v => v!.Value).ToArray();
                 if (values.Length > 0)
                 {
-                    Average = (float)Math.Round(values.Average(),2);
+                    Average = (float)Math.Round(values.Average(), 2);
                     StdDev = CalculateStdDev(values);
                     RSD = StdDev / Average.Value;
                 }
@@ -305,7 +299,7 @@ namespace ChartEditLibrary.Model
                 //  计算各数值与平均数的差值的平方，然后求和 
                 double sum = values.Sum(d => Math.Pow(d - avg, 2));
                 //  除以数量，然后开方
-                ret = Math.Round(Math.Sqrt(sum / (values.Length - 1)),2);
+                ret = Math.Round(Math.Sqrt(sum / (values.Length - 1)), 2);
             }
             return ret;
         }
