@@ -1,9 +1,14 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using ChartEditLibrary.Model;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 
-double[][] transform = 
+//var x = SampleManager.TCheck([1.94f, 1.92f, 1.65f, 1.56f, 1.58f,], [4.22f, 3.32f, 3.90f, 3.21f, 3.94f]);
+var x = SampleManager.TCheck([0.74f, 0.77f, 0.76f, 0.68f, 0.70f], [1.14f, 1.01f, 1.22f, 1.02f, 1.15f]);
+//var x = SampleManager.TCheck([1.91f, 4.04f], [1.94f, 1.92f, 1.65f, 1.56f, 1.58f]);
+
+double[][] transform =
  [[-2.72497478, -0.65566571],
  [-2.40159379, -0.74229195],
  [-3.59870923, -1.7499537 ],
@@ -13,14 +18,14 @@ double[][] transform =
 
 
 
-double[][] data = [ 
+double[][] data = [
  [1.91, 0.79, 1.12, 1.55, 2.16, 2.95, 4.07, 5.48, 7.39, 10.09, 13.51, 17.13, 5.70, 10.38, 3.07, 7.01, 3.46, 1.48, 0.22, 0.42]
 ,[1.94, 0.74, 1.13, 1.55, 2.14, 2.96, 4.07, 5.48, 7.39, 10.09, 13.52, 17.13, 5.70, 10.38, 3.07, 7.02, 3.46, 1.48, 0.23, 0.42]
 ,[1.92, 0.77, 1.12, 1.57, 2.17, 2.98, 4.12, 5.56, 7.48, 10.18, 13.54, 17.05, 5.49, 10.45, 3.09, 6.83, 3.47, 1.53, 0.23, 0.41]
 ,[1.65, 0.76, 1.06, 1.48, 2.08, 2.90, 4.04, 5.50, 7.42, 10.20, 13.64, 17.21, 5.99, 10.47, 2.95, 7.28, 3.33, 1.43, 0.21, 0.40]
 ,[1.56, 0.68, 1.02, 1.42, 2.01, 2.81, 3.90, 5.32, 7.22, 9.91, 13.26, 16.89, 5.36, 10.22, 3.85, 7.47, 4.37, 1.63, 0.28, 0.45]
 ,[1.58, 0.70, 1.04, 1.44, 2.03, 2.84, 3.94, 5.34, 7.27, 9.93, 13.23, 16.91, 5.44, 10.26, 3.77, 7.38, 4.26, 1.63, 0.28, 0.43] ];
-var res = PrincipalComponentProgram.Calculate(data);
+
 
 
 
@@ -33,7 +38,7 @@ internal class PrincipalComponentProgram
 
     public static PCAResult Calculate(double[][] data)
     {
-        
+
         double[] means;
         double[] stds;
         double[][] stdX = MatStandardize(data,
@@ -115,7 +120,7 @@ internal class PrincipalComponentProgram
         Vector<double> singularValues = svd.S;
         return singularValues.ToArray();
     }
-    
+
 
     static double[][] MatStandardize(double[][] data,
       out double[] means, out double[] stds)

@@ -53,7 +53,12 @@ namespace ChartEditLibrary.Model
             {
                 string[][] lines = text.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
                 string[] sampleNames = lines[0].Skip(1).ToArray();
-                string[] dps = lines.Skip(1).Select(v => v[0][2..]).ToArray();
+                string[] dps = lines.Skip(1).Select(v =>
+                {
+                    string t = v[0].ToUpper();
+                    return t[(t.IndexOf("DP") + 2)..];
+
+                }).ToArray();
                 AreaRow[] rows = new AreaRow[dps.Length];
                 for (int i = 0; i < dps.Length; i++)
                 {
@@ -100,9 +105,11 @@ namespace ChartEditLibrary.Model
 
         public static double TCheck(float[] left, float[] right)
         {
-            if (left.Length <= 1 || right.Length <= 1)
-                return 0;
-            return TTest(left, right);
+            //if (left.Length <= 1 || right.Length <= 1)
+            //    return 0;
+            if (left.Length == 1)
+                left = [left[0], left[0]];
+            return TTest(right, left);
         }
 
         public static double TTest(float[] x, float[] y)
@@ -123,17 +130,26 @@ namespace ChartEditLibrary.Model
                 sumXminusMeanSquared += (x[i] - meanX) * (x[i] - meanX);
             for (int i = 0; i < n2; ++i)
                 sumYminusMeanSquared += (y[i] - meanY) * (y[i] - meanY);
-            double varX = sumXminusMeanSquared / (n1 - 1);
-            double varY = sumYminusMeanSquared / (n2 - 1);
+            double se;
+            if (n1 == n2)
+                se = Math.Sqrt(((n1 - 1) * sumXminusMeanSquared + (n2 - 1) * sumYminusMeanSquared) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2)) / 2;
+            else
+            {
+                double n = Math.Max(n1, n2);
+                se = Math.Sqrt(((n - 1) * sumXminusMeanSquared + (n - 1) * sumYminusMeanSquared) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2)) / 2;
+            }
+
+            //double varX = sumXminusMeanSquared / (n1 - 1);
+            //double varY = sumYminusMeanSquared / (n2 - 1);
             double top = (meanX - meanY);
-            double bot = Math.Sqrt((varX / n1) + (varY / n2));
-            double t = top / bot;
-            double num = ((varX / n1) + (varY / n2)) * ((varX / n1) + (varY / n2));
-            double denomLeft = ((varX / n1) * (varX / n1)) / (n1 - 1);
-            double denomRight = ((varY / n2) * (varY / n2)) / (n2 - 1);
-            double denom = denomLeft + denomRight;
-            double df = num / denom;
-            df = x.Length + y.Length - 2;
+            //double bot = Math.Sqrt((varX / n1) + (varY / n2));
+            double t = top / se;
+            //double num = ((varX / n1) + (varY / n2)) * ((varX / n1) + (varY / n2));
+            //double denomLeft = ((varX / n1) * (varX / n1)) / (n1 - 1);
+            //double denomRight = ((varY / n2) * (varY / n2)) / (n2 - 1);
+            //double denom = denomLeft + denomRight;
+            //double df = num / denom;
+            double df = x.Length + y.Length - 2;
             double p = Student(t, df); // Cumulative two-tail density 
             return p;
             //Console.WriteLine("mean of x = " + meanX.ToString("F3"));

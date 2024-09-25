@@ -1,5 +1,6 @@
 ﻿using ChartEditLibrary.Interfaces;
 using ChartEditLibrary.Model;
+using ChartEditWPF.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -15,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace ChartEditWPF.ViewModels
 {
-    internal partial class TCheckPageViewModel(IFileDialog _fileDialog, IMessageBox _messageBox, ILogger<TCheckPageViewModel> logger) : ObservableObject
+    internal partial class TCheckPageViewModel(IFileDialog _fileDialog, IMessageBox _messageBox, ISelectDialog _selectDialog, ILogger<TCheckPageViewModel> logger) : ObservableObject
     {
         private AreaDatabase? database;
 
@@ -105,10 +106,26 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
+        void RemoveSamples()
+        {
+            if (Samples.Count == 0)
+                return;
+            object[]? objs = _selectDialog.ShowListDialog("选择移除数据", "样品", Samples.Select(v => v.SampleName).ToArray());
+            if (objs is null)
+                return;
+            foreach (var obj in objs)
+                Samples.Remove(Samples.First(v => v.SampleName == (string)obj));
+            _messageBox.Popup("移除样品成功", NotificationType.Success);
+        }
+
+        [RelayCommand]
         void ClearSamples()
         {
+            if (Samples.Count == 0)
+                return;
             Samples.Clear();
             PValues.Clear();
+            _messageBox.Popup("清空样品成功", NotificationType.Success);
         }
 
         public class PValue(string dp) : INotifyPropertyChanged

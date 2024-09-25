@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Xml.Serialization;
 
 namespace ChartEditWPF.ViewModels
@@ -17,6 +18,8 @@ namespace ChartEditWPF.ViewModels
     internal partial class TCheckControlViewModel : ObservableObject
     {
         public string SampleName { get; }
+
+        public Visibility[] ColumnVisibilities { get; }
 
         public string[] DP { get; private set; }
 
@@ -37,6 +40,11 @@ namespace ChartEditWPF.ViewModels
             {
                 float?[] values = sampleAreas.Select(s => s.Area[i]).ToArray();
                 Rows.Add(new RangeRow(DP[i], values));
+            }
+            ColumnVisibilities = new Visibility[3];
+            for(int i=0;i<3;++i)
+            {
+                ColumnVisibilities[i] = i < Columns.Length ? Visibility.Visible : Visibility.Hidden;
             }
         }
 

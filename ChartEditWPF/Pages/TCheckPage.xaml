@@ -86,12 +86,22 @@
                 Width="130"
                 Margin="5"
                 Command="{Binding AddSampleCommand}"
-                Content="添加" />
+                Content="添加样品" />
+            <Button
+                Width="130"
+                Margin="5"
+                Command="{Binding RemoveSamplesCommand}"
+                Content="移除样品" />
             <Button
                 Width="130"
                 Margin="5"
                 Command="{Binding ClearSamplesCommand}"
-                Content="清空" />
+                Content="清空样品" />
+            <Button
+                Width="130"
+                Margin="5"
+                Command="{Binding ImportCommand}"
+                Content="导入数据" />
         </StackPanel>
     </Grid>
 </Page>
