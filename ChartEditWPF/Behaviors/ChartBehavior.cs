@@ -118,7 +118,7 @@ namespace ChartEditWPF.Behaviors
                 ++index;
             }
             plot.Add.Ellipse(0, 0, chart.SingularValues[0], chart.SingularValues[1]);
-
+            plot.Axes.AutoScale();
         }
     }
 

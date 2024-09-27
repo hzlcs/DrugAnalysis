@@ -6,14 +6,15 @@
     xmlns:local="clr-namespace:ChartEditWPF"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
-    d:DataContext="{d:DesignInstance vm:QualityRangeControlViewModel}"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    d:DataContext="{d:DesignInstance Type=vm:TCheckControlViewModel}"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    mc:Ignorable="d">
+    mc:Ignorable="d" Background="Transparent">
     <UserControl.Resources>
         <local:BindingProxy x:Key="bind" Data="{Binding}" />
     </UserControl.Resources>
-    <DataGrid
+    <!--<DataGrid
         AutoGenerateColumns="False"
         CanUserAddRows="False"
         CanUserDeleteRows="False"
@@ -34,5 +35,44 @@
                 HeaderStringFormat="0.00" />
             <DataGridTextColumn Binding="{Binding RSD, StringFormat={}{0:P1}}" Header="RSD%" />
         </DataGrid.Columns>
-    </DataGrid>
+    </DataGrid>-->
+    <Border CornerRadius="5" Background="#FFEEEEEE" BorderBrush="#FFE0E0E0" Padding="6" BorderThickness="1">
+        <StackPanel>
+            <ItemsControl ItemsSource="{Binding ColumnDatas}" Padding="10,0,10,0" d:ItemsSource="{x:Static vm:TCheckControlViewModel.DesignColumn}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="0,15,0,11"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Value}" Width="{Binding Width}" FontSize="14" TextAlignment="Center"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ItemsControl ItemsSource="{Binding DataRows}" d:ItemsSource="{x:Static vm:TCheckControlViewModel.DesignRow}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="White" CornerRadius="5" Margin="0,0,0,4" Height="30" Padding="10,0,10,0" >
+                            <ItemsControl ItemsSource="{Binding Datas}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Value}" Width="{Binding Width}" TextAlignment="Center" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                        
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Border>
+    
+    
 </UserControl>

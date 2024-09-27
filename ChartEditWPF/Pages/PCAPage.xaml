@@ -26,6 +26,22 @@
             HorizontalScrollBarVisibility="Auto"
             VerticalScrollBarVisibility="Disabled">
             <StackPanel Orientation="Horizontal">
+                <DataGrid
+    Grid.Column="0"
+    AutoGenerateColumns="False"
+    CanUserAddRows="False"
+    CanUserDeleteRows="False"
+    CanUserReorderColumns="False"
+    CanUserResizeRows="False"
+    CanUserSortColumns="False"
+    IsReadOnly="True"
+    ItemsSource="{Binding PValues}"
+    RowHeight="30">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Binding="{Binding DP}" Header="DP" />
+                        
+                    </DataGrid.Columns>
+                </DataGrid>
                 <ItemsControl ItemsSource="{Binding Samples}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -46,18 +62,33 @@
                 Width="130"
                 Margin="5"
                 Command="{Binding AddSampleCommand}"
-                Content="添加" />
+                Content="添加样品" />
+            <Button
+                Width="130"
+                Margin="5"
+                Command="{Binding AddDatabaseCommand}"
+                Content="添加数据" />
+            <Button
+                Width="130"
+                Margin="5"
+                Command="{Binding RemoveSamplesCommand}"
+                Content="移除样品" />
             <Button
                 Width="130"
                 Margin="5"
                 Command="{Binding ClearSamplesCommand}"
-                Content="清空" />
+                Content="清空样品" />
 
             <Button
                 Width="130"
                 Margin="5"
-                Command="{Binding ShowPCACommand}"
+                Command="{Binding ImportCommand}"
                 Content="PCA" />
+            <Button
+                Width="130"
+                Margin="5"
+                Command="{Binding ShowPCACommand}"
+                Content="显示结果" />
         </StackPanel>
     </Grid>
 </Page>

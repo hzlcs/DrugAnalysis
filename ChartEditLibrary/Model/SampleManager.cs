@@ -105,10 +105,12 @@ namespace ChartEditLibrary.Model
 
         public static double TCheck(float[] left, float[] right)
         {
-            //if (left.Length <= 1 || right.Length <= 1)
-            //    return 0;
+            if (left.Length == 0 || right.Length == 0)
+                return double.NaN;
             if (left.Length == 1)
                 left = [left[0], left[0]];
+            if (right.Length == 1)
+                right = [right[0], right[0]];
             return TTest(right, left);
         }
 

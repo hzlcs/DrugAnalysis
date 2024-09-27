@@ -90,6 +90,11 @@
             <Button
                 Width="130"
                 Margin="5"
+                Command="{Binding AddDatabaseCommand}"
+                Content="添加数据" />
+            <Button
+                Width="130"
+                Margin="5"
                 Command="{Binding RemoveSamplesCommand}"
                 Content="移除样品" />
             <Button
@@ -101,7 +106,7 @@
                 Width="130"
                 Margin="5"
                 Command="{Binding ImportCommand}"
-                Content="导入数据" />
+                Content="T检验" />
         </StackPanel>
     </Grid>
 </Page>

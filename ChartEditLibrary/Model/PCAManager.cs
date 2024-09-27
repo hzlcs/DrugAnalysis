@@ -14,6 +14,9 @@ namespace ChartEditLibrary.Model
 {
     public class PCAManager
     {
+        public record Result(SamplePCA[] samples, double[] singularValues, double[] eigenVectors);
+
+
         public class SamplePCA(AreaDatabase database) : AreaDatabase(database)
         {
             public PointF[] Points { get; internal set; } = null!;
@@ -29,7 +32,7 @@ namespace ChartEditLibrary.Model
         }
 
 
-        public static SamplePCA[] GetPCA(AreaDatabase[] databases, out double[] singularValues, out double[] eigenVectors)
+        public static Result GetPCA(AreaDatabase[] databases)
         {
             List<double[]> dataX = new List<double[]>(); //All data of all classes together
             List<string> classes = new List<string>(); //List of classes
@@ -41,29 +44,20 @@ namespace ChartEditLibrary.Model
                 for (int i = 0; i < sample.SampleNames.Length; ++i)
                 {
                     classes.Add(sample.SampleNames[i]);
-                    dataX.Add(sample.Rows.Select(v => Math.Round(v.Areas[i]!.Value, 2)).ToArray());
+                    dataX.Add(sample.Rows.Select(v => v.Areas[i]).Where(v => v.HasValue).Select(v => Math.Round(v.GetValueOrDefault(), 2)).ToArray());
                 }
             }
-            double[,] doubles = new double[dataX.Count, dataX[0].Length];
-            for (int i = 0; i < dataX.Count; i++)
-            {
-                for (int j = 0; j < dataX[i].Length; j++)
-                {
-                    doubles[i, j] = dataX[i][j];
-                }
-            }
+            
 
             var res = PrincipalComponentProgram.Calculate(dataX.ToArray());
-            singularValues = res.SingularValues;
-            eigenVectors = res.EigenVectors;
             //Calculate z
             List<double[]> z = new List<double[]>(res.TransformedData);
-            
+
             foreach (var item in result)
             {
                 item.Points = z.GetRange(item.ResultIndex, item.SampleNames.Length).Select(v => new PointF((float)v[0], (float)v[1])).ToArray();
             }
-            return result;
+            return new Result(result, res.SingularValues, res.EigenVectors);
         }
 
         private static double[] Mi(List<double[]> dataX, int pocetDimenzi)
@@ -574,4 +568,4 @@ namespace ChartEditLibrary.Model
 
 
     }
-} 
+}
