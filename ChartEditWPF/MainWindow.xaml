@@ -65,18 +65,36 @@
                     Header="垂直积分" />
             </hc:SideMenuItem>
         </hc:SideMenu>
-        <Border Grid.Column="1" Panel.ZIndex="5" Background="Transparent" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="340">
-            <Popup IsOpen="{Binding PopupVisible}" Placement="Top">
-                <ItemsControl ItemsSource="{Binding Notifications}" Background="White">
+        <Border
+            Grid.Column="1"
+            Width="340"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Bottom"
+            Panel.ZIndex="5"
+            d:Height="300"
+            Background="Transparent">
+            <Popup
+                d:IsOpen="True"
+                IsOpen="{Binding PopupVisible}"
+                Placement="Top">
+                <ItemsControl
+                    d:ItemsSource="{x:Static vm:MainViewModel.DesignNotificationContents}"
+                    Background="White"
+                    ItemsSource="{Binding Notifications}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <c:NotificationCard DataContext="{Binding}" Margin="0,5,0,0"/>
+                            <c:NotificationCard Margin="0,5,0,0" DataContext="{Binding}" />
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </Popup>
         </Border>
-        <c:LoadingControl Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding LoadingVisible}" Panel.ZIndex="4"/>
+        <c:LoadingControl
+            Grid.ColumnSpan="2"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Panel.ZIndex="4"
+            Visibility="{Binding LoadingVisible}" />
         <Frame
             x:Name="panel"
             Grid.Column="1"

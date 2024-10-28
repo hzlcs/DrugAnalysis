@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static ChartEditLibrary.Model.AreaDatabase;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ChartEditLibrary.Model
 {
@@ -105,41 +106,36 @@ namespace ChartEditLibrary.Model
 
         public static double TCheck(float[] left, float[] right)
         {
-            if (left.Length == 0 || right.Length == 0)
+            if (left.Length == 0 || right.Length == 0 || left.Length + right.Length <= 2)
                 return double.NaN;
-            if (left.Length == 1)
-                left = [left[0], left[0]];
-            if (right.Length == 1)
-                right = [right[0], right[0]];
             return TTest(right, left);
         }
 
         public static double TTest(float[] x, float[] y)
         {
-            double sumX = 0.0;
-            double sumY = 0.0;
-            for (int i = 0; i < x.Length; ++i)
-                sumX += x[i];
-            for (int i = 0; i < y.Length; ++i)
-                sumY += y[i];
+            double sumX = x.Sum();
+            double sumY = y.Sum();
             int n1 = x.Length;
             int n2 = y.Length;
             double meanX = sumX / n1;
             double meanY = sumY / n2;
-            double sumXminusMeanSquared = 0.0; // Calculate variances
-            double sumYminusMeanSquared = 0.0;
-            for (int i = 0; i < n1; ++i)
-                sumXminusMeanSquared += (x[i] - meanX) * (x[i] - meanX);
-            for (int i = 0; i < n2; ++i)
-                sumYminusMeanSquared += (y[i] - meanY) * (y[i] - meanY);
-            double se;
-            if (n1 == n2)
-                se = Math.Sqrt(((n1 - 1) * sumXminusMeanSquared + (n2 - 1) * sumYminusMeanSquared) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2)) / 2;
-            else
-            {
-                double n = Math.Max(n1, n2);
-                se = Math.Sqrt(((n - 1) * sumXminusMeanSquared + (n - 1) * sumYminusMeanSquared) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2)) / 2;
-            }
+            //double sumXminusMeanSquared = 0.0; // Calculate variances
+            //double sumYminusMeanSquared = 0.0;
+            //for (int i = 0; i < n1; ++i)
+            //    sumXminusMeanSquared += (x[i] - meanX) * (x[i] - meanX);
+            //for (int i = 0; i < n2; ++i)
+            //    sumYminusMeanSquared += (y[i] - meanY) * (y[i] - meanY);
+
+            var s1 = x.Sum(v => Math.Pow(v, 2)) - Math.Pow(sumX, 2) / n1;
+            var s2 = y.Sum(v => Math.Pow(v, 2)) - Math.Pow(sumY, 2) / n2;
+            //if (n1 == n2)
+            //    se = Math.Sqrt(((n1 - 1) * sumXminusMeanSquared + (n2 - 1) * sumYminusMeanSquared) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2)) / 2;
+            //else
+
+            //double n = sumXminusMeanSquared / n1 < sumYminusMeanSquared / n2 ? n1 : n2;
+            //se = Math.Sqrt(((n - 1) * sumXminusMeanSquared + (n - 1) * sumYminusMeanSquared) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2)) / 2;
+            double se = Math.Sqrt((s1 + s2) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2));
+
 
             //double varX = sumXminusMeanSquared / (n1 - 1);
             //double varY = sumYminusMeanSquared / (n2 - 1);

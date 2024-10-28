@@ -98,7 +98,6 @@ namespace ChartEditWPF.ViewModels
             }
         }
 
-        int i = 0;
         [RelayCommand]
         async Task Import()
         {

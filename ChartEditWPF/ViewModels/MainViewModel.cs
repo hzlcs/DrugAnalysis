@@ -21,6 +21,13 @@ namespace ChartEditWPF.ViewModels
     internal partial class MainViewModel(IServiceProvider serviceProvider) : ObservableObject, IMessageWindow
     {
 
+        public static NotificationContent[] DesignNotificationContents { get; } =
+        [
+            new NotificationContent("通知", "这是一个通知", NotificationType.Information),
+            new NotificationContent("警告", "这是一个警告", NotificationType.Warning),
+            new NotificationContent("错误", "这是一个错误", NotificationType.Error),
+        ];
+
         public ObservableCollection<NotificationContent> Notifications { get; } = [];
 
         [ObservableProperty]

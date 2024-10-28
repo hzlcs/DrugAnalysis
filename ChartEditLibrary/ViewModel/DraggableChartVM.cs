@@ -73,7 +73,7 @@ namespace ChartEditLibrary.ViewModel
             Unit = dataSource[1].X - dataSource[0].X;
             YMax = dataSource[0];
             YMinHalf = dataSource[0];
-            int half = dataSource.Length / 2;
+            int minRange = dataSource.Length / 3;
             for (int i = 0; i < dataSource.Length; ++i)
             {
                 var data = dataSource[i];
@@ -82,7 +82,7 @@ namespace ChartEditLibrary.ViewModel
                     YMax = data;
                     heighestIndex = i;
                 }
-                if (i < half && YMinHalf.Y > data.Y)
+                if (i < minRange && YMinHalf.Y > data.Y)
                     YMinHalf = data;
             }
             BaseLine = new BaseLine(new Coordinates(YMinHalf.X, YMinHalf.Y), new Coordinates(dataSource[^1].X, YMinHalf.Y));
@@ -116,7 +116,7 @@ namespace ChartEditLibrary.ViewModel
         /// </summary>
         /// <param name="oldValue"></param>
         /// <param name="newValue"></param>
-        public void UpdateBaseLine(CoordinateLine oldValue, CoordinateLine newValue)
+        public void UpdateBaseLine(CoordinateLine _, CoordinateLine newValue)
         {
             foreach (var i in SplitLines)
             {
@@ -504,6 +504,21 @@ namespace ChartEditLibrary.ViewModel
                 default:
                     break;
             }
+            if(SplitLines.Count > 0)
+            {
+                var lastLine = SplitLines.Last().End;
+                double y = BaseLine.End.Y;
+                int last = GetDateSourceIndex(lastLine.X);
+                for (int i = last; i < DataSource.Length; ++i)
+                {
+                    if (DataSource[i].Y < y)
+                    {
+                        BaseLine.End = new Coordinates(DataSource[i].X, DataSource[i].Y);
+                        UpdateBaseLine(default, BaseLine.Line);
+                        break;
+                    }
+                }
+            }
         }
 
         private void InitSplitLine_Other()
@@ -535,6 +550,8 @@ namespace ChartEditLibrary.ViewModel
                     continue;
                 if (minDots.Count > 0 && DataSource[max].Y - DataSource[minDots[^1]].Y < config.MinHeight * perVaule)
                     continue;
+                if (DataSource[min].X <= BaseLine.Start.X)
+                    continue;
 
                 maxDots.Add(max);
                 minDots.Add(min);
@@ -547,6 +564,7 @@ namespace ChartEditLibrary.ViewModel
             {
                 AddSplitLine(DataSource[i]);
             }
+            
         }
 
         private void InitSplitLine_YN(object? tag)
@@ -1031,12 +1049,14 @@ namespace ChartEditLibrary.ViewModel
 
         private void OnNextLineChanged(SplitLine sender, EditLineBase? oldValue, EditLineBase newValue)
         {
+
             if (oldValue is null)//第一次设置时
             {
                 //初始化面积和RT
                 sender.Area = GetArea(sender, newValue);
                 int startIndex = GetDateSourceIndex(newValue.Start.X);
                 int endIndex = GetDateSourceIndex(sender.Start.X);
+                Debug.Assert(startIndex < endIndex && startIndex > 0 && endIndex < DataSource.Length);
                 sender.RTIndex = GetDateSourceIndex(DataSource[startIndex..endIndex].MaxBy(v => v.Y).X);
                 sender.RT = DataSource[sender.RTIndex].X;
             }

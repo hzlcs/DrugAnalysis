@@ -4,10 +4,21 @@ using ChartEditLibrary.Model;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 
-//var x = SampleManager.TCheck([1.94f, 1.92f, 1.65f, 1.56f, 1.58f,], [4.22f, 3.32f, 3.90f, 3.21f, 3.94f]);
-var x = SampleManager.TCheck([0.74f, 0.77f, 0.76f, 0.68f, 0.70f], [1.14f, 1.01f, 1.22f, 1.02f, 1.15f]);
+//var x = SampleManager.TCheck([1.94f, 1.92f, 1.65f, 1.56f, 1.58f,], [4.22f, 3.32f, 3.90f, 3.21f, 3.94f, 1.91f]);
+var x = SampleManager.TCheck([3.07f, 3.09f, 2.95f, 3.85f, 3.77f], [3.07f, 2.59f, 3.14f, 2.95f, 2.37f, 2.71f]);
+//var x = SampleManager.TCheck([0.74f, 0.77f, 0.76f, 0.68f, 0.70f], [1.14f, 1.01f, 1.22f, 1.02f, 1.15f]);
 //var x = SampleManager.TCheck([1.91f, 4.04f], [1.94f, 1.92f, 1.65f, 1.56f, 1.58f]);
 
+double[] data1 = [263.8, 271.5, 284.6, 292.7, 254.8, 275.9, 281.7, 268.6, 264.4, 275.3, 270.8, 262.3, 275.9, 281.7, 268.6, 264.4, 273.2, 270.9, 260.5, 264.4];
+double[] data2 = [235.9, 215.4, 251.8, 224.7, 228.3, 231.1, 253, 221.7, 218.8, 232.7, 230.9, 240.7, 255.8, 260.7, 224.4, 232.7, 231.5, 240.7, 257.3];
+
+//SampleManager.TCheck(data1.Select(v=>(float)v).ToArray(), data2.Select(v=>(float)v).ToArray());
+
+var mean1 = data1.Average();
+var mean2 = data2.Average();
+var s1 = data1.Select(v => (v - mean1) * (v - mean1)).Average();
+var s2 = data2.Select(v => (v - mean2) * (v - mean2)).Average();
+var s = Math.Sqrt((data1.Sum(v => v * v) - data1.Sum() * data1.Sum() / data1.Length) / (data1.Length - 1));
 double[][] transform =
  [[-2.72497478, -0.65566571],
  [-2.40159379, -0.74229195],
@@ -247,52 +258,6 @@ internal class PrincipalComponentProgram
             }
         }
 
-        return result;
-    }
-
-
-    static int NumNonCommentLines(string fn,
-      string comment)
-    {
-        int ct = 0;
-        string line = "";
-        FileStream ifs = new FileStream(fn, FileMode.Open);
-        StreamReader sr = new StreamReader(ifs);
-        while ((line = sr.ReadLine()) != null)
-            if (line.StartsWith(comment) == false)
-                ++ct;
-        sr.Close(); ifs.Close();
-        return ct;
-    }
-
-
-    static double[][] MatLoad(string fn, int[] usecols,
-      char sep, string comment)
-    {
-        // count number of non-comment lines
-        int nRows = NumNonCommentLines(fn, comment);
-
-        int nCols = usecols.Length;
-        double[][] result = MatCreate(nRows, nCols);
-        string line = "";
-        string[] tokens = null;
-        FileStream ifs = new FileStream(fn, FileMode.Open);
-        StreamReader sr = new StreamReader(ifs);
-
-        int i = 0;
-        while ((line = sr.ReadLine()) != null)
-        {
-            if (line.StartsWith(comment) == true)
-                continue;
-            tokens = line.Split(sep);
-            for (int j = 0; j < nCols; ++j)
-            {
-                int k = usecols[j];  // into tokens
-                result[i][j] = double.Parse(tokens[k]);
-            }
-            ++i;
-        }
-        sr.Close(); ifs.Close();
         return result;
     }
 
