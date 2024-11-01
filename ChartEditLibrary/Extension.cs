@@ -2,25 +2,26 @@
 using ScottPlot;
 using ScottPlot.Plottables;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace ChartEditLibrary
 {
     public static class Extension
     {
-        private static readonly ConditionalWeakTable<EditLineBase, LinePlot> linePlotWeakTable = [];
+        private static readonly ConditionalWeakTable<EditLineBase, LinePlot> LinePlotWeakTable = [];
 
         public static LinePlot AddEditLine(this IPlotControl chart, EditLineBase line)
         {
             var linePlot = chart.Plot.Add.Line(line.Line);
-            linePlotWeakTable.AddOrUpdate(line, linePlot);
+            LinePlotWeakTable.AddOrUpdate(line, linePlot);
             line.PropertyChanged += OnLineChanged;
             return linePlot;
         }
 
         public static void RemoveSplitLine(this IPlotControl chart, SplitLine line)
         {
-            if (linePlotWeakTable.TryGetValue(line, out var linePlot))
+            if (LinePlotWeakTable.TryGetValue(line, out var linePlot))
                 chart.Plot.Remove(linePlot);
         }
 
@@ -34,13 +35,13 @@ namespace ChartEditLibrary
                 return;
             if (!line.TryGetLinePlot(out var linePlot))
                 return;
-            linePlot!.Start = line.Start;
-            linePlot!.End = line.End;
+            linePlot.Start = line.Start;
+            linePlot.End = line.End;
         }
 
-        public static bool TryGetLinePlot(this EditLineBase line, out LinePlot? linePlot)
+        private static bool TryGetLinePlot(this EditLineBase line, [NotNullWhen(true)] out LinePlot? linePlot)
         {
-            return linePlotWeakTable.TryGetValue(line, out linePlot);
+            return LinePlotWeakTable.TryGetValue(line, out linePlot);
         }
 
         public static Coordinates GetMarkPoint(this DraggedLineInfo info)
@@ -50,7 +51,7 @@ namespace ChartEditLibrary
 
 
 
-        public static int BinaryInsert<T>(this IList<T> list, T item, IComparer<T> comparer)
+        private static int BinaryInsert<T>(this IList<T> list, T item, IComparer<T> comparer)
         {
             int l = 0;
             int r = list.Count - 1;
@@ -71,9 +72,9 @@ namespace ChartEditLibrary
             return list.BinaryInsert(item, Comparer<T>.Create((l, r) => l.CompareTo(r)));
         }
 
-        public static ScottPlot.Color ToScottColor(this System.Drawing.Color color)
+        public static Color ToScottColor(this System.Drawing.Color color)
         {
-            return new ScottPlot.Color(color.R, color.G, color.B, color.A);
+            return new Color(color.R, color.G, color.B, color.A);
         }
     }
 }
