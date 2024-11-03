@@ -33,9 +33,9 @@ namespace ChartEditWPF.ViewModels
             Columns = sampleAreas.Select(s => s.SampleName).ToArray();
             SampleName = Columns[0][..Columns[0].LastIndexOf('-')];
             DP = sampleAreas[0].DP;
-            for (int i = 0; i < DP.Length; i++)
+            for (var i = 0; i < DP.Length; i++)
             {
-                float?[] values = sampleAreas.Select(s => s.Area[i]).ToArray();
+                var values = sampleAreas.Select(s => s.Area[i]).ToArray();
                 Rows.Add(new RangeRow(DP[i], values));
             }
         }
@@ -43,7 +43,7 @@ namespace ChartEditWPF.ViewModels
         public void ApplyDP(string[] dp)
         {
             DP = dp;
-            for (int i = 0; i < DP.Length; i++)
+            for (var i = 0; i < DP.Length; i++)
             {
                 if (Rows[i].DP == dp[i])
                     continue;
@@ -60,7 +60,7 @@ namespace ChartEditWPF.ViewModels
             }
             try
             {
-                AreaDatabase database = await SampleManager.GetDatabaseAsync(fileName[0]);
+                var database = await SampleManager.GetDatabaseAsync(fileName[0]);
                 Import(database);
 
             }
@@ -72,17 +72,17 @@ namespace ChartEditWPF.ViewModels
 
         public void Import(AreaDatabase database)
         {
-            for (int i = 0; i < Rows.Count; ++i)
+            for (var i = 0; i < Rows.Count; ++i)
             {
-                RangeRow row = Rows[i];
-                string dp = row.DP;
+                var row = Rows[i];
+                var dp = row.DP;
                 if (!database.TryGetRow(dp, out var datarow))
                 {
                     row.Range = "-";
                     continue;
                 }
-                double _range = Math.Round((row.Average.GetValueOrDefault() - datarow.Average.GetValueOrDefault()) / datarow.StdDev, 2);
-                int range = 0;
+                var _range = Math.Round((row.Average.GetValueOrDefault() - datarow.Average.GetValueOrDefault()) / datarow.StdDev, 2);
+                var range = 0;
                 if (_range > 0)
                     range = (int)Math.Ceiling(_range);
                 else if (_range < 0)

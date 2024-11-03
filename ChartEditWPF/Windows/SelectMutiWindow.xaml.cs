@@ -34,7 +34,7 @@ namespace ChartEditWPF.Windows
             column.Binding = new Binding("Item");
             checkBox.Binding = new Binding("IsSelected");
             SelectItem[] items = new SelectItem[data.Length];
-            for (int i = 0; i < data.Length; i++)
+            for (var i = 0; i < data.Length; i++)
             {
                 items[i] = new SelectItem(data.GetValue(i)!);
             }

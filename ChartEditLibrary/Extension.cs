@@ -29,7 +29,7 @@ namespace ChartEditLibrary
         {
             if (sender is null)
                 return;
-            EditLineBase line = (EditLineBase)sender;
+            var line = (EditLineBase)sender;
 
             if (e.PropertyName != nameof(line.Line))
                 return;
@@ -53,12 +53,12 @@ namespace ChartEditLibrary
 
         private static int BinaryInsert<T>(this IList<T> list, T item, IComparer<T> comparer)
         {
-            int l = 0;
-            int r = list.Count - 1;
+            var l = 0;
+            var r = list.Count - 1;
             while (r >= l)
             {
-                int mid = (l + r) / 2;
-                int com = comparer.Compare(item, list[mid]);
+                var mid = (l + r) / 2;
+                var com = comparer.Compare(item, list[mid]);
                 if (com >= 0)
                     l = mid + 1;
                 else

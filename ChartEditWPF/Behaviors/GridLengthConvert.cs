@@ -19,7 +19,7 @@ namespace ChartEditWPF
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            GridLength length = (GridLength)value;
+            var length = (GridLength)value;
             return length.Value;
 
         }

@@ -32,7 +32,7 @@ namespace ChartEditWPF.ViewModels
                 List<AreaDatabase> databases = [];
                 AreaDatabase.AreaRow[] rows = new AreaDatabase.AreaRow[Samples[0].Rows.Count];
                 string[] dp = Samples[0].DP;
-                for (int i = 0; i < rows.Length; i++)
+                for (var i = 0; i < rows.Length; i++)
                 {
                     rows[i] = new AreaDatabase.AreaRow(dp[i], Samples.SelectMany(v => v.GetValues(i)).ToArray());
                 }

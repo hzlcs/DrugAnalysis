@@ -13,11 +13,12 @@ using ChartEditLibrary.ViewModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ScottPlot;
 using ScottPlot.Plottables;
+using Version = System.Version;
 
 namespace ChartEditLibrary.Model
 {
 
-    public abstract partial class EditLineBase : ObservableObject
+    public abstract partial class EditLineBase(CoordinateLine line) : ObservableObject
     {
         public delegate void SplitLineMovedEventHandler(SplitLine mover, CoordinateLine oldValue, CoordinateLine newValue);
         public delegate void SplitLineMovingEventHandler(SplitLine line, CoordinateLine oldValue, CoordinateLine newValue);
@@ -34,23 +35,17 @@ namespace ChartEditLibrary.Model
         public Coordinates Start
         {
             get => Line.Start;
-            set
-            {
-                Line = new CoordinateLine(value, Line.End);
-            }
+            set => Line = new CoordinateLine(value, Line.End);
         }
 
         public Coordinates End
         {
             get => Line.End;
-            set
-            {
-                Line = new CoordinateLine(Line.Start, value);
-            }
+            set => Line = new CoordinateLine(Line.Start, value);
         }
 
         [ObservableProperty]
-        private CoordinateLine line;
+        private CoordinateLine line = line;
 
         /// <summary>
         /// 当前是否被选中
@@ -62,43 +57,39 @@ namespace ChartEditLibrary.Model
         /// </summary>
         partial void OnLineChanging(CoordinateLine oldValue, CoordinateLine newValue)
         {
-            if (this is not SplitLine line || oldValue.Start.X == newValue.Start.X)
-            {
+            if (this is not SplitLine splitLine || Math.Abs(oldValue.Start.X - newValue.Start.X) < Utility.Tolerance)
                 return;
-            }
-            SplitLineMoving?.Invoke(line, oldValue, newValue);
+            
+            SplitLineMoving?.Invoke(splitLine, oldValue, newValue);
         }
+        
 
         /// <summary>
         /// 分割线移动后触发移动后事件
         /// </summary>
         partial void OnLineChanged(CoordinateLine oldValue, CoordinateLine newValue)
         {
-            if (this is not SplitLine line || oldValue.Start.X == newValue.Start.X)
-            {
+            if (this is not SplitLine splitLine || Math.Abs(oldValue.Start.X - newValue.Start.X) < Utility.Tolerance)
                 return;
-            }
+            
+            // ReSharper disable once ExplicitCallerInfoArgument
             OnPropertyChanged("Item[]");
-            SplitLineMoved?.Invoke(line, oldValue, newValue);
+            SplitLineMoved?.Invoke(splitLine, oldValue, newValue);
         }
 
-        public EditLineBase(CoordinateLine line)
-        {
-            this.line = line;
-        }
-
-        public EditLineBase(Coordinates start, Coordinates end)
-        {
-            line = new CoordinateLine(start, end);
-        }
-
+        
     }
 
     /// <summary>
     /// 分割线
     /// </summary>
-    public partial class SplitLine : EditLineBase, IComparable<SplitLine>, IEnumerable<string?>
+    [SuppressMessage("ReSharper", "ExplicitCallerInfoArgument")]
+    public partial class SplitLine(CoordinateLine line)
+        : EditLineBase(line), IComparable<SplitLine>, IEnumerable<string?>
     {
+
+        
+        
         public delegate void NextLineChangedEventHandler(SplitLine sender, EditLineBase? oldValue, EditLineBase newValue);
         public event NextLineChangedEventHandler? NextLineChanged;
         /// <summary>
@@ -140,14 +131,9 @@ namespace ChartEditLibrary.Model
             }
         }
 
-        public SplitLine(CoordinateLine line) : base(line)
+        int IComparable<SplitLine>.CompareTo(SplitLine? other)
         {
-            
-        }
-
-        public int CompareTo(SplitLine? other)
-        {
-            return Start.X.CompareTo(other!.Start.X);
+            return other is null ? 0 : Start.X.CompareTo(other.Start.X);
         }
 
         /// <summary>
@@ -155,8 +141,10 @@ namespace ChartEditLibrary.Model
         /// </summary>
         [ObservableProperty]
         private EditLineBase nextLine = null!;
+        
         private double area;
         private double areaRatio;
+
 
         /// <summary>
         /// 设置左边的分割线（该线在最左边时为<see cref="BaseLine"/>）
@@ -166,9 +154,9 @@ namespace ChartEditLibrary.Model
             NextLineChanged?.Invoke(this, oldValue, newValue);
         }
 
-        public double Area { get => area; set { area = value; OnPropertyChanged("Item[]"); } }
+        public double Area { get => area; set { area = value; UpdateUI(); } }
 
-        public double AreaRatio { get => areaRatio; set { areaRatio = value; OnPropertyChanged("Item[]"); } }
+        public double AreaRatio { get => areaRatio; set { areaRatio = value; UpdateUI(); } }
 
         public override string ToString()
         {
@@ -181,6 +169,7 @@ namespace ChartEditLibrary.Model
         /// <para>Todo: 修改DP时智能改动其他峰的DP</para>
         /// </summary>
         /// <param name="value"></param>
+        /// <param name="lines"></param>
         /// <returns></returns>
         public bool TrySetDPIndex(string? value, IList<SplitLine> lines)
         {
@@ -189,15 +178,15 @@ namespace ChartEditLibrary.Model
                 DP = null;
                 return true;
             }
-            if (DP is null && int.TryParse(value, out int dp))
+            if (DP is null && int.TryParse(value, out var dp))
             {
                 if (lines.Take(Index).All(v => v.DP is null))
                 {
                     //获取该DP在聚合度表中的索引
-                    int index = Array.IndexOf(DPTable, dp);
+                    var index = Array.IndexOf(DPTable, dp);
                     if (index >= 0)
                     {
-                        for (int i = Index - 1; i >= 0; --i)
+                        for (var i = Index - 1; i >= 0; --i)
                         {
                             lines[i].DP = DPTable.ElementAtOrDefault(index).ToString();
                             ++index;
@@ -208,17 +197,17 @@ namespace ChartEditLibrary.Model
 
             }
             DP = value;
-            OnPropertyChanged("Item[]");
+            UpdateUI();
             return true;
         }
 
         [Obsolete("智能设置DP值代开发")]
         private static void SetDPIndex(IList<SplitLine> sameLines, int index)
         {
-            int dpValue = DPTable[index];
+            var dpValue = DPTable[index];
             if (sameLines.Count > 1)
             {
-                for (int i = 0; i < sameLines.Count; i++)
+                for (var i = 0; i < sameLines.Count; i++)
                 {
                     //sameLines[i].dpIndex = index;
                     sameLines[i].DP = $"{dpValue}-{i + 1}";
@@ -233,23 +222,26 @@ namespace ChartEditLibrary.Model
 
         IEnumerator<string?> IEnumerable<string?>.GetEnumerator()
         {
-            for (int i = 0; i <= 5; ++i)
-                yield return this[i].ToString();
+            for (var i = 0; i <= 5; ++i)
+                yield return this[i];
             yield return "DP" + DP;
         }
 
-        public IEnumerator GetEnumerator() => GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<string?>)this).GetEnumerator();
 
+        /// <summary>
+        /// 触发所有列的更新
+        /// </summary>
         public void UpdateUI()
         {
-            OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
+            OnPropertyChanged("Item[]");
         }
     }
 
     /// <summary>
     /// 基线
     /// </summary>
-    public partial class BaseLine(CoordinateLine line) : EditLineBase(line)
+    public class BaseLine(CoordinateLine line) : EditLineBase(line)
     {
         public BaseLine(Coordinates start, Coordinates end) : this(new CoordinateLine(start, end))
         {
@@ -280,13 +272,18 @@ namespace ChartEditLibrary.Model
         }
     }
 
-    public readonly struct DraggedLineInfo(EditLineBase line, bool IsStart) : IEqualityComparer<DraggedLineInfo>, IEquatable<DraggedLineInfo>
+    /// <summary>
+    /// 拖拽线信息
+    /// </summary>
+    /// <param name="line">线</param>
+    /// <param name="isStart">当线是基线时，表示是基线的开始或结束</param>
+    public readonly struct DraggedLineInfo(EditLineBase line, bool isStart) : IEqualityComparer<DraggedLineInfo>, IEquatable<DraggedLineInfo>
     {
-        public EditLineBase DraggedLine { get; init; } = line;
+        public EditLineBase DraggedLine { get; } = line;
 
-        public bool IsBaseLine { get; init; } = line is BaseLine;
+        public bool IsBaseLine { get; } = line is BaseLine;
 
-        public bool IsStart { get; init; } = IsStart;
+        public bool IsStart { get; } = isStart;
 
         public bool Equals(DraggedLineInfo x, DraggedLineInfo y)
         {

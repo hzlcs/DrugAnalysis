@@ -15,7 +15,7 @@ namespace ChartEditWPF.ViewModels
 {
     public partial class ShowControlViewModel : ObservableObject
     {
-        public ShowControlViewModel(IChartControl chartControl, DraggableChartVM draggableChartVM)
+        public ShowControlViewModel(IChartControl chartControl, DraggableChartVm draggableChartVM)
         {
             ChartControl = chartControl;
             DraggableChartVM = draggableChartVM;
@@ -29,7 +29,7 @@ namespace ChartEditWPF.ViewModels
 
         public IChartControl ChartControl { get; set; }
 
-        public DraggableChartVM DraggableChartVM { get; set; }
+        public DraggableChartVm DraggableChartVM { get; set; }
 
         [ObservableProperty]
         private bool showData = true;
@@ -40,7 +40,7 @@ namespace ChartEditWPF.ViewModels
         [RelayCommand]
         void CopyData()
         {
-            string data = string.Join("\n", DraggableChartVM.SplitLines.Select(v => string.Join("\t", v)).Prepend("Peak\tStart X\tEnd X\tCenter X\tArea\tArea Sum %\tDP"));
+            var data = string.Join("\n", DraggableChartVM.SplitLines.Select(v => string.Join("\t", v)).Prepend("Peak\tStart X\tEnd X\tCenter X\tArea\tArea Sum %\tDP"));
             Clipboard.Clear();
             Clipboard.SetText(data, TextDataFormat.Text);
             Clipboard.Flush();

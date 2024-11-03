@@ -48,18 +48,18 @@ namespace ChartEditWPF.Windows
             myPlot.Font.Automatic();
             myPlot.Axes.Top.IsVisible = false;
             myPlot.Axes.Right.IsVisible = false;
-            Legend legend = myPlot.ShowLegend(Edge.Bottom).Legend;
+            var legend = myPlot.ShowLegend(Edge.Bottom).Legend;
             ScottPlot.Palettes.Category10 palette = new();
             List<Bar> bars = new List<Bar>();
-            List<LegendItem> legendItems = legend.ManualItems;
-            int rowCount = samples[0].DP.Length;
-            int colCount = samples.Length;
+            var legendItems = legend.ManualItems;
+            var rowCount = samples[0].DP.Length;
+            var colCount = samples.Length;
 
-            for (int col = 0; col < colCount; ++col)
+            for (var col = 0; col < colCount; ++col)
             {
                 var sample = samples[col];
                 legendItems.Add(new LegendItem() { LabelText = sample.SampleName, FillColor = palette.GetColor(col) });
-                for (int row = 0; row < rowCount; ++row)
+                for (var row = 0; row < rowCount; ++row)
                 {
                     Bar bar = new()
                     {
@@ -72,8 +72,8 @@ namespace ChartEditWPF.Windows
                     bars.Add(bar);
                 }
             }
-            Tick[] ticks = new Tick[rowCount];
-            for (int i = 0; i < rowCount; ++i)
+            var ticks = new Tick[rowCount];
+            for (var i = 0; i < rowCount; ++i)
             {
                 ticks[i] = new Tick(i * (colCount + 1) + colCount / 2 - 1, "dp" + samples[0].DP[i]);
             }

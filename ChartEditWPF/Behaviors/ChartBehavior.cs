@@ -61,7 +61,7 @@ namespace ChartEditWPF.Behaviors
 
         private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            ChartPlot chartPlot = (ChartPlot)d;
+            var chartPlot = (ChartPlot)d;
             if (e.NewValue is IChartControl chartControl)
             {
                 chartPlot.chartControl = chartControl;
@@ -100,16 +100,16 @@ namespace ChartEditWPF.Behaviors
                 return;
             chart.Plot.Clear();
             var plot = chart.Plot;
-            int xMax = (int)Math.Ceiling(chart.SingularValues[0]) + 1;
-            int yMax = (int)Math.Ceiling(chart.SingularValues[1]) + 1;
+            var xMax = (int)Math.Ceiling(chart.SingularValues[0]) + 1;
+            var yMax = (int)Math.Ceiling(chart.SingularValues[1]) + 1;
             plot.Add.Line(-xMax, 0, xMax, 0);
             plot.Add.Line(0, -yMax, 0, yMax);
             ScottPlot.Palettes.Category10 palette = new();
-            int index = 0;
+            var index = 0;
             foreach (var sample in samples)
             {
                 plot.Legend.ManualItems.Add(new ScottPlot.LegendItem() { LabelText = sample.ClassName, FillColor = palette.GetColor(index) });
-                for (int i = 0; i < sample.Points.Length; ++i)
+                for (var i = 0; i < sample.Points.Length; ++i)
                 {
                     plot.Add.Marker(sample.Points[i].X, sample.Points[i].Y, color: palette.GetColor(index));
                     plot.Add.Text(sample.SampleNames[i], sample.Points[i].X, sample.Points[i].Y);

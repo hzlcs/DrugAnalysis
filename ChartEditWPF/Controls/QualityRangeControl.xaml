@@ -12,13 +12,13 @@
     d:DesignWidth="800"
     mc:Ignorable="d">
     <UserControl.Resources>
-        <local:BindingProxy x:Key="bind" Data="{Binding}" />
+        <local:BindingProxy x:Key="Bind" Data="{Binding}" />
     </UserControl.Resources>
     <DataGrid ItemsSource="{Binding Rows}" RowHeight="30" b:ReadonlyDataGrid.Default="True"> 
         <DataGrid.Columns>
-            <DataGridTextColumn Binding="{Binding Areas[0], StringFormat={}{0:0.00}}" Header="{Binding Source={StaticResource bind}, Path=Data.Columns[0]}" />
-            <DataGridTextColumn Binding="{Binding Areas[1], StringFormat={}{0:0.00}}" Header="{Binding Source={StaticResource bind}, Path=Data.Columns[1]}" />
-            <DataGridTextColumn Binding="{Binding Areas[2], StringFormat={}{0:0.00}}" Header="{Binding Source={StaticResource bind}, Path=Data.Columns[2]}" />
+            <DataGridTextColumn Binding="{Binding Areas[0], StringFormat={}{0:0.00}}" Header="{Binding Source={StaticResource Bind}, Path=Data.Columns[0]}" />
+            <DataGridTextColumn Binding="{Binding Areas[1], StringFormat={}{0:0.00}}" Header="{Binding Source={StaticResource Bind}, Path=Data.Columns[1]}" />
+            <DataGridTextColumn Binding="{Binding Areas[2], StringFormat={}{0:0.00}}" Header="{Binding Source={StaticResource Bind}, Path=Data.Columns[2]}" />
             <DataGridTextColumn Binding="{Binding Average, StringFormat={}{0:0.00}}" Header="AVG" />
             <DataGridTextColumn Binding="{Binding StdDev, StringFormat={}{0:0.00}}" Header="SD" HeaderStringFormat="0.00"/>
             <DataGridTextColumn Binding="{Binding RSD, StringFormat={}{0:P1}}"  Header="RSD%"/>
@@ -26,7 +26,7 @@
                 <DataGridTemplateColumn.Header>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
                         <TextBlock Text="质量范围" />
-                        <Button Width="15" Height="15" Margin="5,0,0,0" BorderThickness="0" Command="{Binding Source={StaticResource bind}, Path=Data.ImportCommand}">
+                        <Button Width="15" Height="15" Margin="5,0,0,0" BorderThickness="0" Command="{Binding Source={StaticResource Bind}, Path=Data.ImportCommand}">
                             <Button.Background>
                                 <ImageBrush ImageSource="/Resources/import.png"/>
                             </Button.Background>

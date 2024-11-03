@@ -30,7 +30,7 @@ namespace ChartEditWPF.Behaviors
 
         private static void ValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            DataGrid dataGrid = (DataGrid)d;
+            var dataGrid = (DataGrid)d;
             if((bool)e.NewValue)
             {
                 dataGrid.Columns.CollectionChanged += CollectionChanged;

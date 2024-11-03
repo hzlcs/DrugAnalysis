@@ -27,7 +27,7 @@ namespace ChartEditWPF
         [STAThread]
         public static void Main(string[] args)
         {
-            using IHost host = CreateHostBuilder(args).Build();
+            using var host = CreateHostBuilder(args).Build();
             host.Start();
             ServiceProvider = host.Services;
             App app = new();
@@ -82,7 +82,7 @@ namespace ChartEditWPF
 
         private static void ConfigureLog()
         {
-            string logOutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] {SourceContext:l}{NewLine}{Message}{NewLine}{Exception}";
+            var logOutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] {SourceContext:l}{NewLine}{Message}{NewLine}{Exception}";
             Log.Logger = new LoggerConfiguration()
               .MinimumLevel.Override("Default", Debugger.IsAttached ? LogEventLevel.Debug : LogEventLevel.Information)
               .MinimumLevel.Override("Microsoft", LogEventLevel.Error)

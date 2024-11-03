@@ -39,9 +39,9 @@ namespace ChartEditWPF.ViewModels
             Columns = sampleAreas.Select(s => s.SampleName).ToArray();
             ColumnDatas = new ObservableCollection<Data>(Columns.Select(v => new Data(v, 125)).Concat(sourceArray.Select(v => new Data(v, 50))).ToList());
             DP = sampleAreas[0].DP;
-            for (int i = 0; i < DP.Length; i++)
+            for (var i = 0; i < DP.Length; i++)
             {
-                float?[] values = sampleAreas.Select(s => s.Area[i]).ToArray();
+                var values = sampleAreas.Select(s => s.Area[i]).ToArray();
                 Rows.Add(new RangeRow(DP[i], values));
                 DataRows.Add(GetDataRow(Rows[i]));
             }

@@ -21,11 +21,11 @@ namespace ChartEditLibrary.Model
             var title = text[0];
             SampleArea[] sampleAreas = new SampleArea[(title.Length - 1) / 6];
             string[] dps = text.Skip(2).Select(v => v[0][2..]).ToArray();
-            for (int i = 0; i < sampleAreas.Length; ++i)
+            for (var i = 0; i < sampleAreas.Length; ++i)
             {
                 sampleAreas[i] = new SampleArea(title[1 + i * 7], dps, text.Skip(2).Select(v =>
                 {
-                    string value = v[1 + i * 7 + 5];
+                    var value = v[1 + i * 7 + 5];
                     if (string.IsNullOrEmpty(value))
                         return null;
                     return new float?(float.Parse(value));
@@ -47,26 +47,26 @@ namespace ChartEditLibrary.Model
             {
                 throw new FileNotFoundException("文件不存在", fileName);
             }
-            using FileStream fileStream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var fileStream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             using StreamReader reader = new(fileStream, Encoding.UTF8);
-            string text = (await reader.ReadToEndAsync()).Replace("��n=3��", "(n=3)");
+            var text = (await reader.ReadToEndAsync()).Replace("��n=3��", "(n=3)");
             try
             {
                 string[][] lines = text.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
                 string[] sampleNames = lines[0].Skip(1).ToArray();
                 string[] dps = lines.Skip(1).Select(v =>
                 {
-                    string t = v[0].ToUpper();
+                    var t = v[0].ToUpper();
                     return t[(t.IndexOf("DP") + 2)..];
 
                 }).ToArray();
                 AreaRow[] rows = new AreaRow[dps.Length];
-                for (int i = 0; i < dps.Length; i++)
+                for (var i = 0; i < dps.Length; i++)
                 {
-                    float?[] areas = new float?[sampleNames.Length];
-                    for (int j = 0; j < sampleNames.Length; j++)
+                    var areas = new float?[sampleNames.Length];
+                    for (var j = 0; j < sampleNames.Length; j++)
                     {
-                        if (float.TryParse(lines[i + 1][j + 1], out float value))
+                        if (float.TryParse(lines[i + 1][j + 1], out var value))
                         {
                             areas[j] = value;
                         }
@@ -91,8 +91,8 @@ namespace ChartEditLibrary.Model
 
         private static int DPCompare(string l, string r)
         {
-            int[] ls = l.Split('-').Select(int.Parse).ToArray();
-            int[] rs = r.Split('-').Select(int.Parse).ToArray();
+            var ls = l.Split('-').Select(int.Parse).ToArray();
+            var rs = r.Split('-').Select(int.Parse).ToArray();
             if (ls[0] != rs[0])
                 return rs[0] - ls[0];
             if (ls.Length == rs.Length && ls.Length == 2)
@@ -115,10 +115,10 @@ namespace ChartEditLibrary.Model
         {
             double sumX = x.Sum();
             double sumY = y.Sum();
-            int n1 = x.Length;
-            int n2 = y.Length;
-            double meanX = sumX / n1;
-            double meanY = sumY / n2;
+            var n1 = x.Length;
+            var n2 = y.Length;
+            var meanX = sumX / n1;
+            var meanY = sumY / n2;
             //double sumXminusMeanSquared = 0.0; // Calculate variances
             //double sumYminusMeanSquared = 0.0;
             //for (int i = 0; i < n1; ++i)
@@ -134,21 +134,21 @@ namespace ChartEditLibrary.Model
 
             //double n = sumXminusMeanSquared / n1 < sumYminusMeanSquared / n2 ? n1 : n2;
             //se = Math.Sqrt(((n - 1) * sumXminusMeanSquared + (n - 1) * sumYminusMeanSquared) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2)) / 2;
-            double se = Math.Sqrt((s1 + s2) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2));
+            var se = Math.Sqrt((s1 + s2) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2));
 
 
             //double varX = sumXminusMeanSquared / (n1 - 1);
             //double varY = sumYminusMeanSquared / (n2 - 1);
-            double top = (meanX - meanY);
+            var top = (meanX - meanY);
             //double bot = Math.Sqrt((varX / n1) + (varY / n2));
-            double t = top / se;
+            var t = top / se;
             //double num = ((varX / n1) + (varY / n2)) * ((varX / n1) + (varY / n2));
             //double denomLeft = ((varX / n1) * (varX / n1)) / (n1 - 1);
             //double denomRight = ((varY / n2) * (varY / n2)) / (n2 - 1);
             //double denom = denomLeft + denomRight;
             //double df = num / denom;
             double df = x.Length + y.Length - 2;
-            double p = Student(t, df); // Cumulative two-tail density 
+            var p = Student(t, df); // Cumulative two-tail density 
             return p;
             //Console.WriteLine("mean of x = " + meanX.ToString("F3"));
             //Console.WriteLine("mean of y = " + meanY.ToString("F3"));
@@ -163,7 +163,7 @@ namespace ChartEditLibrary.Model
             // for large integer df or double df
             // adapted from ACM algorithm 395
             // returns 2-tail p-value
-            double n = df; // to sync with ACM parameter name
+            var n = df; // to sync with ACM parameter name
             double a, b, y;
             t = t * t;
             y = t / n;
@@ -236,7 +236,7 @@ namespace ChartEditLibrary.Model
         {
             get
             {
-                int index = Array.IndexOf(DP, dp);
+                var index = Array.IndexOf(DP, dp);
                 if (index == -1)
                 {
                     throw new IndexOutOfRangeException("DP not found");
@@ -263,7 +263,7 @@ namespace ChartEditLibrary.Model
 
         public bool TryGetRow(string dp, [MaybeNullWhen(false)] out AreaRow row)
         {
-            int index = Array.IndexOf(DP, dp);
+            var index = Array.IndexOf(DP, dp);
             if (index == -1)
             {
                 row = null;
@@ -287,7 +287,7 @@ namespace ChartEditLibrary.Model
             {
                 this.DP = dp;
                 this.Areas = areas;
-                float[] values = areas.Where(v => v.HasValue).Select(v => v!.Value).ToArray();
+                var values = areas.Where(v => v.HasValue).Select(v => v!.Value).ToArray();
                 if (values.Length > 0)
                 {
                     Average = (float)Math.Round(values.Average(), 2);
@@ -311,7 +311,7 @@ namespace ChartEditLibrary.Model
                 //  计算平均数   
                 double avg = values.Average();
                 //  计算各数值与平均数的差值的平方，然后求和 
-                double sum = values.Sum(d => Math.Pow(d - avg, 2));
+                var sum = values.Sum(d => Math.Pow(d - avg, 2));
                 //  除以数量，然后开方
                 ret = Math.Round(Math.Sqrt(sum / (values.Length - 1)), 2);
             }

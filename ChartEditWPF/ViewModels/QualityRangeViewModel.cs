@@ -81,7 +81,7 @@ namespace ChartEditWPF.ViewModels
             try
             {
                 using var _ = _messageBox.ShowLoading("正在导入数据...");
-                AreaDatabase database = await SampleManager.GetDatabaseAsync(fileName[0]);
+                var database = await SampleManager.GetDatabaseAsync(fileName[0]);
                 foreach (var qualityRange in QualityRanges)
                 {
                     qualityRange.Import(database);
@@ -122,15 +122,15 @@ namespace ChartEditWPF.ViewModels
             using var _ = _messageBox.ShowLoading("正在导出结果...");
             try
             {
-                StringBuilder sb = new StringBuilder();
+                var sb = new StringBuilder();
                 string[] dps = QualityRanges[0].DP;
                 sb.AppendLine($"DP," + string.Join(",,", QualityRanges.Select(v => string.Join(",", v.Columns) + ",AVG,SD,RSD%,质量范围")));
-                for (int i = 0; i < dps.Length; ++i)
+                for (var i = 0; i < dps.Length; ++i)
                 {
                     sb.Append("DP" + dps[i] + ",");
                     foreach (var sample in QualityRanges)
                     {
-                        RangeRow row = sample.Rows[i];
+                        var row = sample.Rows[i];
                         object?[] data = [row.Areas.ElementAtOrDefault(0), row.Areas.ElementAtOrDefault(1), row.Areas.ElementAtOrDefault(2), row.Average, row.StdDev, row.RSD, row.Range];
                         sb.Append(string.Join(",", data));
                         sb.Append(",,");

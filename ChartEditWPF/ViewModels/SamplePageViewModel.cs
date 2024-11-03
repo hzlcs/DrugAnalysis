@@ -57,12 +57,12 @@ namespace ChartEditWPF.ViewModels
             }
             if (PValues.Count == 0)
             {
-                for (int i = 0; i < dp.Length; ++i)
+                for (var i = 0; i < dp.Length; ++i)
                 {
                     PValues.Add(new PValue(dp[i]));
                 }
             }
-            for (int i = 0; i < dp.Length; ++i)
+            for (var i = 0; i < dp.Length; ++i)
             {
                 if (PValues[i].DP != dp[i])
                 {
@@ -187,15 +187,15 @@ namespace ChartEditWPF.ViewModels
         {
             Dictionary<string, List<int>> sameSamples = [];
             List<int> @default = [];
-            for (int i = 0; i < database.SampleNames.Length; ++i)
+            for (var i = 0; i < database.SampleNames.Length; ++i)
             {
-                int index = database.SampleNames[i].LastIndexOf('-');
+                var index = database.SampleNames[i].LastIndexOf('-');
                 if (index == -1)
                 {
                     @default.Add(i);
                     continue;
                 }
-                string sampleName = database.SampleNames[i][..index];
+                var sampleName = database.SampleNames[i][..index];
                 if (!sameSamples.TryGetValue(sampleName, out var list))
                 {
                     list = new List<int>();

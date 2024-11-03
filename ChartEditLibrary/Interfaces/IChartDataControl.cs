@@ -11,7 +11,7 @@ namespace ChartEditLibrary.Interfaces
 {
     public interface IChartDataControl
     {
-        void BindData(DraggableChartVM vm);
+        void BindData(DraggableChartVm vm);
 
         void SplitLines_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e);
 

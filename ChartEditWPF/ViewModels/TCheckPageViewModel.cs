@@ -24,15 +24,15 @@ namespace ChartEditWPF.ViewModels
         {
             if (database is null)
                 return;
-            for (int i = 0; i < PValues.Count; ++i)
+            for (var i = 0; i < PValues.Count; ++i)
             {
-                string dp = PValues[i].DP;
+                var dp = PValues[i].DP;
                 if (!database.TryGetRow(dp, out var row))
                 {
                     PValues[i].Value = double.NaN;
                     continue;
                 }
-                float[] values = Samples.SelectMany(v => v.GetValues(i)).Where(v => v.HasValue).Select(v => v.GetValueOrDefault()).ToArray();
+                var values = Samples.SelectMany(v => v.GetValues(i)).Where(v => v.HasValue).Select(v => v.GetValueOrDefault()).ToArray();
                 PValues[i].Value = SampleManager.TCheck(values, row.Areas.Where(v => v.HasValue).Select(v => v.GetValueOrDefault()).ToArray());
             }
         }

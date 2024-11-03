@@ -24,7 +24,7 @@ namespace ChartEditLibrary.Interfaces
     {
         IPlotControl PlotControl { get; }
 
-        DraggableChartVM ChartData { get; set; }
+        DraggableChartVm ChartData { get; set; }
 
         void MouseDown(object? sender, PointF mousePoint, bool left);
 
@@ -55,7 +55,7 @@ namespace ChartEditLibrary.Interfaces
     public class ChartControl(IMessageBox messageBox, IFileDialog dialog, IInputForm inputForm) : IChartControl
     {
         public IPlotControl PlotControl { get; set; } = null!;
-        public DraggableChartVM ChartData { get; set; } = null!;
+        public DraggableChartVm ChartData { get; set; } = null!;
         private Text? MyHighlightText;
         private Coordinates mouseCoordinates;
         private DraggedLineInfo? draggedLine;
@@ -192,7 +192,7 @@ namespace ChartEditLibrary.Interfaces
             if (draggedLine is null)
                 return;
             Pixel mousePixel = new(mousePoint.X, mousePoint.Y);
-            Coordinates mouseLocation = PlotControl.Plot.GetCoordinates(mousePixel);
+            var mouseLocation = PlotControl.Plot.GetCoordinates(mousePixel);
             var line = draggedLine.Value;
             var chartPoint = ChartData.GetChartPoint(mouseLocation.X, line.IsBaseLine ? mouseLocation.Y : null);
             MoveLine(chartPoint, mouseLocation);
@@ -240,12 +240,12 @@ namespace ChartEditLibrary.Interfaces
         {
             if (_dialog.ShowDialog(ChartData.FileName + ".csv", out var fileNames))
             {
-                string fileName = fileNames[0];
+                var fileName = fileNames[0];
                 if (File.Exists(fileName))
                 {
                     File.Delete(fileName);
                 }
-                string dir = Path.GetDirectoryName(fileName)!;
+                var dir = Path.GetDirectoryName(fileName)!;
                 if (!Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
                 File.WriteAllText(fileName, ChartData.GetSaveContent(), Encoding.UTF8);
@@ -265,14 +265,14 @@ namespace ChartEditLibrary.Interfaces
             }
             else
             {
-                SplitLine line = (SplitLine)lineInfo.Value.DraggedLine;
+                var line = (SplitLine)lineInfo.Value.DraggedLine;
                 if (!_messageBox.ConfirmOperation($"确认移除分割线：({line.End.X}, {line.End.Y})?"))
                     return;
                 ChartData.RemoveSplitLine(line);
                 if (!string.IsNullOrWhiteSpace(line.DP))
                 {
                     string[] dps = line.DP.Split('-');
-                    if (dps.Length > 1 && int.TryParse(dps[0], out int dp) && int.TryParse(dps[1], out int index))
+                    if (dps.Length > 1 && int.TryParse(dps[0], out var dp) && int.TryParse(dps[1], out var index))
                     {
                         var lines = ChartData.SplitLines.Where(v => (v.DP?.StartsWith(dps[0])).GetValueOrDefault()).Reverse().ToArray();
                         if(lines.Length == 1)
@@ -305,12 +305,12 @@ namespace ChartEditLibrary.Interfaces
             else
             {
                 var line = ChartData.AddSplitLine(chartPoint.Value);
-                ChartData.DraggedLine = DraggableChartVM.GetFocusLineInfo(line);
+                ChartData.DraggedLine = DraggableChartVm.GetFocusLineInfo(line);
                 var first = ChartData.SplitLines.FirstOrDefault(v => v.RTIndex > line.RTIndex);
                 if (first is not null && !string.IsNullOrWhiteSpace(first.DP))
                 {
                     string[] dps = first.DP.Split('-');
-                    if (int.TryParse(dps[0], out int dp))
+                    if (int.TryParse(dps[0], out var dp))
                     {
                         if (dps.Length == 1)
                         {
@@ -321,7 +321,7 @@ namespace ChartEditLibrary.Interfaces
                         }
                         else
                         {
-                            int index = int.Parse(dps[1]);
+                            var index = int.Parse(dps[1]);
                             line.DP = $"{dp}-{++index}";
                             line.UpdateUI();
                             foreach (var l in ChartData.SplitLines.Reverse().Where(v => v.RTIndex < line.RTIndex &&
@@ -350,8 +350,8 @@ namespace ChartEditLibrary.Interfaces
             }
             else
             {
-                SplitLine line = (SplitLine)lineInfo.Value.DraggedLine;
-                if (_inputForm.TryGetInput(line.DP,out string? value))
+                var line = (SplitLine)lineInfo.Value.DraggedLine;
+                if (_inputForm.TryGetInput(line.DP,out var value))
                 {
                     if (!line.TrySetDPIndex(value, ChartData.SplitLines))
                     {
@@ -360,7 +360,7 @@ namespace ChartEditLibrary.Interfaces
                     else
                     {
                         ChartData.DraggedLine = null;
-                        ChartData.DraggedLine = DraggableChartVM.GetFocusLineInfo(line);
+                        ChartData.DraggedLine = DraggableChartVm.GetFocusLineInfo(line);
                     }
                 }
 

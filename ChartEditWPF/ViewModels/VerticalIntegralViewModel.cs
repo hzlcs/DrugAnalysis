@@ -15,7 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static ChartEditLibrary.ViewModel.DraggableChartVM;
+using static ChartEditLibrary.ViewModel.DraggableChartVm;
 
 namespace ChartEditWPF.ViewModels
 {
@@ -52,9 +52,9 @@ namespace ChartEditWPF.ViewModels
                 var t = cacheContents.Where(v => !string.IsNullOrEmpty(v.FilePath)).Select(Create).ToArray();
                 foreach (var vm in t)
                 {
-                    IChartControl chartControl = App.ServiceProvider.GetRequiredService<IChartControl>();
+                    var chartControl = App.ServiceProvider.GetRequiredService<IChartControl>();
                     chartControl.ChartData = vm;
-                    ShowControlViewModel svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
+                    var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
                     DataSources.Add(svm);
                 }
             }
@@ -75,7 +75,7 @@ namespace ChartEditWPF.ViewModels
                 var contenets = DataSources.Select(v =>
                 {
                     var vm = v.DraggableChartVM;
-                    CacheContent cache = new CacheContent()
+                    var cache = new CacheContent()
                     {
                         FilePath = vm.FilePath,
                         FileName = vm.FileName,
@@ -101,7 +101,7 @@ namespace ChartEditWPF.ViewModels
         [RelayCommand]
         async Task Import()
         {
-            ExportType type = (ExportType)_selectDialog.ShowCombboxDialog("选择导入类型", exportTypes);
+            var type = (ExportType)_selectDialog.ShowCombboxDialog("选择导入类型", exportTypes);
             if (!_fileDialog.ShowDialog(null, out var fileNames))
                 return;
             using var _ = _messageBox.ShowLoading("正在导入数据...");
@@ -109,11 +109,11 @@ namespace ChartEditWPF.ViewModels
             {
                 try
                 {
-                    var vm = await DraggableChartVM.CreateAsync(file, type);
+                    var vm = await DraggableChartVm.CreateAsync(file, type);
                     vm.InitSplitLine(null);
-                    IChartControl chartControl = App.ServiceProvider.GetRequiredService<IChartControl>();
+                    var chartControl = App.ServiceProvider.GetRequiredService<IChartControl>();
                     chartControl.ChartData = vm;
-                    ShowControlViewModel svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
+                    var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
                     DataSources.Add(svm);
                 }
                 catch (Exception ex)
@@ -132,7 +132,7 @@ namespace ChartEditWPF.ViewModels
             object[]? objs = _selectDialog.ShowListDialog("选择导出数据", "样品", DataSources.Select(v => v.DraggableChartVM.FileName).ToArray());
             if (objs is null || objs.Length == 0)
                 return;
-            if (!_fileDialog.ShowDirectoryDialog(out string? folderName))
+            if (!_fileDialog.ShowDirectoryDialog(out var folderName))
                 return;
             using var _ = _messageBox.ShowLoading("正在导出数据...");
             try
@@ -142,13 +142,13 @@ namespace ChartEditWPF.ViewModels
                 Dictionary<string, List<SaveRow[]>> contents = new Dictionary<string, List<SaveRow[]>>();
                 foreach (var obj in objs)
                 {
-                    string fileName = (string)obj;
+                    var fileName = (string)obj;
                     var vm = DataSources.First(v => v.DraggableChartVM.FileName == fileName);
                     vm.DraggableChartVM.SaveToFile().ContinueWith(v => v.Result.IfFail(e => _messageBox.Show(e.Message)));
                     var bytes = vm.ChartControl.GetImage();
                     File.WriteAllBytes(System.IO.Path.Combine(folderName, fileName + ".png"), bytes);
 
-                    string fileKey = fileName[..fileName.LastIndexOf('-')];
+                    var fileKey = fileName[..fileName.LastIndexOf('-')];
                     if (!contents.ContainsKey(fileKey))
                         contents[fileKey] = new List<SaveRow[]>();
                     var saveRow = vm.DraggableChartVM.GetSaveRow();
@@ -157,13 +157,13 @@ namespace ChartEditWPF.ViewModels
                 foreach (var content in contents)
                 {
 
-                    string path = System.IO.Path.Combine(folderName, content.Key + ".csv");
-                    StringBuilder sb = new StringBuilder();
+                    var path = System.IO.Path.Combine(folderName, content.Key + ".csv");
+                    var sb = new StringBuilder();
                     sb.AppendLine("," + string.Join(",,", content.Value.Select(v => v[0].line)));
                     sb.AppendLine("DP," + string.Join(",,", content.Value.Select(v => v[1].line)));
                     string[] dps = SampleManager.MergeDP(content.Value.Select(v => v.Skip(2).Select(x => x.dp).ToArray()));
-                    int count = content.Value[0][0].line.AsSpan().Count(",");
-                    string emptyLine = new string(Enumerable.Repeat(',', count).ToArray());
+                    var count = content.Value[0][0].line.AsSpan().Count(",");
+                    var emptyLine = new string(Enumerable.Repeat(',', count).ToArray());
                     foreach (var dp in dps)
                     {
                         sb.Append($"DP{dp},");
@@ -216,7 +216,7 @@ namespace ChartEditWPF.ViewModels
         {
             if (DataSources.Count == 0)
                 return;
-            bool hided = DataSources[0].ShowData;
+            var hided = DataSources[0].ShowData;
             foreach (var d in DataSources)
             {
                 d.ShowData = !hided;

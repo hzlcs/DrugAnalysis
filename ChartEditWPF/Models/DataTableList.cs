@@ -54,7 +54,7 @@ namespace ChartEditWPF.Models
                 throw new ArgumentException($"Column {columnName} already exists", nameof(columnName));
             }
             columns.Add(columnName);
-            int index = columns.Count - 1;
+            var index = columns.Count - 1;
             colIndex.Add(columnName, index);
             columnInfos.Add(new ColumnInfo(columnName, data.Select(v => v[index])));
             foreach (var row in data)

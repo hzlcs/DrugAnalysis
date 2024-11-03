@@ -21,35 +21,29 @@ using LanguageExt;
 
 namespace ChartEditLibrary.ViewModel
 {
-    public partial class DraggableChartVM : ObservableObject
+    public partial class DraggableChartVm : ObservableObject
     {
         public event Action<SplitLine>? DraggedLineChanged;
 
+        /// <summary>
+        /// x轴单位间距
+        /// </summary>
         public double Unit { get; }
 
-        /// <summary>
-        /// 通知前端数据发生变化
-        /// </summary>
-        public event Action? OnBaseLineChanged;
+        public string FileName { get; }
 
-        public string FileName { get; init; }
+        public string FilePath { get; }
 
-        public string FilePath { get; init; }
-
-        [ObservableProperty]
-        private DraggedLineInfo? draggedLine;
+        [ObservableProperty] private DraggedLineInfo? draggedLine;
 
         private int draggedSplitLineIndex;
 
-        public Coordinates YMax { get; init; }
+        private readonly Coordinates yMax;
+        public BaseLine BaseLine { get; }
 
-        public Coordinates YMinHalf { get; init; }
+        public ObservableCollection<SplitLine> SplitLines { get; } = [];
 
-        public BaseLine BaseLine { get; init; }
-
-        public ObservableCollection<SplitLine> SplitLines { get; init; } = [];
-
-        public Coordinates[] DataSource { get; init; }
+        public Coordinates[] DataSource { get; }
 
         private ExportType exportType;
 
@@ -58,34 +52,40 @@ namespace ChartEditLibrary.ViewModel
         /// </summary>
         public Vector2d Sensitivity { get; set; }
 
-        public double SumArea { get; set; }
+        private double SumArea { get; set; }
 
-        private readonly int heighestIndex;
+        private readonly int highestIndex;
 
-        private bool inited = false;
+        /// <summary>
+        /// 是否初始化
+        /// </summary>
+        private bool initialized = false;
 
-        private DraggableChartVM(string filePath, Coordinates[] dataSource, ExportType exportType)
+        private DraggableChartVm(string filePath, Coordinates[] dataSource, ExportType exportType)
         {
             this.FilePath = filePath;
             this.FileName = Path.GetFileNameWithoutExtension(filePath);
             this.exportType = exportType;
             this.DataSource = dataSource;
             Unit = dataSource[1].X - dataSource[0].X;
-            YMax = dataSource[0];
-            YMinHalf = dataSource[0];
-            int minRange = dataSource.Length / 3;
-            for (int i = 0; i < dataSource.Length; ++i)
+            yMax = dataSource[0];
+            var yMinHalf = dataSource[0];
+            var minRange = dataSource.Length / 3;
+            for (var i = 0; i < dataSource.Length; ++i)
             {
                 var data = dataSource[i];
-                if (data.Y > YMax.Y && data.X < 42.5)
+                if (data.Y > yMax.Y && data.X < 42.5)
                 {
-                    YMax = data;
-                    heighestIndex = i;
+                    yMax = data;
+                    highestIndex = i;
                 }
-                if (i < minRange && YMinHalf.Y > data.Y)
-                    YMinHalf = data;
+
+                if (i < minRange && yMinHalf.Y > data.Y)
+                    yMinHalf = data;
             }
-            BaseLine = new BaseLine(new Coordinates(YMinHalf.X, YMinHalf.Y), new Coordinates(dataSource[^1].X, YMinHalf.Y));
+
+            BaseLine = new BaseLine(new Coordinates(yMinHalf.X, yMinHalf.Y),
+                new Coordinates(dataSource[^1].X, yMinHalf.Y));
         }
 
         /// <summary>
@@ -93,156 +93,60 @@ namespace ChartEditLibrary.ViewModel
         /// </summary>
         partial void OnDraggedLineChanged(DraggedLineInfo? oldValue, DraggedLineInfo? newValue)
         {
+            if (oldValue is { DraggedLine: SplitLine oldLine })
+                oldLine.SplitLineMoving -= OnLineMoving;
+
             //移除对上条线的移动监测
-            if (oldValue.HasValue)
-            {
-                if (!oldValue.Value.IsBaseLine)
-                    oldValue.Value.DraggedLine.SplitLineMoving -= OnLineMoving;
-            }
+            if (oldValue is { IsBaseLine: false })
+                oldValue.Value.DraggedLine.SplitLineMoving -= OnLineMoving;
+
+            if (!newValue.HasValue || newValue.Value.IsBaseLine)
+                return;
             //添加对当前线的移动监测
-            if (newValue.HasValue && !newValue.Value.IsBaseLine)
-            {
-                if (!newValue.Value.IsBaseLine)
-                {
-                    draggedSplitLineIndex = SplitLines.IndexOf((SplitLine)newValue.Value.DraggedLine);
-                    newValue.Value.DraggedLine.SplitLineMoving += OnLineMoving;
-                    DraggedLineChanged?.Invoke((SplitLine)newValue.Value.DraggedLine);
-                }
-            }
+            newValue.Value.DraggedLine.SplitLineMoving += OnLineMoving;
+
+            draggedSplitLineIndex = SplitLines.IndexOf((SplitLine)newValue.Value.DraggedLine);
+            DraggedLineChanged?.Invoke((SplitLine)newValue.Value.DraggedLine);
         }
 
         /// <summary>
         /// 基线变动时，更新所有分割线的面积
         /// </summary>
-        /// <param name="oldValue"></param>
+        /// <param name="_"></param>
         /// <param name="newValue"></param>
         public void UpdateBaseLine(CoordinateLine _, CoordinateLine newValue)
         {
             foreach (var i in SplitLines)
             {
-                double newY1 = newValue.Y(i.Start.X);
-                double newY2 = newValue.Y(i.NextLine.Start.X);
-                double width = i.Start.X - i.NextLine.Start.X;
-                double y1 = i.Start.Y - newY1;
-                double y2 = i.NextLine.Start.Y - newY2;
+                var newY1 = newValue.Y(i.Start.X);
+                var newY2 = newValue.Y(i.NextLine.Start.X);
+                var width = i.Start.X - i.NextLine.Start.X;
+                var y1 = i.Start.Y - newY1;
+                var y2 = i.NextLine.Start.Y - newY2;
                 i.Area += (y1 + y2) * width / 2;
                 i.Start = new Coordinates(i.Start.X, newY1);
             }
+
             SumArea = SplitLines.Sum(x => x.Area);
             foreach (var i in SplitLines)
             {
                 i.AreaRatio = i.Area / SumArea;
             }
-            OnBaseLineChanged?.Invoke();
         }
 
-        /// <summary>
-        /// 分割线移动时，检测是否跨过相邻分割线
-        /// </summary>
-        private void OnLineMoving(SplitLine line, CoordinateLine oldValue, CoordinateLine newValue)
-        {
-            if (oldValue.Start.X < newValue.Start.X)
-            {
-                var after = SplitLines.ElementAtOrDefault(draggedSplitLineIndex + 1);
-                if (after != null && line.Start.X >= after.Start.X)
-                {
-                    SplitLines[draggedSplitLineIndex] = after;
-                    SplitLines[draggedSplitLineIndex + 1] = line;
-                    after.NextLine = line.NextLine;
-                    line.NextLine = after;
-                    if (draggedSplitLineIndex + 2 < SplitLines.Count)
-                        SplitLines[draggedSplitLineIndex + 2].NextLine = line;
-                    line.Index = ++draggedSplitLineIndex + 1;
-                    after.Index = line.Index - 1;
-                    UpdateLineArea(draggedSplitLineIndex, true);
-                }
-            }
-            else
-            {
-                var before = SplitLines.ElementAtOrDefault(draggedSplitLineIndex - 1);
-                //跨过分割线后，交换其与跨过的线在集合中的位置
-                if (before != null && line.Start.X <= before.Start.X)
-                {
-                    SplitLines[draggedSplitLineIndex] = before;
-                    SplitLines[draggedSplitLineIndex - 1] = line;
-                    line.NextLine = before.NextLine;
-                    before.NextLine = line;
-                    if (draggedSplitLineIndex + 1 < SplitLines.Count)
-                        SplitLines[draggedSplitLineIndex + 1].NextLine = before;
-                    line.Index = --draggedSplitLineIndex + 1;
-                    before.Index = line.Index + 1;
-                    UpdateLineArea(draggedSplitLineIndex + 1, false);
-                }
-            }
-
-            //OnDataChanged?.Invoke();
-
-
-        }
-
-        /// <summary>
-        /// 发生跨线移动时，更新受影响峰的面积
-        /// </summary>
-        /// <param name="index"></param>
-        /// <param name="after">是否是向右移动时发生</param>
-        void UpdateLineArea(int index, bool after)
-        {
-            //SplitLines[index].Area = GetArea(SplitLines[index]);
-            //SplitLines[index].AreaRatio = SplitLines[index].Area / SumArea;
-            //if(index > 0)
-            //{
-            //    SplitLines[index - 1].Area = GetArea(SplitLines[index - 1]);
-            //    SplitLines[index - 1].AreaRatio = SplitLines[index - 1].Area / SumArea;
-            //}
-            //if (index + 1 < SplitLines.Count)
-            //{
-            //    SplitLines[index + 1].Area = GetArea(SplitLines[index + 1]);
-            //    SplitLines[index + 1].AreaRatio = SplitLines[index + 1].Area / SumArea;
-            //}
-            //return;
-            double area1 = SplitLines[index - 1].Area;
-            double area2 = SplitLines[index].Area;
-            bool end = SplitLines.Count == index + 1;
-            double area3 = end ? 0 : SplitLines[index + 1].Area;
-            if (after)
-            {
-                SplitLines[index - 1].Area = area2 + area1;
-                SplitLines[index - 1].AreaRatio = SplitLines[index - 1].Area / SumArea;
-                SplitLines[index].Area = -area1;
-                SplitLines[index].AreaRatio = SplitLines[index].Area / SumArea;
-                if (!end)
-                {
-                    SplitLines[index + 1].Area = area3 + area1;
-                    SplitLines[index + 1].AreaRatio = SplitLines[index + 1].Area / SumArea;
-                }
-            }
-            else
-            {
-                SplitLines[index - 1].Area = area2 + area1;
-                SplitLines[index - 1].AreaRatio = SplitLines[index - 1].Area / SumArea;
-                SplitLines[index].Area = -area1;
-                SplitLines[index].AreaRatio = SplitLines[index].Area / SumArea;
-                if (!end)
-                {
-                    SplitLines[index + 1].Area = area3 + area1;
-                    SplitLines[index + 1].AreaRatio = SplitLines[index + 1].Area / SumArea;
-                }
-            }
-
-        }
 
         /// <summary>
         /// 获取坐标点一定范围内的分割线或基线
         /// </summary>
-        /// <param name="dataPoint"></param>
+        /// <param name="dataPoint">鼠标坐标点</param>
+        /// <param name="region">是否按区域查询（"设置DP"时为True）</param>
         /// <returns></returns>
         public DraggedLineInfo? GetDraggedLine(Coordinates dataPoint, bool region = false)
         {
             BaseLine.IsSelected = false;
             foreach (var line in SplitLines)
-            {
                 line.IsSelected = false;
-            }
+
             if (BaseLine.Start.Distance(dataPoint) < Sensitivity.Y)
             {
                 DraggedLine = GetFocusLineInfo(BaseLine, true);
@@ -256,12 +160,12 @@ namespace ChartEditLibrary.ViewModel
                 SplitLine? line = null;
                 if (!region)
                 {
-                    SplitLine nearest = SplitLines.MinBy(x => Math.Abs(x.Start.X - dataPoint.X))!;
+                    var nearest = SplitLines.MinBy(x => Math.Abs(x.Start.X - dataPoint.X));
                     if (nearest is not null)
                     {
                         if (Math.Abs(nearest.Start.X - dataPoint.X) < Sensitivity.X
-                        && Math.Min(nearest.Start.Y, nearest.End.Y) < dataPoint.Y
-                        && Math.Max(nearest.Start.Y, nearest.End.Y) > dataPoint.Y)
+                            && Math.Min(nearest.Start.Y, nearest.End.Y) < dataPoint.Y
+                            && Math.Max(nearest.Start.Y, nearest.End.Y) > dataPoint.Y)
                         {
                             line = nearest;
                         }
@@ -271,19 +175,13 @@ namespace ChartEditLibrary.ViewModel
                 {
                     line = SplitLines.FirstOrDefault(v => v.Start.X > dataPoint.X);
                 }
-                if (line is null)
-                {
-                    DraggedLine = null;
-                }
-                else
-                {
-                    DraggedLine = GetFocusLineInfo(line, false);
-                }
+
+                DraggedLine = line is null ? null : GetFocusLineInfo(line, false);
             }
-            if (DraggedLine != null)
-            {
+
+            if (DraggedLine is not null)
                 DraggedLine.Value.DraggedLine.IsSelected = true;
-            }
+
             return DraggedLine;
         }
 
@@ -303,7 +201,7 @@ namespace ChartEditLibrary.ViewModel
             if (x < DataSource[0].X || x > DataSource[^1].X)
                 return null;
 
-            int index = (int)((x - DataSource[0].X) / Unit);
+            var index = (int)((x - DataSource[0].X) / Unit);
             if (Math.Abs(DataSource[index].X - x) > Math.Abs(DataSource[index + 1].X - x))
                 index += 1;
             if (y.HasValue)
@@ -313,6 +211,7 @@ namespace ChartEditLibrary.ViewModel
                     return new Coordinates(x, y.Value);
                 }
             }
+
             return DataSource[index];
         }
 
@@ -321,7 +220,7 @@ namespace ChartEditLibrary.ViewModel
         /// </summary>
         public int GetDateSourceIndex(double x)
         {
-            int index = (int)((x - DataSource[0].X) / Unit);
+            var index = (int)((x - DataSource[0].X) / Unit);
             if (Math.Abs(DataSource[index].X - x) > Math.Abs(DataSource[index + 1].X - x))
                 index += 1;
             return index;
@@ -351,12 +250,13 @@ namespace ChartEditLibrary.ViewModel
         {
             line.SplitLineMoved += OnLineMoved;
             line.NextLineChanged += OnNextLineChanged;
-            int index = SplitLines.BinaryInsert(line);
+            var index = SplitLines.BinaryInsert(line);
             line.Index = index + 1;
-            for (int i = index + 1; i < SplitLines.Count; ++i)
+            for (var i = index + 1; i < SplitLines.Count; ++i)
             {
                 ++SplitLines[i].Index;
             }
+
             if (index == 0)
             {
                 line.NextLine = BaseLine;
@@ -399,7 +299,6 @@ namespace ChartEditLibrary.ViewModel
                     parentLine.RT = DataSource[parentLine.RTIndex].X;
                 }
             }
-
         }
 
         /// <summary>
@@ -410,11 +309,12 @@ namespace ChartEditLibrary.ViewModel
         {
             line.SplitLineMoved -= OnLineMoved;
             line.NextLineChanged -= OnNextLineChanged;
-            int index = SplitLines.IndexOf(line);
-            for (int i = index + 1; i < SplitLines.Count; ++i)
+            var index = SplitLines.IndexOf(line);
+            for (var i = index + 1; i < SplitLines.Count; ++i)
             {
                 --SplitLines[i].Index;
             }
+
             if (index == 0)
             {
                 if (SplitLines.Count > 1)
@@ -454,6 +354,7 @@ namespace ChartEditLibrary.ViewModel
                     changeLine.RT = DataSource[changeLine.RTIndex].X;
                 }
             }
+
             SplitLines.Remove(line);
             DraggedLine = null;
         }
@@ -465,8 +366,8 @@ namespace ChartEditLibrary.ViewModel
         public double GetArea(SplitLine line, EditLineBase? nextLine = null)
         {
             nextLine ??= line.NextLine;
-            int dataEnd = GetDateSourceIndex(line.Start.X);
-            int dataStart = GetDateSourceIndex(nextLine.Start.X);
+            var dataEnd = GetDateSourceIndex(line.Start.X);
+            var dataStart = GetDateSourceIndex(nextLine.Start.X);
 
             return GetArea(dataStart, dataEnd);
         }
@@ -477,22 +378,23 @@ namespace ChartEditLibrary.ViewModel
         public double GetArea(int dataStart, int dataEnd)
         {
             double area = 0;
-            for (int i = dataStart; i < dataEnd; ++i)
+            for (var i = dataStart; i < dataEnd; ++i)
             {
                 area += DataSource[i].Y + DataSource[i + 1].Y;
             }
+
             var res = area * Unit / 2;
-            double y1 = 0 - BaseLine.GetY(DataSource[dataStart].X);
-            double y2 = 0 - BaseLine.GetY(DataSource[dataEnd].X);
+            var y1 = 0 - BaseLine.GetY(DataSource[dataStart].X);
+            var y2 = 0 - BaseLine.GetY(DataSource[dataEnd].X);
             res += (y1 + y2) * (DataSource[dataEnd].X - DataSource[dataStart].X) / 2;
             return res;
         }
 
         public void InitSplitLine(object? tag)
         {
-            if (inited)
+            if (initialized)
                 return;
-            inited = true;
+            initialized = true;
             switch (exportType)
             {
                 case ExportType.Enoxaparin:
@@ -504,12 +406,13 @@ namespace ChartEditLibrary.ViewModel
                 default:
                     break;
             }
-            if(SplitLines.Count > 0)
+
+            if (SplitLines.Count > 0)
             {
                 var lastLine = SplitLines.Last().End;
-                double y = BaseLine.End.Y;
-                int last = GetDateSourceIndex(lastLine.X);
-                for (int i = last; i < DataSource.Length; ++i)
+                var y = BaseLine.End.Y;
+                var last = GetDateSourceIndex(lastLine.X);
+                for (var i = last; i < DataSource.Length; ++i)
                 {
                     if (DataSource[i].Y < y)
                     {
@@ -523,21 +426,21 @@ namespace ChartEditLibrary.ViewModel
 
         private void InitSplitLine_Other()
         {
-            double perVaule = YMax.Y / 100;
+            var perVaule = yMax.Y / 100;
             //double m = dataSource.Take(dataSource.Length / 2).Min(v => v.Y);
             //for (int i = 0; i < dataSource.Length; i++)
             //    dataSource[i].Y -= m;
-            int end = DataSource.Length / 3 * 2;
+            var end = DataSource.Length / 3 * 2;
             while (end < DataSource.Length - 1 && DataSource[end].Y > 0)
                 end++;
-            Config config = Config.GetConfig(exportType);
+            var config = Config.GetConfig(exportType);
             List<int> maxDots = [];
             List<int> minDots = [];
-            GetPoints(DataSource, 0, end, out int[] _minDots, out int[] _maxDots);
-            for (int i = 0; i < _minDots.Length; i++)
+            GetPoints(DataSource, 0, end, out var _minDots, out var _maxDots);
+            for (var i = 0; i < _minDots.Length; i++)
             {
-                int max = _maxDots[i];
-                int min = _minDots[i];
+                var max = _maxDots[i];
+                var min = _minDots[i];
                 if (DataSource[max].X <= config.XMin)
                     continue;
                 if (DataSource[max].X >= config.XMax)
@@ -558,33 +461,32 @@ namespace ChartEditLibrary.ViewModel
 
                 //if (maxDots.Count > 1 && DataSource[max].X - DataSource[maxDots[^2]].X < 0.3) //若两个顶点峰太近,移除后一个
                 //    maxDots.Remove(max);
-
             }
+
             foreach (var i in minDots)
             {
                 AddSplitLine(DataSource[i]);
             }
-            
         }
 
         private void InitSplitLine_YN(object? tag)
         {
-            double perVaule = YMax.Y / 100;
+            var perVaule = yMax.Y / 100;
             //double m = dataSource.Take(dataSource.Length / 2).Min(v => v.Y);
             //for (int i = 0; i < dataSource.Length; i++)
             //    dataSource[i].Y -= m;
-            int end = DataSource.Length / 3 * 2;
+            var end = DataSource.Length / 3 * 2;
             while (end < DataSource.Length - 1 && DataSource[end].Y > 0)
                 end++;
-            Config config = Config.GetConfig(exportType);
-            List<int> maxDots = new List<int>();
-            List<int> minDots = new List<int>();
-            GetPoints(DataSource, 0, end, out int[] _minDots, out int[] _maxDots);
+            var config = Config.GetConfig(exportType);
+            var maxDots = new List<int>();
+            var minDots = new List<int>();
+            GetPoints(DataSource, 0, end, out var _minDots, out var _maxDots);
 
-            for (int i = 0; i < _minDots.Length; i++)
+            for (var i = 0; i < _minDots.Length; i++)
             {
-                int max = _maxDots[i];
-                int min = _minDots[i];
+                var max = _maxDots[i];
+                var min = _minDots[i];
 
                 if (DataSource[max].X <= config.XMin)
                     continue;
@@ -605,7 +507,8 @@ namespace ChartEditLibrary.ViewModel
                 //if (maxDots.Count > 1 && DataSource[max].X - DataSource[maxDots[^2]].X < 0.3) //若两个顶点峰太近,移除后一个
                 //    maxDots.Remove(max);
             }
-            int dp6Index = maxDots.IndexOf(heighestIndex);
+
+            var dp6Index = maxDots.IndexOf(highestIndex);
             Debug.Assert(dp6Index != -1);
             if (4.Equals(tag))
             {
@@ -618,9 +521,10 @@ namespace ChartEditLibrary.ViewModel
                     dp6Index -= 1;
                 }
             }
+
             //dp6
-            int startMin = dp6Index - 1;
-            int endMin = dp6Index;
+            var startMin = dp6Index - 1;
+            var endMin = dp6Index;
             if (DataSource[maxDots[dp6Index]].Y - DataSource[minDots[dp6Index - 1]].Y < 10) //若左边还有一个顶点峰
             {
                 --startMin;
@@ -629,20 +533,22 @@ namespace ChartEditLibrary.ViewModel
             {
                 ++endMin;
             }
+
             if (DataSource[maxDots[endMin]].X - DataSource[minDots[endMin]].X > -0.7)
             {
                 ++endMin;
             }
-            int dp6Start = minDots[endMin];
-            int dp6End = minDots[startMin];
-            int peakCount = endMin - startMin;
+
+            var dp6Start = minDots[endMin];
+            var dp6End = minDots[startMin];
+            var peakCount = endMin - startMin;
             if (peakCount != 3)
             {
-                int startT = minDots[startMin];
-                int endT = minDots[endMin];
+                var startT = minDots[startMin];
+                var endT = minDots[endMin];
                 var t = GetT(DataSource, startT, endT);
                 GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
-                for (int i = 0; i < _minDots.Length; ++i)
+                for (var i = 0; i < _minDots.Length; ++i)
                 {
                     int? add = null;
                     if (t[_maxDots[i]].Y < 2)
@@ -670,6 +576,7 @@ namespace ChartEditLibrary.ViewModel
                     }
                 }
             }
+
             minDots.Sort();
 
             //dp4
@@ -681,19 +588,20 @@ namespace ChartEditLibrary.ViewModel
             }
             else if (DataSource[maxDots[endMin]].X - DataSource[maxDots[endMin + 1]].X > -0.7)
                 ++endMin;
-            int dp4Start = minDots[endMin];
+
+            var dp4Start = minDots[endMin];
             peakCount = endMin - startMin;
             if (peakCount != 2)
             {
-                int startT = minDots[startMin];
-                int endT = minDots[endMin];
+                var startT = minDots[startMin];
+                var endT = minDots[endMin];
                 var t = GetT(DataSource, startT, endT);
                 GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
-                for (int i = 0; i < _minDots.Length; ++i)
+                for (var i = 0; i < _minDots.Length; ++i)
                 {
                     if (t[_maxDots[i]].Y < 0 || t[_minDots[i]].Y > 0)
                     {
-                        int add = startT + _maxDots[i];
+                        var add = startT + _maxDots[i];
                         if (minDots.Contains(add))
                             continue;
                         minDots.Add(add);
@@ -705,6 +613,7 @@ namespace ChartEditLibrary.ViewModel
                     }
                 }
             }
+
             minDots.Sort();
 
             //dp3
@@ -714,19 +623,20 @@ namespace ChartEditLibrary.ViewModel
             {
                 ++endMin;
             }
-            int dp3Start = minDots[endMin];
+
+            var dp3Start = minDots[endMin];
             peakCount = endMin - startMin;
             if (peakCount != 2)
             {
-                int startT = minDots[startMin];
-                int endT = minDots[endMin];
+                var startT = minDots[startMin];
+                var endT = minDots[endMin];
                 var t = GetT(DataSource, startT, endT);
                 GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
-                for (int i = 0; i < _minDots.Length; ++i)
+                for (var i = 0; i < _minDots.Length; ++i)
                 {
                     if (t[_maxDots[i]].Y < 0 || t[_minDots[i]].Y > 0)
                     {
-                        int add = startT + _maxDots[i];
+                        var add = startT + _maxDots[i];
                         if (minDots.Contains(add))
                             continue;
                         minDots.Add(add);
@@ -735,16 +645,18 @@ namespace ChartEditLibrary.ViewModel
                         {
                             dp3Start = add;
                         }
+
                         break;
                     }
                 }
             }
+
             minDots.Sort();
 
             //dp2
             startMin = endMin;
             endMin = minDots.Count - 1;
-            int dp2Start = minDots[endMin];
+            var dp2Start = minDots[endMin];
             peakCount = endMin - startMin;
             if (peakCount > 2)
             {
@@ -755,8 +667,8 @@ namespace ChartEditLibrary.ViewModel
             }
 
             minDots.Sort();
-            int dp = 2;
-            int sort = 1;
+            var dp = 2;
+            var sort = 1;
             foreach (var i in minDots.Distinct().Reverse())
             {
                 if (i <= dp6End)
@@ -788,6 +700,7 @@ namespace ChartEditLibrary.ViewModel
                         sort = 1;
                     }
                 }
+
                 AddSplitLine(DataSource[i]).DP = dp + "-" + sort;
                 ++sort;
             }
@@ -803,42 +716,46 @@ namespace ChartEditLibrary.ViewModel
 
         private Coordinates[] GetT(Coordinates[] data, int start, int end)
         {
-            Coordinates[] t = new Coordinates[end - start + 1];
-            for (int i = 0; i < t.Length; ++i)
+            var t = new Coordinates[end - start + 1];
+            for (var i = 0; i < t.Length; ++i)
             {
                 t[i] = new Coordinates(data[start + i].X, (data[start + i + 1].Y - data[start + i].Y) / Unit);
             }
+
             return t;
         }
 
-        private static void GetPoints(Coordinates[] coordinates, int start, int end, out int[] minDots, out int[] maxDots)
+        private static void GetPoints(Coordinates[] coordinates, int start, int end, out int[] minDots,
+            out int[] maxDots)
         {
-            int inter = 5;
-            List<int> maxDotList = new List<int>();
-            List<int> minDotList = new List<int>();
-            for (int i = start; i < end; i++)
+            var inter = 5;
+            var maxDotList = new List<int>();
+            var minDotList = new List<int>();
+            for (var i = start; i < end; i++)
             {
-
-                int max = i;
-                for (int j = i; j < end; j++)
+                var max = i;
+                for (var j = i; j < end; j++)
                 {
                     if (coordinates[j].Y > coordinates[max].Y)
                         max = j;
                     else if (j - max > inter)
                         break;
                 }
+
                 maxDotList.Add(max);
-                int min = max;
-                for (int j = max + 1; j < end; j++)
+                var min = max;
+                for (var j = max + 1; j < end; j++)
                 {
                     if (coordinates[j].Y < coordinates[min].Y)
                         min = j;
                     else if (j - min > inter)
                         break;
                 }
+
                 minDotList.Add(min);
                 i = min;
             }
+
             Debug.Assert(minDotList.Count == maxDotList.Count);
             minDots = [.. minDotList];
             maxDots = [.. maxDotList];
@@ -846,17 +763,17 @@ namespace ChartEditLibrary.ViewModel
 
         public SplitLine AddSplitLine(Coordinates point)
         {
-            CoordinateLine chartLine = CreateSplitLine(point);
+            var chartLine = CreateSplitLine(point);
             var line = new SplitLine(chartLine);
             AddSplitLine(line);
             return line;
         }
 
-        public static async Task<DraggableChartVM> CreateAsync(string filePath, ExportType exportType)
+        public static async Task<DraggableChartVm> CreateAsync(string filePath, ExportType exportType)
         {
             var (dataSource, saveLine) = await ReadCsv(filePath).ConfigureAwait(false);
 
-            var res = new DraggableChartVM(filePath, dataSource, exportType);
+            var res = new DraggableChartVm(filePath, dataSource, exportType);
             if (saveLine != null)
                 res.ApplyResult(saveLine);
             return res;
@@ -864,25 +781,27 @@ namespace ChartEditLibrary.ViewModel
 
         private void ApplyResult(string[] lines)
         {
-            string[] baseInfo = lines[0].Split(',');
+            var baseInfo = lines[0].Split(',');
             exportType = Enum.Parse<ExportType>(baseInfo[1]);
             BaseLine.Start = new Coordinates(double.Parse(baseInfo[2]), double.Parse(baseInfo[3]));
             BaseLine.End = new Coordinates(double.Parse(baseInfo[4]), double.Parse(baseInfo[5]));
-            for (int i = 2; i < lines.Length; i++)
+            for (var i = 2; i < lines.Length; i++)
             {
                 string[] data = lines[i].Split(',');
-                double x = double.Parse(data[1]);
-                Coordinates? point = GetChartPoint(x);
+                var x = double.Parse(data[1]);
+                var point = GetChartPoint(x);
                 if (point.HasValue)
                     AddSplitLine(point.Value).DP = data[6][2..].TrimEnd('\r');
             }
-            inited = true;
+
+            initialized = true;
         }
 
-        public static DraggableChartVM Create(CacheContent cache)
+        public static DraggableChartVm Create(CacheContent cache)
         {
-            Coordinates[] dataSource = Enumerable.Range(0, cache.X.Length).Select(i => new Coordinates(cache.X[i], cache.Y[i])).ToArray();
-            var vm = new DraggableChartVM(cache.FilePath, dataSource, ExportType.None);
+            var dataSource = Enumerable.Range(0, cache.X.Length).Select(i => new Coordinates(cache.X[i], cache.Y[i]))
+                .ToArray();
+            var vm = new DraggableChartVm(cache.FilePath, dataSource, ExportType.None);
             vm.ApplyResult(cache.SaveContent);
             return vm;
         }
@@ -898,19 +817,22 @@ namespace ChartEditLibrary.ViewModel
 
         private string[] GetSaveRowContent()
         {
-            string baseInfo = $"{FileName},{exportType},{BaseLine.Start.X},{BaseLine.Start.Y},{BaseLine.End.X},{BaseLine.End.Y},";
-            string title = "Peak,Start X,End X,Center X,Area,Area Sum %,DP";
+            var baseInfo =
+                $"{FileName},{exportType},{BaseLine.Start.X},{BaseLine.Start.Y},{BaseLine.End.X},{BaseLine.End.Y},";
+            var title = "Peak,Start X,End X,Center X,Area,Area Sum %,DP";
             IEnumerable<string> lines = SplitLines.Select(x =>
-            $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2},DP{x.DP}");
+                $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2},DP{x.DP}");
             return lines.Prepend(title).Prepend(baseInfo).ToArray();
         }
 
         public SaveRow[] GetSaveRow()
         {
-            SaveRow baseInfo = new("", $"{FileName},{exportType},{BaseLine.Start.X},{BaseLine.Start.Y},{BaseLine.End.X},{BaseLine.End.Y}");
+            SaveRow baseInfo = new("",
+                $"{FileName},{exportType},{BaseLine.Start.X},{BaseLine.Start.Y},{BaseLine.End.X},{BaseLine.End.Y}");
             SaveRow title = new("", "Peak,Start X,End X,Center X,Area,Area Sum %");
-            IEnumerable<SaveRow> lines = SplitLines.Select(x =>
-            new SaveRow(x.DP!, $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2}"));
+            var lines = SplitLines.Select(x =>
+                new SaveRow(x.DP!,
+                    $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2}"));
             return lines.Prepend(title).Prepend(baseInfo).ToArray();
         }
 
@@ -920,28 +842,32 @@ namespace ChartEditLibrary.ViewModel
             {
                 static string GetDataLine(string line)
                 {
-                    int index = 0;
-                    for (int i = 0; i < 3; ++i)
+                    var index = 0;
+                    for (var i = 0; i < 3; ++i)
                     {
                         index = line.IndexOf(',', index) + 1;
                         if (index == 0)
                             return line;
                     }
+
                     return line[0..(index - 1)];
                 }
+
                 string[] save = GetSaveRowContent();
                 string[] datas = File.ReadAllLines(FilePath);
                 File.Delete(FilePath);
                 using StreamWriter writer = new(File.Create(FilePath));
-                for (int i = 0; i < datas.Length; ++i)
+                for (var i = 0; i < datas.Length; ++i)
                 {
-                    string line = datas[i];
+                    var line = datas[i];
                     if (i < save.Length)
                     {
                         line = GetDataLine(line) + ",," + save[i];
                     }
+
                     await writer.WriteLineAsync(line);
                 }
+
                 return new Result<bool>(true);
             }
             catch (UnauthorizedAccessException ue)
@@ -962,34 +888,91 @@ namespace ChartEditLibrary.ViewModel
 
         internal void ApplyResult(string saveContent)
         {
-            string[] lines = saveContent.Split(Environment.NewLine);
+            var lines = saveContent.Split(Environment.NewLine);
             ApplyResult(lines);
         }
 
-        private void OnLineMoved(EditLineBase mover, CoordinateLine oldValue, CoordinateLine newValue)
+        /// <summary>
+        /// 分割线移动时，检测是否跨过相邻分割线
+        /// </summary>
+        private void OnLineMoving(SplitLine splitLine, CoordinateLine oldValue, CoordinateLine newValue)
         {
-            if (mover is not SplitLine line)
-                return;
-            //本次移动的范围
-            int startIndex = GetDateSourceIndex(oldValue.Start.X);
-            int endIndex = GetDateSourceIndex(newValue.Start.X);
+            if (oldValue.Start.X < newValue.Start.X)
+            {
+                var after = SplitLines.ElementAtOrDefault(draggedSplitLineIndex + 1);
+                if (after == null || !(oldValue.Start.X >= after.Start.X)) return;
+                SplitLines[draggedSplitLineIndex] = after;
+                SplitLines[draggedSplitLineIndex + 1] = splitLine;
+                after.NextLine = splitLine.NextLine;
+                splitLine.NextLine = after;
+                if (draggedSplitLineIndex + 2 < SplitLines.Count)
+                    SplitLines[draggedSplitLineIndex + 2].NextLine = splitLine;
+                splitLine.Index = ++draggedSplitLineIndex + 1;
+                after.Index = splitLine.Index - 1;
+                UpdateLineArea(draggedSplitLineIndex);
+            }
+            else
+            {
+                var before = SplitLines.ElementAtOrDefault(draggedSplitLineIndex - 1);
+                //跨过分割线后，交换其与跨过的线在集合中的位置
+                if (before == null || !(oldValue.Start.X <= before.Start.X)) return;
+                SplitLines[draggedSplitLineIndex] = before;
+                SplitLines[draggedSplitLineIndex - 1] = splitLine;
+                splitLine.NextLine = before.NextLine;
+                before.NextLine = splitLine;
+                if (draggedSplitLineIndex + 1 < SplitLines.Count)
+                    SplitLines[draggedSplitLineIndex + 1].NextLine = before;
+                splitLine.Index = --draggedSplitLineIndex + 1;
+                before.Index = splitLine.Index + 1;
+                UpdateLineArea(draggedSplitLineIndex + 1);
+            }
+        }
 
+        /// <summary>
+        /// 发生跨线移动时，更新受影响峰的面积
+        /// </summary>
+        /// <param name="index">中间线的索引</param>
+        private void UpdateLineArea(int index)
+        {
+            var area1 = SplitLines[index - 1].Area;
+            var area2 = SplitLines[index].Area;
+            var area3 = SplitLines[index + 1].Area;
+            var end = SplitLines.Count == index + 1;
+
+
+            SplitLines[index - 1].Area = area2 + area1;
+            SplitLines[index - 1].AreaRatio = SplitLines[index - 1].Area / SumArea;
+
+            SplitLines[index].Area = -area1;
+            SplitLines[index].AreaRatio = SplitLines[index].Area / SumArea;
+            if (end)
+                return;
+            SplitLines[index + 1].Area = area3 + area1;
+            SplitLines[index + 1].AreaRatio = SplitLines[index + 1].Area / SumArea;
+        }
+
+        private void OnLineMoved(SplitLine line, CoordinateLine oldValue, CoordinateLine newValue)
+        {
+            //本次移动的范围
+            var startIndex = GetDateSourceIndex(oldValue.Start.X);
+            var endIndex = GetDateSourceIndex(newValue.Start.X);
             //向右移动
-            int sign = 1;
+            var right = true;
             //向左移动
             if (startIndex > endIndex)
             {
                 (endIndex, startIndex) = (startIndex, endIndex);
-                sign = -1;
+                right = false;
             }
+
             //面积变化量
-            double change = GetArea(startIndex, endIndex) * sign;
+            var change = GetArea(startIndex, endIndex) * (right ? 1 : -1);
 
             //更新面积
             line.Area += change;
             line.AreaRatio = line.Area / SumArea;
             //当前是最后一个分割线时更新总面积及分割线的面积比例
-            if (this.Equals(SplitLines[^1]))
+            if (line.Index == SplitLines.Count)
             {
                 SumArea += change;
                 foreach (var temp in SplitLines)
@@ -998,16 +981,8 @@ namespace ChartEditLibrary.ViewModel
                 }
             }
 
-            if (sign == -1)
-            {
-                //向左移动时，若跨过RT值，则默认RT值为当前移动值，即默认递减
-                if (line.RTIndex > endIndex)
-                {
-                    line.RTIndex = endIndex;
-                    line.RT = DataSource[line.RTIndex].X;
-                }
-            }
-            else
+            //更新RT值
+            if (right)
             {
                 //向右移动时，需先获取当前移动范围内的最大值，若大于RT值则更新RT值
                 var max = DataSource[startIndex..endIndex].MaxBy(v => v.Y);
@@ -1017,113 +992,124 @@ namespace ChartEditLibrary.ViewModel
                     line.RT = DataSource[line.RTIndex].X;
                 }
             }
+            else
+            {
+                if (line.RTIndex > startIndex)
+                {
+                    line.RTIndex = startIndex;
+                    line.RT = DataSource[line.RTIndex].X;
+                }
+            }
+            
+
 
             //处理移动对右边一条线的影响
             var rightLine = SplitLines.ElementAtOrDefault(line.Index);
-            if (rightLine is not null)
-            {
-                //此时面积为减去变化量
-                rightLine.Area -= change;
-                rightLine.AreaRatio = rightLine.Area / SumArea;
+            if (rightLine is null)
+                return;
 
-                //RT值处理与本身相反
-                if (sign == -1)
+            //此时面积为减去变化量
+            rightLine.Area -= change;
+            rightLine.AreaRatio = rightLine.Area / SumArea;
+
+            //RT值处理与本身相反
+            if (!right)
+            {
+                var max = DataSource[startIndex..endIndex].MaxBy(v => v.Y);
+                if (max.Y > DataSource[rightLine.RTIndex].Y)
                 {
-                    var max = DataSource[startIndex..endIndex].MaxBy(v => v.Y);
-                    if (max.Y > DataSource[rightLine.RTIndex].Y)
-                    {
-                        rightLine.RTIndex = GetDateSourceIndex(max.X);
-                        rightLine.RT = DataSource[line.RTIndex].X;
-                    }
-                }
-                else
-                {
-                    if (rightLine.RTIndex < endIndex)
-                    {
-                        rightLine.RTIndex = endIndex;
-                        rightLine.RT = DataSource[rightLine.RTIndex].X;
-                    }
+                    rightLine.RTIndex = GetDateSourceIndex(max.X);
+                    rightLine.RT = DataSource[rightLine.RTIndex].X;
                 }
             }
+            else
+            {
+                if (rightLine.RTIndex < endIndex)
+                {
+                    rightLine.RTIndex = endIndex;
+                    rightLine.RT = DataSource[rightLine.RTIndex].X;
+                }
+            }
+            
         }
+
 
         private void OnNextLineChanged(SplitLine sender, EditLineBase? oldValue, EditLineBase newValue)
         {
-
-            if (oldValue is null)//第一次设置时
-            {
-                //初始化面积和RT
-                sender.Area = GetArea(sender, newValue);
-                int startIndex = GetDateSourceIndex(newValue.Start.X);
-                int endIndex = GetDateSourceIndex(sender.Start.X);
-                Debug.Assert(startIndex < endIndex && startIndex > 0 && endIndex < DataSource.Length);
-                sender.RTIndex = GetDateSourceIndex(DataSource[startIndex..endIndex].MaxBy(v => v.Y).X);
-                sender.RT = DataSource[sender.RTIndex].X;
-            }
-            //添加对下一条线移动的监听，以处理移动对本线的影响
-            //if (oldValue is SplitLine old)
-            //    old.SplitLineMoved -= OnLineMoved;
-            //if (newValue is SplitLine newLine)
-            //    newLine.SplitLineMoved += OnLineMoved;
+            if (oldValue is not null)
+                return; //第一次设置时
+            //初始化面积和RT
+            sender.Area = GetArea(sender, newValue);
+            var startIndex = GetDateSourceIndex(newValue.Start.X);
+            var endIndex = GetDateSourceIndex(sender.Start.X);
+            Debug.Assert(startIndex < endIndex && startIndex > 0 && endIndex < DataSource.Length);
+            sender.RTIndex = GetDateSourceIndex(DataSource[startIndex..endIndex].MaxBy(v => v.Y).X);
+            sender.RT = DataSource[sender.RTIndex].X;
         }
 
         private static async Task<(Coordinates[], string[]?)> ReadCsv(string path)
         {
             char[] spe = [',', '\t'];
             string[] data;
-            bool hasResult = false;
-            string fileName = Path.GetFileNameWithoutExtension(path);
+            var hasResult = false;
+            var fileName = Path.GetFileNameWithoutExtension(path);
             List<string> saveContent = new List<string>();
+
             static string? GetSaveLine(string line)
             {
-                int index = 0;
-                for (int i = 0; i < 4; ++i)
+                var index = 0;
+                for (var i = 0; i < 4; ++i)
                 {
                     index = line.IndexOf(',', index) + 1;
                     if (index == 0)
                         return null;
                 }
+
                 return line[index..];
             }
+
             using (StreamReader sr = new(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
             {
-                string? first = sr.ReadLine();
+                var first = sr.ReadLine();
                 if (first is not null)
                 {
-                    string? temp = GetSaveLine(first);
+                    var temp = GetSaveLine(first);
                     if (temp is not null)
                     {
                         saveContent.Add(temp);
                         hasResult = true;
                     }
                 }
-                string? second = sr.ReadLine();
+
+                var second = sr.ReadLine();
                 if (hasResult && second != null)
                     saveContent.Add(GetSaveLine(second)!);
-                data = (await sr.ReadToEndAsync().ConfigureAwait(false)).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+                data = (await sr.ReadToEndAsync().ConfigureAwait(false)).Split(Environment.NewLine,
+                    StringSplitOptions.RemoveEmptyEntries);
                 if (hasResult)
                 {
-                    for (int i = 0; i < data.Length; ++i)
+                    for (var i = 0; i < data.Length; ++i)
                     {
-                        string? temp = GetSaveLine(data[i]);
+                        var temp = GetSaveLine(data[i]);
                         if (temp is null)
                             break;
                         saveContent.Add(temp);
                     }
                 }
             }
+
             try
             {
-                double[][] temp = data.Select(v => v.Split(spe).Skip(1).Take(2).Select(v1 => double.Parse(v1)).ToArray())
-                .Where(v => v[0] >= 20 && v[0] <= 60).ToArray();
-                return (temp.Select(v => new Coordinates(v[0], v[1])).ToArray(), hasResult ? saveContent.ToArray() : null);
+                double[][] temp = data
+                    .Select(v => v.Split(spe).Skip(1).Take(2).Select(v1 => double.Parse(v1)).ToArray())
+                    .Where(v => v[0] >= 20 && v[0] <= 60).ToArray();
+                return (temp.Select(v => new Coordinates(v[0], v[1])).ToArray(),
+                    hasResult ? saveContent.ToArray() : null);
             }
             catch
             {
                 throw new Exception(Path.GetFileNameWithoutExtension(path) + "数据格式错误");
             }
-
         }
     }
-
 }

@@ -35,7 +35,7 @@ namespace ChartEditWPF.Behaviors
         #region CallBack Method
         private static void MouseDownCommandPropertyChangedCallBack(DependencyObject inDependencyObject, DependencyPropertyChangedEventArgs inEventArgs)
         {
-            UIElement? uiElement = inDependencyObject as UIElement;
+            var uiElement = inDependencyObject as UIElement;
             if (null == uiElement) 
                 return;
 

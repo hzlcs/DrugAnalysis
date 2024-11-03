@@ -30,7 +30,7 @@ namespace ChartEditLibrary.Entitys
         /// <exception cref="Exception">配置文件加载失败</exception>
         public static void LoadConfig()
         {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ChartEdit\\config.json");
+            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ChartEdit\\config.json");
             if (File.Exists(path))
             {
                 var temp = JsonConvert.DeserializeObject<KeyValuePair<string, Config>[]>(File.ReadAllText(path));
@@ -44,7 +44,7 @@ namespace ChartEditLibrary.Entitys
 
         public static void SaveConfig()
         {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ChartEdit\\config.json");
+            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ChartEdit\\config.json");
             if (!Directory.Exists(Path.GetDirectoryName(path)))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);

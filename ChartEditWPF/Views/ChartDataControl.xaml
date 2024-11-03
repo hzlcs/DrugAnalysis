@@ -32,15 +32,7 @@
         RowHeight="25"
         SelectedItem="{Binding DraggedLine}"
         VerticalScrollBarVisibility="Visible">
-        <!--<DataGrid.CellStyle>
-            <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource {x:Type DataGridCell}}">
-                <Style.Triggers>
-                    <Trigger Property="IsSelected" Value="True">
-                        <Setter Property="Foreground" Value="LightBlue"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-        </DataGrid.CellStyle>-->
+
         <DataGrid.Columns>
             <DataGridTextColumn
                 Width="55"

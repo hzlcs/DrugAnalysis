@@ -4,41 +4,20 @@ using ChartEditLibrary.Model;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 
-//var x = SampleManager.TCheck([1.94f, 1.92f, 1.65f, 1.56f, 1.58f,], [4.22f, 3.32f, 3.90f, 3.21f, 3.94f, 1.91f]);
-var x = SampleManager.TCheck([3.07f, 3.09f, 2.95f, 3.85f, 3.77f], [3.07f, 2.59f, 3.14f, 2.95f, 2.37f, 2.71f]);
-//var x = SampleManager.TCheck([0.74f, 0.77f, 0.76f, 0.68f, 0.70f], [1.14f, 1.01f, 1.22f, 1.02f, 1.15f]);
-//var x = SampleManager.TCheck([1.91f, 4.04f], [1.94f, 1.92f, 1.65f, 1.56f, 1.58f]);
-
-double[] data1 = [263.8, 271.5, 284.6, 292.7, 254.8, 275.9, 281.7, 268.6, 264.4, 275.3, 270.8, 262.3, 275.9, 281.7, 268.6, 264.4, 273.2, 270.9, 260.5, 264.4];
-double[] data2 = [235.9, 215.4, 251.8, 224.7, 228.3, 231.1, 253, 221.7, 218.8, 232.7, 230.9, 240.7, 255.8, 260.7, 224.4, 232.7, 231.5, 240.7, 257.3];
-
-//SampleManager.TCheck(data1.Select(v=>(float)v).ToArray(), data2.Select(v=>(float)v).ToArray());
-
-var mean1 = data1.Average();
-var mean2 = data2.Average();
-var s1 = data1.Select(v => (v - mean1) * (v - mean1)).Average();
-var s2 = data2.Select(v => (v - mean2) * (v - mean2)).Average();
-var s = Math.Sqrt((data1.Sum(v => v * v) - data1.Sum() * data1.Sum() / data1.Length) / (data1.Length - 1));
-double[][] transform =
- [[-2.72497478, -0.65566571],
- [-2.40159379, -0.74229195],
- [-3.59870923, -1.7499537 ],
- [-2.69460159,  3.3227639 ],
- [ 6.44518431, -0.02962813],
- [ 4.97469509, -0.14522441]];
+MyClass my = new();
+BaseClass b = my;
+Console.WriteLine(b.Value); // base
 
 
+class BaseClass
+{
+    public string Value { get; set; } = "base";
+}
 
-double[][] data = [
- [1.91, 0.79, 1.12, 1.55, 2.16, 2.95, 4.07, 5.48, 7.39, 10.09, 13.51, 17.13, 5.70, 10.38, 3.07, 7.01, 3.46, 1.48, 0.22, 0.42]
-,[1.94, 0.74, 1.13, 1.55, 2.14, 2.96, 4.07, 5.48, 7.39, 10.09, 13.52, 17.13, 5.70, 10.38, 3.07, 7.02, 3.46, 1.48, 0.23, 0.42]
-,[1.92, 0.77, 1.12, 1.57, 2.17, 2.98, 4.12, 5.56, 7.48, 10.18, 13.54, 17.05, 5.49, 10.45, 3.09, 6.83, 3.47, 1.53, 0.23, 0.41]
-,[1.65, 0.76, 1.06, 1.48, 2.08, 2.90, 4.04, 5.50, 7.42, 10.20, 13.64, 17.21, 5.99, 10.47, 2.95, 7.28, 3.33, 1.43, 0.21, 0.40]
-,[1.56, 0.68, 1.02, 1.42, 2.01, 2.81, 3.90, 5.32, 7.22, 9.91, 13.26, 16.89, 5.36, 10.22, 3.85, 7.47, 4.37, 1.63, 0.28, 0.45]
-,[1.58, 0.70, 1.04, 1.44, 2.03, 2.84, 3.94, 5.34, 7.27, 9.93, 13.23, 16.91, 5.44, 10.26, 3.77, 7.38, 4.26, 1.63, 0.28, 0.43] ];
-
-
-
+class MyClass : BaseClass
+{
+    public new string Value { get; set; } = "my";
+}
 
 
 
@@ -75,7 +54,7 @@ internal class PrincipalComponentProgram
         Eigen(covarMat, out eigenVals, out eigenVecs);
 
         // sort eigenvals from large to smallest
-        int[] idxs = ArgSort(eigenVals);  // save to sort evecs
+        var idxs = ArgSort(eigenVals);  // save to sort evecs
         Array.Reverse(idxs);
         //VecShow(idxs, 3);
 
@@ -93,13 +72,13 @@ internal class PrincipalComponentProgram
 
         //Console.WriteLine("\nComputing variance" +
         //  " explained: ");
-        double sum = 0.0;
-        for (int i = 0; i < eigenVals.Length; ++i)
+        var sum = 0.0;
+        for (var i = 0; i < eigenVals.Length; ++i)
             sum += eigenVals[i];
-        double[] eigenVectors = new double[2];
-        for (int i = 0; i < eigenVectors.Length; ++i)
+        var eigenVectors = new double[2];
+        for (var i = 0; i < eigenVectors.Length; ++i)
         {
-            double pctExplained = eigenVals[i] / sum;
+            var pctExplained = eigenVals[i] / sum;
             eigenVectors[i] = pctExplained;
         }
 
@@ -109,26 +88,26 @@ internal class PrincipalComponentProgram
           MatProduct(stdX, MatTranspose(eigenVecs));  // all 
         double[][] reduced = MatExtractCols(transformed,
           new int[] { 0, 1 });  // first 2 
-        float[] reducedF = new float[reduced.Length * reduced[0].Length];
+        var reducedF = new float[reduced.Length * reduced[0].Length];
         for (int i = 0, c = 0; i < reduced.Length; i++)
         {
-            for (int j = 0; j < reduced[i].Length; j++)
+            for (var j = 0; j < reduced[i].Length; j++)
             {
                 reducedF[c++] = (float)reduced[i][j];
             }
         }
         //for (int i = 0; i < reduced.Length; ++i)
         //    VecShow(reduced[i], 4, 9);
-        double[] singularValues = Singular(reduced);
+        var singularValues = Singular(reduced);
         var res = new PCAResult(reduced, singularValues, eigenVectors);
         return res;
     } // Main
 
     static double[] Singular(double[][] data)
     {
-        Matrix<double> matrix = Matrix<double>.Build.DenseOfRowArrays(data);
-        Svd<double> svd = matrix.Svd();
-        Vector<double> singularValues = svd.S;
+        var matrix = Matrix<double>.Build.DenseOfRowArrays(data);
+        var svd = matrix.Svd();
+        var singularValues = svd.S;
         return singularValues.ToArray();
     }
 
@@ -137,35 +116,35 @@ internal class PrincipalComponentProgram
       out double[] means, out double[] stds)
     {
         // scikit style z-score biased normalization
-        int rows = data.Length;
-        int cols = data[0].Length;
+        var rows = data.Length;
+        var cols = data[0].Length;
         double[][] result = MatCreate(rows, cols);
 
         // compute means
-        double[] mns = new double[cols];
-        for (int j = 0; j < cols; ++j)
+        var mns = new double[cols];
+        for (var j = 0; j < cols; ++j)
         {
-            double sum = 0.0;
-            for (int i = 0; i < rows; ++i)
+            var sum = 0.0;
+            for (var i = 0; i < rows; ++i)
                 sum += data[i][j];
             mns[j] = sum / rows;
         } // j
 
         // compute std devs
-        double[] sds = new double[cols];
-        for (int j = 0; j < cols; ++j)
+        var sds = new double[cols];
+        for (var j = 0; j < cols; ++j)
         {
-            double sum = 0.0;
-            for (int i = 0; i < rows; ++i)
+            var sum = 0.0;
+            for (var i = 0; i < rows; ++i)
                 sum += (data[i][j] - mns[j]) *
                   (data[i][j] - mns[j]);
             sds[j] = Math.Sqrt(sum / rows);  // biased version
         } // j
 
         // normalize
-        for (int j = 0; j < cols; ++j)
+        for (var j = 0; j < cols; ++j)
         {
-            for (int i = 0; i < rows; ++i)
+            for (var i = 0; i < rows; ++i)
                 result[i][j] = (data[i][j] - mns[j]) / sds[j];
         } // j
 
@@ -178,9 +157,9 @@ internal class PrincipalComponentProgram
 
     static int[] ArgSort(double[] vec)
     {
-        int n = vec.Length;
-        int[] idxs = new int[n];
-        for (int i = 0; i < n; ++i)
+        var n = vec.Length;
+        var idxs = new int[n];
+        for (var i = 0; i < n; ++i)
             idxs[i] = i;
         Array.Sort(vec, idxs);  // sort idxs based on vec vals
         return idxs;
@@ -190,16 +169,16 @@ internal class PrincipalComponentProgram
     static double[][] MatExtractCols(double[][] mat,
       int[] cols)
     {
-        int srcRows = mat.Length;
-        int srcCols = mat[0].Length;
-        int tgtCols = cols.Length;
+        var srcRows = mat.Length;
+        var srcCols = mat[0].Length;
+        var tgtCols = cols.Length;
 
         double[][] result = MatCreate(srcRows, tgtCols);
-        for (int i = 0; i < srcRows; ++i)
+        for (var i = 0; i < srcRows; ++i)
         {
-            for (int j = 0; j < tgtCols; ++j)
+            for (var j = 0; j < tgtCols; ++j)
             {
-                int c = cols[j];
+                var c = cols[j];
                 result[i][j] = mat[i][c];
             }
         }
@@ -210,23 +189,23 @@ internal class PrincipalComponentProgram
     static double Covariance(double[] v1, double[] v2)
     {
         // compute means of v1 and v2
-        int n = v1.Length;
+        var n = v1.Length;
 
-        double sum1 = 0.0;
-        for (int i = 0; i < n; ++i)
+        var sum1 = 0.0;
+        for (var i = 0; i < n; ++i)
             sum1 += v1[i];
-        double mean1 = sum1 / n;
+        var mean1 = sum1 / n;
 
-        double sum2 = 0.0;
-        for (int i = 0; i < n; ++i)
+        var sum2 = 0.0;
+        for (var i = 0; i < n; ++i)
             sum2 += v2[i];
-        double mean2 = sum2 / n;
+        var mean2 = sum2 / n;
 
         // compute covariance
-        double sum = 0.0;
-        for (int i = 0; i < n; ++i)
+        var sum = 0.0;
+        for (var i = 0; i < n; ++i)
             sum += (v1[i] - mean1) * (v2[i] - mean2);
-        double result = sum / (n - 1);
+        var result = sum / (n - 1);
 
         return result;
     }
@@ -244,14 +223,14 @@ internal class PrincipalComponentProgram
         else
             source = MatTranspose(data);
 
-        int srcRows = source.Length;  // num features
-        int srcCols = source[0].Length;  // not used
+        var srcRows = source.Length;  // num features
+        var srcCols = source[0].Length;  // not used
 
         double[][] result = MatCreate(srcRows, srcRows);
 
-        for (int i = 0; i < result.Length; ++i)
+        for (var i = 0; i < result.Length; ++i)
         {
-            for (int j = 0; j <= i; ++j)
+            for (var j = 0; j <= i; ++j)
             {
                 result[i][j] = Covariance(source[i], source[j]);
                 result[j][i] = result[i][j];
@@ -269,41 +248,41 @@ internal class PrincipalComponentProgram
         // QR decomposition, Householder algorithm.
         // assumes square matrix
 
-        int n = mat.Length;  // assumes mat is nxn
-        int nCols = mat[0].Length;
+        var n = mat.Length;  // assumes mat is nxn
+        var nCols = mat[0].Length;
         if (n != nCols) Console.WriteLine("M not square ");
 
         double[][] Q = MatIdentity(n);
         double[][] R = MatCopy(mat);
-        for (int i = 0; i < n - 1; ++i)
+        for (var i = 0; i < n - 1; ++i)
         {
             double[][] H = MatIdentity(n);
-            double[] a = new double[n - i];
-            int k = 0;
-            for (int ii = i; ii < n; ++ii)
+            var a = new double[n - i];
+            var k = 0;
+            for (var ii = i; ii < n; ++ii)
                 a[k++] = R[ii][i];
 
-            double normA = VecNorm(a);
+            var normA = VecNorm(a);
             if (a[0] < 0.0) { normA = -normA; }
-            double[] v = new double[a.Length];
-            for (int j = 0; j < v.Length; ++j)
+            var v = new double[a.Length];
+            for (var j = 0; j < v.Length; ++j)
                 v[j] = a[j] / (a[0] + normA);
             v[0] = 1.0;
 
             double[][] h = MatIdentity(a.Length);
-            double vvDot = VecDot(v, v);
+            var vvDot = VecDot(v, v);
             double[][] alpha = VecToMat(v, v.Length, 1);
             double[][] beta = VecToMat(v, 1, v.Length);
             double[][] aMultB = MatProduct(alpha, beta);
 
-            for (int ii = 0; ii < h.Length; ++ii)
-                for (int jj = 0; jj < h[0].Length; ++jj)
+            for (var ii = 0; ii < h.Length; ++ii)
+                for (var jj = 0; jj < h[0].Length; ++jj)
                     h[ii][jj] -= (2.0 / vvDot) * aMultB[ii][jj];
 
             // copy h into lower right of H
-            int d = n - h.Length;
-            for (int ii = 0; ii < h.Length; ++ii)
-                for (int jj = 0; jj < h[0].Length; ++jj)
+            var d = n - h.Length;
+            for (var ii = 0; ii < h.Length; ++ii)
+                for (var jj = 0; jj < h[0].Length; ++jj)
                     H[ii + d][jj + d] = h[ii][jj];
 
             Q = MatProduct(Q, H);
@@ -314,7 +293,7 @@ internal class PrincipalComponentProgram
         {
             // standardize so R diagonal is all positive
             double[][] D = MatCreate(n, n);
-            for (int i = 0; i < n; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 if (R[i][i] < 0.0) D[i][i] = -1.0;
                 else D[i][i] = 1.0;
@@ -334,13 +313,13 @@ internal class PrincipalComponentProgram
     {
         // compute eigenvalues eigenvectors at the same time
 
-        int n = M.Length;
+        var n = M.Length;
         double[][] X = MatCopy(M);  // mat must be square
         double[][] Q; double[][] R;
         double[][] pq = MatIdentity(n);
-        int maxCt = 10000;
+        var maxCt = 10000;
 
-        int ct = 0;
+        var ct = 0;
         while (ct < maxCt)
         {
             MatDecomposeQR(X, out Q, out R, false);
@@ -353,8 +332,8 @@ internal class PrincipalComponentProgram
         }
 
         // eigenvalues are diag elements of X
-        double[] evals = new double[n];
-        for (int i = 0; i < n; ++i)
+        var evals = new double[n];
+        for (var i = 0; i < n; ++i)
             evals[i] = X[i][i];
 
         // eigenvectors are columns of pq
@@ -368,7 +347,7 @@ internal class PrincipalComponentProgram
     static double[][] MatCreate(int rows, int cols)
     {
         double[][] result = new double[rows][];
-        for (int i = 0; i < rows; ++i)
+        for (var i = 0; i < rows; ++i)
             result[i] = new double[cols];
         return result;
     }
@@ -376,10 +355,10 @@ internal class PrincipalComponentProgram
 
     static double[][] MatCopy(double[][] m)
     {
-        int nRows = m.Length; int nCols = m[0].Length;
+        var nRows = m.Length; var nCols = m[0].Length;
         double[][] result = MatCreate(nRows, nCols);
-        for (int i = 0; i < nRows; ++i)
-            for (int j = 0; j < nCols; ++j)
+        for (var i = 0; i < nRows; ++i)
+            for (var j = 0; j < nCols; ++j)
                 result[i][j] = m[i][j];
         return result;
     }
@@ -388,18 +367,18 @@ internal class PrincipalComponentProgram
     static double[][] MatProduct(double[][] matA,
       double[][] matB)
     {
-        int aRows = matA.Length;
-        int aCols = matA[0].Length;
-        int bRows = matB.Length;
-        int bCols = matB[0].Length;
+        var aRows = matA.Length;
+        var aCols = matA[0].Length;
+        var bRows = matB.Length;
+        var bCols = matB[0].Length;
         if (aCols != bRows)
             throw new Exception("Non-conformable matrices");
 
         double[][] result = MatCreate(aRows, bCols);
 
-        for (int i = 0; i < aRows; ++i) // each row of A
-            for (int j = 0; j < bCols; ++j) // each col of B
-                for (int k = 0; k < aCols; ++k)
+        for (var i = 0; i < aRows; ++i) // each row of A
+            for (var j = 0; j < bCols; ++j) // each col of B
+                for (var k = 0; k < aCols; ++k)
                     result[i][j] += matA[i][k] * matB[k][j];
 
         return result;
@@ -409,10 +388,10 @@ internal class PrincipalComponentProgram
     static bool MatIsUpperTri(double[][] mat,
       double tol)
     {
-        int n = mat.Length;
-        for (int i = 0; i < n; ++i)
+        var n = mat.Length;
+        for (var i = 0; i < n; ++i)
         {
-            for (int j = 0; j < i; ++j)
+            for (var j = 0; j < i; ++j)
             {  // check lower vals
                 if (Math.Abs(mat[i][j]) > tol)
                 {
@@ -427,7 +406,7 @@ internal class PrincipalComponentProgram
     static double[][] MatIdentity(int n)
     {
         double[][] result = MatCreate(n, n);
-        for (int i = 0; i < n; ++i)
+        for (var i = 0; i < n; ++i)
             result[i][i] = 1.0;
         return result;
     }
@@ -435,11 +414,11 @@ internal class PrincipalComponentProgram
 
     static double[][] MatTranspose(double[][] m)
     {
-        int nr = m.Length;
-        int nc = m[0].Length;
+        var nr = m.Length;
+        var nc = m[0].Length;
         double[][] result = MatCreate(nc, nr);  // note
-        for (int i = 0; i < nr; ++i)
-            for (int j = 0; j < nc; ++j)
+        for (var i = 0; i < nr; ++i)
+            for (var j = 0; j < nc; ++j)
                 result[j][i] = m[i][j];
         return result;
     }
@@ -447,11 +426,11 @@ internal class PrincipalComponentProgram
 
     static void MatShow(double[][] m, int dec, int wid)
     {
-        for (int i = 0; i < m.Length; ++i)
+        for (var i = 0; i < m.Length; ++i)
         {
-            for (int j = 0; j < m[0].Length; ++j)
+            for (var j = 0; j < m[0].Length; ++j)
             {
-                double v = m[i][j];
+                var v = m[i][j];
                 if (Math.Abs(v) < 1.0e-5) v = 0.0;
                 Console.Write(v.ToString("F" + dec).PadLeft(wid));
             }
@@ -462,9 +441,9 @@ internal class PrincipalComponentProgram
 
     static double VecDot(double[] v1, double[] v2)
     {
-        double result = 0.0;
-        int n = v1.Length;
-        for (int i = 0; i < n; ++i)
+        var result = 0.0;
+        var n = v1.Length;
+        for (var i = 0; i < n; ++i)
             result += v1[i] * v2[i];
         return result;
     }
@@ -472,9 +451,9 @@ internal class PrincipalComponentProgram
 
     static double VecNorm(double[] vec)
     {
-        int n = vec.Length;
-        double sum = 0.0;
-        for (int i = 0; i < n; ++i)
+        var n = vec.Length;
+        var sum = 0.0;
+        for (var i = 0; i < n; ++i)
             sum += vec[i] * vec[i];
         return Math.Sqrt(sum);
     }
@@ -484,9 +463,9 @@ internal class PrincipalComponentProgram
       int nRows, int nCols)
     {
         double[][] result = MatCreate(nRows, nCols);
-        int k = 0;
-        for (int i = 0; i < nRows; ++i)
-            for (int j = 0; j < nCols; ++j)
+        var k = 0;
+        for (var i = 0; i < nRows; ++i)
+            for (var j = 0; j < nCols; ++j)
                 result[i][j] = vec[k++];
         return result;
     }
@@ -495,9 +474,9 @@ internal class PrincipalComponentProgram
     static void VecShow(double[] vec,
       int dec, int wid)
     {
-        for (int i = 0; i < vec.Length; ++i)
+        for (var i = 0; i < vec.Length; ++i)
         {
-            double x = vec[i];
+            var x = vec[i];
             if (Math.Abs(x) < 1.0e-8) x = 0.0;
             Console.Write(x.ToString("F" + dec).
               PadLeft(wid));
