@@ -36,13 +36,13 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        void SelectConfig(ExportType type)
+        private void SelectConfig(ExportType type)
         {
             Config = Config.GetConfig(type);
         }
 
         [RelayCommand]
-        void SaveConfig()
+        private void SaveConfig()
         {
             Config.SaveConfig();
             messageBox.Popup("保存成功", NotificationType.Success);

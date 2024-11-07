@@ -12,9 +12,9 @@ using MathNet.Numerics.LinearAlgebra.Factorization;
 
 namespace ChartEditLibrary.Model
 {
-    public class PCAManager
+    public static class PCAManager
     {
-        public record Result(SamplePCA[] samples, double[] singularValues, double[] eigenVectors);
+        public record Result(SamplePCA[] Samples, double[] SingularValues, double[] EigenVectors);
 
 
         public class SamplePCA(AreaDatabase database) : AreaDatabase(database)
@@ -34,24 +34,23 @@ namespace ChartEditLibrary.Model
 
         public static Result GetPCA(AreaDatabase[] databases)
         {
-            List<double[]> dataX = new List<double[]>(); //All data of all classes together
-            List<string> classes = new List<string>(); //List of classes
-            SamplePCA[] result = databases.Select(v => new SamplePCA(v)).ToArray(); //Result of PCA for each class 
+            var dataX = new List<double[]>(); //All data of all classes together
+            var classes = new List<string>(); //List of classes
+            var result = databases.Select(v => new SamplePCA(v)).ToArray(); //Result of PCA for each class 
             foreach (var item in result)
             {
-                var sample = item;
-                sample.ResultIndex = classes.Count;
-                for (var i = 0; i < sample.SampleNames.Length; ++i)
+                item.ResultIndex = classes.Count;
+                for (var i = 0; i < item.SampleNames.Length; ++i)
                 {
-                    classes.Add(sample.SampleNames[i]);
-                    dataX.Add(sample.Rows.Select(v => v.Areas[i]).Where(v => v.HasValue).Select(v => Math.Round(v.GetValueOrDefault(), 2)).ToArray());
+                    classes.Add(item.SampleNames[i]);
+                    dataX.Add(item.Rows.Select(v => v.Areas[i]).Where(v => v.HasValue).Select(v => Math.Round(v.GetValueOrDefault(), 2)).ToArray());
                 }
             }
             
 
             var res = PrincipalComponentProgram.Calculate(dataX.ToArray());
             //Calculate z
-            List<double[]> z = new List<double[]>(res.TransformedData);
+            var z = new List<double[]>(res.TransformedData);
 
             foreach (var item in result)
             {
@@ -63,9 +62,9 @@ namespace ChartEditLibrary.Model
         private static double[] Mi(List<double[]> dataX, int pocetDimenzi)
         {
             var mi = new double[pocetDimenzi];
-            for (var y = 0; y < dataX.Count; y++) //For every N
-                for (var x = 0; x < dataX[y].Length; x++) //For every element in transaction
-                    mi[x] += dataX[y][x];
+            foreach (var t in dataX)
+                for (var x = 0; x < t.Length; x++) //For every element in transaction
+                    mi[x] += t[x];
 
             for (var d = 0; d < pocetDimenzi; d++)
             {
@@ -79,9 +78,9 @@ namespace ChartEditLibrary.Model
             var varOfEachColumn = new double[dimensions];
             for (var i = 0; i < dimensions; i++)
             {
-                for (var j = 0; j < dataX.Count; j++)
+                foreach (var t in dataX)
                 {
-                    varOfEachColumn[i] += Math.Pow(dataX[j][i] - mi[i], 2);
+                    varOfEachColumn[i] += Math.Pow(t[i] - mi[i], 2);
                 }
             }
             for (var d = 0; d < varOfEachColumn.Length; d++)
@@ -93,9 +92,7 @@ namespace ChartEditLibrary.Model
 
         private static double Coveriance(double[] dimenzeA, double meanA, double[] dimenzeB, double meanB, int numberOfData)
         {
-            double result = 0;
-            for (var a = 0; a < dimenzeA.Length; a++) //Both dimensions are same length, so it doesnt matter which I put here
-                result += (dimenzeA[a] - meanA) * (dimenzeB[a] - meanB);
+            var result = dimenzeA.Select((t, a) => (t - meanA) * (dimenzeB[a] - meanB)).Sum();
             return result / numberOfData;
         }
 
@@ -130,7 +127,7 @@ namespace ChartEditLibrary.Model
         }
     }
 
-    internal class PrincipalComponentProgram
+    internal static class PrincipalComponentProgram
     {
         public record PCAResult(double[][] TransformedData, double[] SingularValues, double[] EigenVectors);
 

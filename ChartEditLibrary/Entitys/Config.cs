@@ -16,11 +16,10 @@ namespace ChartEditLibrary.Entitys
         private static readonly Dictionary<string, Config> Configs = [];
         public static Config GetConfig(ExportType key)
         {
-            if (!Configs.TryGetValue(key.ToString(), out var config))
-            {
-                config = new Config(key.ToString());
-                Configs[key.ToString()] = config;
-            }
+            if (Configs.TryGetValue(key.ToString(), out var config)) 
+                return config;
+            config = new Config(key.ToString());
+            Configs[key.ToString()] = config;
             return config;
         }
 
@@ -31,14 +30,14 @@ namespace ChartEditLibrary.Entitys
         public static void LoadConfig()
         {
             var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ChartEdit\\config.json");
-            if (File.Exists(path))
+            if (!File.Exists(path)) 
+                return;
+            var temp = JsonConvert.DeserializeObject<KeyValuePair<string, Config>[]>(File.ReadAllText(path));
+            if (temp is null) 
+                return;
+            foreach (var item in temp)
             {
-                var temp = JsonConvert.DeserializeObject<KeyValuePair<string, Config>[]>(File.ReadAllText(path));
-                if (temp != null)
-                    foreach (var item in temp)
-                    {
-                        Configs[item.Key] = item.Value;
-                    }
+                Configs[item.Key] = item.Value;
             }
         }
 

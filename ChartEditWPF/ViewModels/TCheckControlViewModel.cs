@@ -37,12 +37,12 @@ namespace ChartEditWPF.ViewModels
             SampleName = SampleName[..SampleName.LastIndexOf('-')];
             Samples = sampleAreas;
             Columns = sampleAreas.Select(s => s.SampleName).ToArray();
-            ColumnDatas = new ObservableCollection<Data>(Columns.Select(v => new Data(v, 125)).Concat(sourceArray.Select(v => new Data(v, 50))).ToList());
+            ColumnDatas = new ObservableCollection<Data>(Columns.Select(v => new Data(v, 125)).Concat(SourceArray.Select(v => new Data(v, 50))).ToList());
             DP = sampleAreas[0].DP;
             for (var i = 0; i < DP.Length; i++)
             {
                 var values = sampleAreas.Select(s => s.Area[i]).ToArray();
-                Rows.Add(new RangeRow(DP[i], values));
+                Rows.Add(new AreaDatabase.AreaRow(DP[i], values));
                 DataRows.Add(GetDataRow(Rows[i]));
             }
         }
@@ -51,8 +51,8 @@ namespace ChartEditWPF.ViewModels
         {
             SampleName = database.ClassName;
             Columns = [.. database.SampleNames];
-            ColumnDatas = new ObservableCollection<Data>(Columns.Select(v => new Data(v, 125)).Concat(sourceArray.Select(v => new Data(v, 50))).ToList());
-            DP = database.DP;
+            ColumnDatas = new ObservableCollection<Data>(Columns.Select(v => new Data(v, 125)).Concat(SourceArray.Select(v => new Data(v, 50))).ToList());
+            DP = [.. database.DP];
             Rows = new ObservableCollection<AreaDatabase.AreaRow>(database.Rows);
             DataRows = new ObservableCollection<DataRow>(database.Rows.Select(GetDataRow));
             Samples = null;
@@ -81,7 +81,7 @@ namespace ChartEditWPF.ViewModels
             }
             if (i < DP.Length)
             {
-                for(; i < DP.Length; i++)
+                for (; i < DP.Length; i++)
                 {
                     Rows.Add(new AreaDatabase.AreaRow(dp[i], new float?[Rows[0].Areas.Length]));
                     DataRows.Add(GetDataRow(Rows[i]));
@@ -102,26 +102,24 @@ namespace ChartEditWPF.ViewModels
         }
         public string[] GetSampleNames()
         {
-            if (Samples is null)
-                return Columns;
-            return [SampleName];
+            return Samples is null ? Columns : [SampleName];
         }
 
-        public static ObservableCollection<DataRow> DesignRow { get; } = new ObservableCollection<DataRow>()
-        {
+        public static ObservableCollection<DataRow> DesignRow { get; } =
+        [
             GetDataRow(new AreaDatabase.AreaRow("dp2", [1.0f, 2.0f, 3.0f])),
-            GetDataRow(new AreaDatabase.AreaRow("dp3", [2.0f, 3.0f, 4.0f])),
-        };
+            GetDataRow(new AreaDatabase.AreaRow("dp3", [2.0f, 3.0f, 4.0f]))
+        ];
 
-        internal static readonly string[] sourceArray = ["AVG", "SD", "RSD%"];
+        private static readonly string[] SourceArray = ["AVG", "SD", "RSD%"];
 
         public static ObservableCollection<Data> DesignColumn { get; } = new ObservableCollection<Data>(
             new string[] { "Sample1", "Sample2", "Sample3" }.Select(v => new Data(v, 125)).
-            Concat(sourceArray.Select(v => new Data(v, 50)).ToList()));
+            Concat(SourceArray.Select(v => new Data(v, 50)).ToList()));
 
     }
 
-    public record DataRow(List<Data> Datas);
+    public record DataRow(List<Data> DataList);
 
     public record Data(string Value, int Width = 125);
 }

@@ -14,31 +14,78 @@
     <UserControl.Resources>
         <local:BindingProxy x:Key="Bind" Data="{Binding}" />
     </UserControl.Resources>
-    <DataGrid ItemsSource="{Binding Rows}" RowHeight="30" b:ReadonlyDataGrid.Default="True"> 
-        <DataGrid.Columns>
-            <DataGridTextColumn Binding="{Binding Areas[0], StringFormat={}{0:0.00}}" Header="{Binding Source={StaticResource Bind}, Path=Data.Columns[0]}" />
-            <DataGridTextColumn Binding="{Binding Areas[1], StringFormat={}{0:0.00}}" Header="{Binding Source={StaticResource Bind}, Path=Data.Columns[1]}" />
-            <DataGridTextColumn Binding="{Binding Areas[2], StringFormat={}{0:0.00}}" Header="{Binding Source={StaticResource Bind}, Path=Data.Columns[2]}" />
-            <DataGridTextColumn Binding="{Binding Average, StringFormat={}{0:0.00}}" Header="AVG" />
-            <DataGridTextColumn Binding="{Binding StdDev, StringFormat={}{0:0.00}}" Header="SD" HeaderStringFormat="0.00"/>
-            <DataGridTextColumn Binding="{Binding RSD, StringFormat={}{0:P1}}"  Header="RSD%"/>
-            <DataGridTemplateColumn>
-                <DataGridTemplateColumn.Header>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <TextBlock Text="质量范围" />
-                        <Button Width="15" Height="15" Margin="5,0,0,0" BorderThickness="0" Command="{Binding Source={StaticResource Bind}, Path=Data.ImportCommand}">
-                            <Button.Background>
-                                <ImageBrush ImageSource="/Resources/import.png"/>
-                            </Button.Background>
-                        </Button>
-                    </StackPanel>
-                </DataGridTemplateColumn.Header>
-                <DataGridTemplateColumn.CellTemplate>
+    <Border CornerRadius="5" Background="#FFEEEEEE" BorderBrush="#FFE0E0E0" Padding="6" BorderThickness="1">
+        <StackPanel Orientation="Vertical">
+            <ItemsControl ItemsSource="{Binding DataColumns}" Padding="10,0,10,0" d:ItemsSource="{x:Static vm:QualityRangeControlViewModel.DesignDataColumns}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="0,15,0,11"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding Range}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ItemsControl ItemsSource="{Binding}" Padding="10,0,10,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Value}" Width="{Binding Width}" FontSize="14" TextAlignment="Center"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="质量范围" Width="80" FontSize="14" TextAlignment="Right" />
+                            <Button Width="15" Height="15" BorderThickness="0" 
+                                    Command="{Binding Source={StaticResource Bind}, Path=Data.ImportCommand}" CommandParameter="{Binding}">
+                                <Button.Background>
+                                    <ImageBrush ImageSource="/Resources/copy.png" />
+                                </Button.Background>
+                            </Button>
+                            <TextBlock Text="" Width="30"/>
+                        </StackPanel>
                     </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-            </DataGridTemplateColumn>
-        </DataGrid.Columns>
-    </DataGrid>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ItemsControl ItemsSource="{Binding DataRows}" Padding="10,0,10,0" d:ItemsSource="{x:Static vm:QualityRangeControlViewModel.DesignDataRows}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="White" CornerRadius="5" Margin="0,0,0,4" Height="30">
+                            <ItemsControl ItemsSource="{Binding Data}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="White" Padding="10,0,10,0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <ItemsControl ItemsSource="{Binding Datas}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding Value}" Width="{Binding Width}" TextAlignment="Center" VerticalAlignment="Center"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="{Binding Range}" Width="125" TextAlignment="Center" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Border>
 </UserControl>

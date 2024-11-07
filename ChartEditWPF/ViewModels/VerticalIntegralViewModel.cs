@@ -15,18 +15,19 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using static ChartEditLibrary.ViewModel.DraggableChartVm;
 
 namespace ChartEditWPF.ViewModels
 {
     public partial class VerticalIntegralViewModel : ObservableObject
     {
-        readonly ISelectDialog _selectDialog;
-        readonly IFileDialog _fileDialog;
-        readonly IMessageBox _messageBox;
-        readonly ILogger logger;
+        private readonly ISelectDialog _selectDialog;
+        private readonly IFileDialog _fileDialog;
+        private readonly IMessageBox _messageBox;
+        private readonly ILogger logger;
 
-        readonly ExportType[] exportTypes = Enum.GetValues<ExportType>();
+        private readonly ExportType[] exportTypes = Enum.GetValues<ExportType>();
 
         public ObservableCollection<ShowControlViewModel> DataSources { get; set; } = [];
 
@@ -39,18 +40,16 @@ namespace ChartEditWPF.ViewModels
             _fileDialog = fileDialog;
             _messageBox = messageBox;
             this.logger = logger;
-            App.Current.Exit += Current_Exit;
-            if (!File.Exists(CacheContent.cacheFile))
+            Application.Current.Exit += Current_Exit;
+            if (!File.Exists(CacheContent.CacheFile))
                 return;
-            CacheContent[] cacheContents = null!;
             try
             {
-                var temp = JsonConvert.DeserializeObject<CacheContent[]>(File.ReadAllText(CacheContent.cacheFile));
+                var temp = JsonConvert.DeserializeObject<CacheContent[]>(File.ReadAllText(CacheContent.CacheFile));
                 if (temp is null || temp.Length == 0)
                     return;
-                cacheContents = temp;
-                var t = cacheContents.Where(v => !string.IsNullOrEmpty(v.FilePath)).Select(Create).ToArray();
-                foreach (var vm in t)
+                var cacheContents = temp.Where(v => !string.IsNullOrEmpty(v.FilePath)).Select(Create).ToArray();
+                foreach (var vm in cacheContents)
                 {
                     var chartControl = App.ServiceProvider.GetRequiredService<IChartControl>();
                     chartControl.ChartData = vm;
@@ -70,22 +69,22 @@ namespace ChartEditWPF.ViewModels
         {
             try
             {
-                if (!Directory.Exists(Path.GetDirectoryName(CacheContent.cacheFile)))
-                    Directory.CreateDirectory(Path.GetDirectoryName(CacheContent.cacheFile)!);
-                var contenets = DataSources.Select(v =>
+                if (!Directory.Exists(Path.GetDirectoryName(CacheContent.CacheFile)))
+                    Directory.CreateDirectory(Path.GetDirectoryName(CacheContent.CacheFile)!);
+                var contents = DataSources.Select(v =>
                 {
                     var vm = v.DraggableChartVM;
                     var cache = new CacheContent()
                     {
                         FilePath = vm.FilePath,
                         FileName = vm.FileName,
-                        X = vm.DataSource.Select(v => v.X).ToArray(),
-                        Y = vm.DataSource.Select(v => v.Y).ToArray(),
+                        X = vm.DataSource.Select(x => x.X).ToArray(),
+                        Y = vm.DataSource.Select(x => x.Y).ToArray(),
                         SaveContent = vm.GetSaveContent()
                     };
                     return cache;
                 });
-                File.WriteAllText(CacheContent.cacheFile, JsonConvert.SerializeObject(contenets));
+                File.WriteAllText(CacheContent.CacheFile, JsonConvert.SerializeObject(contents));
                 
             }
             catch(Exception ex)
@@ -99,7 +98,7 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        async Task Import()
+        private async Task Import()
         {
             var type = (ExportType)_selectDialog.ShowCombboxDialog("选择导入类型", exportTypes);
             if (!_fileDialog.ShowDialog(null, out var fileNames))
@@ -125,7 +124,7 @@ namespace ChartEditWPF.ViewModels
             _messageBox.Popup("导入完成", NotificationType.Success);
         }
         [RelayCommand]
-        void Export()
+        private void Export()
         {
             if (DataSources.Count == 0)
                 return;
@@ -137,9 +136,7 @@ namespace ChartEditWPF.ViewModels
             using var _ = _messageBox.ShowLoading("正在导出数据...");
             try
             {
-
-
-                Dictionary<string, List<SaveRow[]>> contents = new Dictionary<string, List<SaveRow[]>>();
+                var contents = new Dictionary<string, List<SaveRow[]>>();
                 foreach (var obj in objs)
                 {
                     var fileName = (string)obj;
@@ -150,7 +147,7 @@ namespace ChartEditWPF.ViewModels
 
                     var fileKey = fileName[..fileName.LastIndexOf('-')];
                     if (!contents.ContainsKey(fileKey))
-                        contents[fileKey] = new List<SaveRow[]>();
+                        contents[fileKey] = [];
                     var saveRow = vm.DraggableChartVM.GetSaveRow();
                     contents[fileKey].Add(saveRow);
                 }
@@ -170,11 +167,7 @@ namespace ChartEditWPF.ViewModels
                         sb.Append(string.Join(",,", content.Value.Select(row =>
                         {
                             var r = row.FirstOrDefault(v => v.dp == dp);
-                            if (r.dp is null)
-                                return emptyLine;
-                            else
-                                return r.line;
-
+                            return r.dp is null ? emptyLine : r.line;
                         })));
                         sb.AppendLine();
                     }
@@ -191,7 +184,7 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        void Remove()
+        private void Remove()
         {
             if (DataSources.Count == 0)
                 return;
@@ -203,7 +196,7 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        void Resize()
+        private void Resize()
         {
             foreach (var control in DataSources)
             {
@@ -212,7 +205,7 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        void HideData()
+        private void HideData()
         {
             if (DataSources.Count == 0)
                 return;
@@ -221,18 +214,11 @@ namespace ChartEditWPF.ViewModels
             {
                 d.ShowData = !hided;
             }
-            if (hided)
-            {
-                HideButtonText = "显示数据";
-            }
-            else
-            {
-                HideButtonText = "隐藏数据";
-            }
+            HideButtonText = hided ? "显示数据" : "隐藏数据";
         }
 
         [RelayCommand]
-        async Task SaveResult()
+        private async Task SaveResult()
         {
             foreach (var i in DataSources)
             {

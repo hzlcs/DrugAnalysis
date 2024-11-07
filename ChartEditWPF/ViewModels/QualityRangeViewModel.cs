@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static ChartEditWPF.ViewModels.SamplePageViewModel;
 
 namespace ChartEditWPF.ViewModels
 {
@@ -23,56 +24,137 @@ namespace ChartEditWPF.ViewModels
 
         public ObservableCollection<QualityRangeControlViewModel> QualityRanges { get; } = [];
 
-
+        private void AddData(List<QualityRangeControlViewModel> data)
+        {
+            if (data.Count == 0)
+                return;
+            string[]? dp = QualityRanges.FirstOrDefault()?.DP;
+            List<string[]> newDp = [];
+            if (dp is not null)
+                newDp.Add(dp);
+            foreach (var sample in data)
+            {
+                newDp.Add(sample.DP);
+                QualityRanges.Add(sample);
+            }
+            dp = SampleManager.MergeDP(newDp);
+            foreach (var sample in QualityRanges)
+            {
+                sample.ApplyDP(dp);
+            }
+            Dp = dp;
+            //if (database is not null)
+            //{
+            //    DoWork();
+            //}
+        }
 
         [RelayCommand]
-        async Task AddQualityRange()
+        private async Task AddQualityRange()
         {
             if (!_fileDialog.ShowDialog(null, out var fileNames))
                 return;
             using var _ = _messageBox.ShowLoading("正在导入样品...");
-            string[]? dp = QualityRanges.FirstOrDefault()?.DP;
-            List<string[]> newDp = [];
-            foreach (var fileName in fileNames)
+            List<QualityRangeControlViewModel> datas = [];
+
+            try
             {
-                try
+                foreach (var fileName in fileNames)
                 {
-                    if (!File.Exists(fileName))
-                        continue;
-                    var sample = await SampleManager.GetSampleAreasAsync(fileName);
-                    if (dp is not null)
-                        newDp.Add(sample[0].DP);
-                    QualityRanges.Add(new QualityRangeControlViewModel(sample));
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "AddQualityRange:{fileName}", fileName);
-                    _messageBox.Popup(Path.GetFileNameWithoutExtension(fileName) + "导入失败", NotificationType.Error);
-                }
-            }
-            if (dp is not null)
-            {
-                try
-                {
-                    dp = SampleManager.MergeDP(newDp.Prepend(dp));
-                    foreach (var sample in QualityRanges)
+                    try
                     {
-                        sample.ApplyDP(dp);
+                        if (!File.Exists(fileName))
+                            continue;
+                        var sample = await SampleManager.GetSampleAreasAsync(fileName);
+                        datas.Add(new QualityRangeControlViewModel(sample));
                     }
-                    Dp = dp;
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "AddQualityRange:{fileName}", fileName);
+                        _messageBox.Popup(Path.GetFileNameWithoutExtension(fileName) + "导入失败", NotificationType.Error);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "MergeDP");
-                    _messageBox.Popup("合并DP失败", NotificationType.Error);
-                }
+                AddData(datas);
             }
-            Dp = QualityRanges[0].DP;
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "AddSample");
+                _messageBox.Popup("导入样品失败", NotificationType.Error);
+            }
+
             _messageBox.Popup("样品导入成功", NotificationType.Success);
         }
 
         [RelayCommand]
-        async Task Import()
+        private async Task AddDatabase()
+        {
+            if (!_fileDialog.ShowDialog(null, out var fileNames))
+                return;
+            using var _ = _messageBox.ShowLoading("正在添加数据...");
+            try
+            {
+                var datas = new List<QualityRangeControlViewModel>();
+                foreach (var fileName in fileNames)
+                {
+                    if (!File.Exists(fileName))
+                        continue;
+                    var database = await SampleManager.GetDatabaseAsync(fileName);
+                    datas.AddRange(GetSample(database));
+                }
+                AddData(datas);
+                _messageBox.Popup("添加数据成功", NotificationType.Success);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "AddDatabase");
+                _messageBox.Popup("添加数据失败", NotificationType.Error);
+            }
+
+        }
+
+        private static List<QualityRangeControlViewModel> GetSample(AreaDatabase database)
+        {
+            Dictionary<string, List<int>> sameSamples = [];
+            List<int> @default = [];
+            for (var i = 0; i < database.SampleNames.Length; ++i)
+            {
+                var index = database.SampleNames[i].LastIndexOf('-');
+                if (index == -1)
+                {
+                    @default.Add(i);
+                    continue;
+                }
+                var sampleName = database.SampleNames[i][..index];
+                if (!sameSamples.TryGetValue(sampleName, out var list))
+                {
+                    list = [];
+                    sameSamples.Add(sampleName, list);
+                }
+                list.Add(i);
+            }
+            List<QualityRangeControlViewModel> datas = [];
+            foreach (var pair in sameSamples)
+            {
+                var list = pair.Value;
+                var samples = list.Select(v => new SampleArea(pair.Key, [.. database.DP], database.Rows.Select(x => x.Areas[v]).ToArray())).ToArray();
+                datas.Add(new QualityRangeControlViewModel(samples));
+            }
+            if (@default.Count > 0)
+            {
+                if (@default.Count == database.SampleNames.Length)
+                    datas.Add(new QualityRangeControlViewModel(database));
+                else
+                {
+                    AreaDatabase @new = new(database.ClassName, @default.Select(v => database.SampleNames[v]).ToArray(), [.. database.DP],
+                        database.Rows.Select(v => new AreaDatabase.AreaRow(v.DP, @default.Select(i => v.Areas[i]).ToArray())).ToArray());
+                    datas.Add(new QualityRangeControlViewModel(@new));
+                }
+            }
+            return datas;
+        }
+
+        [RelayCommand]
+        private async Task Import()
         {
             if (!_fileDialog.ShowDialog(null, out var fileName))
             {
@@ -96,13 +178,13 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        void ViewChart()
+        private void ViewChart()
         {
             App.ServiceProvider.GetRequiredService<QualityRangeChartWindow>().Show(QualityRanges);
         }
 
         [RelayCommand]
-        void Remove()
+        private void Remove()
         {
             object[]? objs = _selectDialog.ShowListDialog("选择移除数据", "样品", QualityRanges.Select(v => v.SampleName).ToArray());
             if (objs is null)
@@ -113,7 +195,7 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        void ExportResult()
+        private void ExportResult()
         {
             if (QualityRanges.Count == 0)
                 return;
@@ -124,15 +206,14 @@ namespace ChartEditWPF.ViewModels
             {
                 var sb = new StringBuilder();
                 string[] dps = QualityRanges[0].DP;
-                sb.AppendLine($"DP," + string.Join(",,", QualityRanges.Select(v => string.Join(",", v.Columns) + ",AVG,SD,RSD%,质量范围")));
+                var saveDatas = QualityRanges.Select(v => v.GetSaveData()).ToArray();
+                sb.AppendLine($"DP," + string.Join(",,", saveDatas.Select(v => string.Join(",", v.Column))));
                 for (var i = 0; i < dps.Length; ++i)
                 {
                     sb.Append("DP" + dps[i] + ",");
-                    foreach (var sample in QualityRanges)
+                    foreach (var data in saveDatas)
                     {
-                        var row = sample.Rows[i];
-                        object?[] data = [row.Areas.ElementAtOrDefault(0), row.Areas.ElementAtOrDefault(1), row.Areas.ElementAtOrDefault(2), row.Average, row.StdDev, row.RSD, row.Range];
-                        sb.Append(string.Join(",", data));
+                        sb.Append(string.Join(",", data.Rows[i]));
                         sb.Append(",,");
                     }
                     sb.Remove(sb.Length - 2, 2);

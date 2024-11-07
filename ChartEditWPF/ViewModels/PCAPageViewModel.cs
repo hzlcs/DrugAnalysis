@@ -20,8 +20,8 @@ namespace ChartEditWPF.ViewModels
 {
     internal partial class PCAPageViewModel(IFileDialog _fileDialog, IMessageBox _messageBox, ISelectDialog _selectDialog, ILogger<PCAPageViewModel> _logger) : SamplePageViewModel(_fileDialog, _messageBox, _selectDialog, _logger)
     {
-        PCAManager.Result? result;
-        AreaDatabase? cache;
+        private PCAManager.Result? result;
+        private AreaDatabase? cache;
 
         protected override void DoWork()
         {
@@ -57,7 +57,7 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        void ShowPCA()
+        private void ShowPCA()
         {
             if (result is null)
             {

@@ -26,7 +26,7 @@ namespace ChartEditWPF.Windows
             InitializeComponent();
         }
 
-        public PCAWindow(Result result) : this(result.samples, result.singularValues, result.eigenVectors)
+        public PCAWindow(Result result) : this(result.Samples, result.SingularValues, result.EigenVectors)
         {
         }
 

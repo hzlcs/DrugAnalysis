@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -17,18 +18,16 @@ namespace ChartEditLibrary.Model
             if (!File.Exists(fileName))
                 throw new FileNotFoundException("未找到样品文件", fileName);
             using StreamReader sr = new(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-            string[][] text = (await sr.ReadToEndAsync()).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
+            var text = (await sr.ReadToEndAsync()).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
             var title = text[0];
-            SampleArea[] sampleAreas = new SampleArea[(title.Length - 1) / 6];
-            string[] dps = text.Skip(2).Select(v => v[0][2..]).ToArray();
+            var sampleAreas = new SampleArea[(title.Length - 1) / 6];
+            var dps = text.Skip(2).Select(v => v[0][2..]).ToArray();
             for (var i = 0; i < sampleAreas.Length; ++i)
             {
                 sampleAreas[i] = new SampleArea(title[1 + i * 7], dps, text.Skip(2).Select(v =>
                 {
                     var value = v[1 + i * 7 + 5];
-                    if (string.IsNullOrEmpty(value))
-                        return null;
-                    return new float?(float.Parse(value));
+                    return string.IsNullOrEmpty(value) ? null : new float?(float.Parse(value));
                 }).ToArray());
             }
             return sampleAreas;
@@ -84,7 +83,16 @@ namespace ChartEditLibrary.Model
 
         public static string[] MergeDP(IEnumerable<string[]> dps)
         {
-            string[] res = dps.SelectMany(v => v).Distinct().ToArray();
+            var temp = dps.SelectMany(v => v).Distinct().ToList();
+            var single = temp.Where(v => !v.Contains('-')).ToArray();
+            foreach (var s in single)
+            {
+                if (temp.Contains(s + "-1"))
+                {
+                    temp.Remove(s);
+                }
+            }
+            string[] res = [.. temp];
             Array.Sort(res, DPCompare);
             return res;
         }
@@ -111,7 +119,7 @@ namespace ChartEditLibrary.Model
             return TTest(right, left);
         }
 
-        public static double TTest(float[] x, float[] y)
+        private static double TTest(float[] x, float[] y)
         {
             double sumX = x.Sum();
             double sumY = y.Sum();
@@ -229,14 +237,17 @@ namespace ChartEditLibrary.Model
     {
         public string ClassName { get; }
         public string[] SampleNames { get; }
-        public string[] DP { get; }
+        private readonly List<string> dp;
+        public IReadOnlyList<string> DP => dp;
+        private IReadOnlyList<DPString> DPString { get; }
         public AreaRow[] Rows { get; }
 
         public AreaRow this[string dp]
         {
             get
             {
-                var index = Array.IndexOf(DP, dp);
+
+                var index = this.dp.IndexOf(dp);
                 if (index == -1)
                 {
                     throw new IndexOutOfRangeException("DP not found");
@@ -249,7 +260,8 @@ namespace ChartEditLibrary.Model
         {
             this.ClassName = className;
             this.SampleNames = sampleNames;
-            this.DP = dps;
+            this.dp = new List<string>(dps);
+            this.DPString = this.DP.Select(v => new DPString(v)).ToList();
             this.Rows = rows;
         }
 
@@ -257,20 +269,24 @@ namespace ChartEditLibrary.Model
         {
             ClassName = database.ClassName;
             SampleNames = database.SampleNames;
-            DP = database.DP;
+            dp = database.dp;
+            DPString = database.DPString;
             Rows = database.Rows;
         }
 
         public bool TryGetRow(string dp, [MaybeNullWhen(false)] out AreaRow row)
         {
-            var index = Array.IndexOf(DP, dp);
-            if (index == -1)
+            DPString dPString = new(dp);
+            for (int i = 0; i < DPString.Count; i++)
             {
-                row = null;
-                return false;
+                if (DPString[i] == dPString)
+                {
+                    row = Rows[i];
+                    return true;
+                }
             }
-            row = Rows[index];
-            return true;
+            row = null;
+            return false;
         }
 
 
@@ -288,12 +304,23 @@ namespace ChartEditLibrary.Model
                 this.DP = dp;
                 this.Areas = areas;
                 var values = areas.Where(v => v.HasValue).Select(v => v!.Value).ToArray();
-                if (values.Length > 0)
+                if (values.Length <= 0)
+                    return;
+                Average = (float)Math.Round(values.Average(), 2);
+                StdDev = CalculateStdDev(values);
+                RSD = StdDev / Average.Value;
+            }
+
+            public string GetRange(float average)
+            {
+                var _range = Math.Round((average - Average.GetValueOrDefault()) / StdDev, 2);
+                var range = _range switch
                 {
-                    Average = (float)Math.Round(values.Average(), 2);
-                    StdDev = CalculateStdDev(values);
-                    RSD = StdDev / Average.Value;
-                }
+                    > 0 => (int)Math.Ceiling(_range),
+                    < 0 => (int)Math.Floor(_range),
+                    _ => 0
+                };
+                return "AVG" + (range >= 0 ? "+" : "") + range + "SD";
             }
         }
 
@@ -305,16 +332,15 @@ namespace ChartEditLibrary.Model
 
         public static double CalculateStdDev(float[] values)
         {
+            if (values.Length <= 0)
+                return 0;
             double ret = 0;
-            if (values.Length > 0)
-            {
-                //  计算平均数   
-                double avg = values.Average();
-                //  计算各数值与平均数的差值的平方，然后求和 
-                var sum = values.Sum(d => Math.Pow(d - avg, 2));
-                //  除以数量，然后开方
-                ret = Math.Round(Math.Sqrt(sum / (values.Length - 1)), 2);
-            }
+            //  计算平均数   
+            double avg = values.Average();
+            //  计算各数值与平均数的差值的平方，然后求和 
+            var sum = values.Sum(d => Math.Pow(d - avg, 2));
+            //  除以数量，然后开方
+            ret = Math.Round(Math.Sqrt(sum / (values.Length - 1)), 2);
             return ret;
         }
     }

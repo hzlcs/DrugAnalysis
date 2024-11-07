@@ -30,9 +30,11 @@ namespace ChartEditWPF
             using var host = CreateHostBuilder(args).Build();
             host.Start();
             ServiceProvider = host.Services;
-            App app = new();
-            //app.InitializeComponent();
-            app.MainWindow = host.Services.GetRequiredService<MainWindow>();
+            App app = new()
+            {
+                //app.InitializeComponent();
+                MainWindow = host.Services.GetRequiredService<MainWindow>()
+            };
             app.MainWindow.DataContext = host.Services.GetRequiredService<MainViewModel>();
             app.MainWindow.Visibility = Visibility.Visible;
             app.Resources.MergedDictionaries.Add(LoadComponent(new Uri("MyResource.xaml", UriKind.Relative)) as System.Windows.ResourceDictionary);
@@ -40,7 +42,7 @@ namespace ChartEditWPF
             host.StopAsync().Wait();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
+        private static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args).ConfigureLogging(logging =>
             {
                 logging.ClearProviders();
@@ -82,7 +84,7 @@ namespace ChartEditWPF
 
         private static void ConfigureLog()
         {
-            var logOutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] {SourceContext:l}{NewLine}{Message}{NewLine}{Exception}";
+            const string logOutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] {SourceContext:l}{NewLine}{Message}{NewLine}{Exception}";
             Log.Logger = new LoggerConfiguration()
               .MinimumLevel.Override("Default", Debugger.IsAttached ? LogEventLevel.Debug : LogEventLevel.Information)
               .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
@@ -97,14 +99,4 @@ namespace ChartEditWPF
         }
     }
 
-    public static class AppExtensions
-    {
-        static readonly IMessageBox messageBox = App.ServiceProvider.GetRequiredService<IMessageBox>();
-
-        public static void Popup(this Exception ex)
-        {
-            messageBox.Popup(ex.Message, NotificationType.Error);
-        }
-
-    }
 }

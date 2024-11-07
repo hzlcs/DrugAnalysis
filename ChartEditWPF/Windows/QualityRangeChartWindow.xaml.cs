@@ -1,4 +1,5 @@
-﻿using ChartEditWPF.ViewModels;
+﻿using ChartEditLibrary.Model;
+using ChartEditWPF.ViewModels;
 using ScottPlot;
 using System;
 using System.Collections.Generic;
@@ -58,15 +59,29 @@ namespace ChartEditWPF.Windows
             for (var col = 0; col < colCount; ++col)
             {
                 var sample = samples[col];
-                legendItems.Add(new LegendItem() { LabelText = sample.SampleName, FillColor = palette.GetColor(col) });
+                bool database = sample.database is not null;
+                legendItems.Add(new LegendItem() { LabelText = sample.SampleName + (database ? "均值" : ""), FillColor = palette.GetColor(col) });
                 for (var row = 0; row < rowCount; ++row)
                 {
+                    double value;
+                    double error;
+                    if (!database)
+                    {
+                        value = sample.DataRows[row].Data[0].Average.GetValueOrDefault();
+                        error = sample.DataRows[row].Data[0].StdDev;
+                    }
+                    else
+                    {
+                        var values = sample.DataRows[row].Data.Select(v => v.Average.GetValueOrDefault()).ToArray();
+                        value = values.Average();
+                        error = AreaDatabase.CalculateStdDev(values);
+                    }
                     Bar bar = new()
                     {
                         Position = row * (colCount + 1) + col,
                         FillColor = palette.GetColor(col),
-                        Value = sample.Rows[row].Average.GetValueOrDefault(),
-                        Error = sample.Rows[row].StdDev,
+                        Value = value,
+                        Error = error,
                         BorderLineWidth = 1f,
                     };
                     bars.Add(bar);
@@ -80,7 +95,6 @@ namespace ChartEditWPF.Windows
             myPlot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.NumericManual(ticks);
 
             myPlot.Add.Bars(bars);
-
             myPlot.Axes.Bottom.MajorTickStyle.Length = 0;
             myPlot.HideGrid();
 
@@ -91,7 +105,7 @@ namespace ChartEditWPF.Windows
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            
+
         }
     }
 }

@@ -38,7 +38,7 @@ namespace ChartEditWPF.ViewModels
         private SplitLine? draggedLine;
 
         [RelayCommand]
-        void CopyData()
+        private void CopyData()
         {
             var data = string.Join("\n", DraggableChartVM.SplitLines.Select(v => string.Join("\t", v)).Prepend("Peak\tStart X\tEnd X\tCenter X\tArea\tArea Sum %\tDP"));
             Clipboard.Clear();

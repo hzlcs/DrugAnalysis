@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ChartEditLibrary;
 using static ChartEditWPF.ViewModels.TCheckPageViewModel;
 
 namespace ChartEditWPF.ViewModels
@@ -57,9 +58,9 @@ namespace ChartEditWPF.ViewModels
             }
             if (PValues.Count == 0)
             {
-                for (var i = 0; i < dp.Length; ++i)
+                foreach (var t in dp)
                 {
-                    PValues.Add(new PValue(dp[i]));
+                    PValues.Add(new PValue(t));
                 }
             }
             for (var i = 0; i < dp.Length; ++i)
@@ -69,21 +70,21 @@ namespace ChartEditWPF.ViewModels
                     PValues.Insert(i, new PValue(dp[i]));
                 }
             }
-            if(database is not null)
+            if (database is not null)
             {
                 DoWork();
             }
         }
 
         [RelayCommand]
-        async Task AddSample()
+        private async Task AddSample()
         {
             if (!_fileDialog.ShowDialog(null, out var fileNames))
                 return;
             using var _ = _messageBox.ShowLoading("正在导入样品...");
             try
             {
-                List<TCheckControlViewModel> datas = new List<TCheckControlViewModel>();
+                var datas = new List<TCheckControlViewModel>();
                 foreach (var fileName in fileNames)
                 {
                     if (!File.Exists(fileName))
@@ -102,7 +103,7 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        async Task AddDatabase()
+        private async Task AddDatabase()
         {
             if (!_fileDialog.ShowDialog(null, out var fileNames))
             {
@@ -111,7 +112,7 @@ namespace ChartEditWPF.ViewModels
             using var _ = _messageBox.ShowLoading("正在添加数据...");
             try
             {
-                List<TCheckControlViewModel> datas = new List<TCheckControlViewModel>();
+                var datas = new List<TCheckControlViewModel>();
                 foreach (var fileName in fileNames)
                 {
                     if (!File.Exists(fileName))
@@ -130,7 +131,7 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        void RemoveSamples()
+        private void RemoveSamples()
         {
             if (Samples.Count == 0)
                 return;
@@ -139,7 +140,7 @@ namespace ChartEditWPF.ViewModels
                 return;
             foreach (var obj in objs)
                 Samples.Remove(Samples.First(v => v.SampleName == (string)obj));
-            if(Samples.Count == 0)
+            if (Samples.Count == 0)
             {
                 PValues.Clear();
             }
@@ -147,7 +148,7 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        void ClearSamples()
+        private void ClearSamples()
         {
             Samples.Clear();
             PValues.Clear();
@@ -155,7 +156,7 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        async Task Import()
+        private async Task Import()
         {
             if (!_fileDialog.ShowDialog(null, out var fileName))
             {
@@ -183,7 +184,7 @@ namespace ChartEditWPF.ViewModels
 
         }
 
-        private static IEnumerable<TCheckControlViewModel> GetSample(AreaDatabase database)
+        private static List<TCheckControlViewModel> GetSample(AreaDatabase database)
         {
             Dictionary<string, List<int>> sameSamples = [];
             List<int> @default = [];
@@ -198,7 +199,7 @@ namespace ChartEditWPF.ViewModels
                 var sampleName = database.SampleNames[i][..index];
                 if (!sameSamples.TryGetValue(sampleName, out var list))
                 {
-                    list = new List<int>();
+                    list = [];
                     sameSamples.Add(sampleName, list);
                 }
                 list.Add(i);
@@ -207,7 +208,7 @@ namespace ChartEditWPF.ViewModels
             foreach (var pair in sameSamples)
             {
                 var list = pair.Value;
-                SampleArea[] samples = list.Select(v => new SampleArea(pair.Key, database.DP, database.Rows.Select(x => x.Areas[v]).ToArray())).ToArray();
+                var samples = list.Select(v => new SampleArea(pair.Key, [.. database.DP], database.Rows.Select(x => x.Areas[v]).ToArray())).ToArray();
                 datas.Add(new TCheckControlViewModel(samples));
             }
             if (@default.Count > 0)
@@ -216,8 +217,8 @@ namespace ChartEditWPF.ViewModels
                     datas.Add(new TCheckControlViewModel(database));
                 else
                 {
-                    AreaDatabase @new = new(database.ClassName, @default.Select(v => database.SampleNames[v]).ToArray(),database.DP,
-                        database.Rows.Select(v=>new AreaDatabase.AreaRow(v.DP, @default.Select(i => v.Areas[i]).ToArray())).ToArray());
+                    AreaDatabase @new = new(database.ClassName, @default.Select(v => database.SampleNames[v]).ToArray(), [.. database.DP],
+                        database.Rows.Select(v => new AreaDatabase.AreaRow(v.DP, @default.Select(i => v.Areas[i]).ToArray())).ToArray());
                     datas.Add(new TCheckControlViewModel(@new));
                 }
             }
@@ -236,7 +237,7 @@ namespace ChartEditWPF.ViewModels
                 get => value;
                 set
                 {
-                    if (this.value == value)
+                    if (Math.Abs(this.value.GetValueOrDefault() - value.GetValueOrDefault()) < Utility.Tolerance)
                         return;
                     this.value = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));

@@ -15,10 +15,6 @@
             <RowDefinition Height="30" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Button
-            Grid.Row="0"
-            Height="50"
-            Click="Button_Click" />
         <Border Grid.Row="1">
             <ch:WpfPlot Name="chart" />
         </Border>

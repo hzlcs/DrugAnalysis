@@ -31,16 +31,16 @@ namespace ChartEditWPF.ViewModels
         public ObservableCollection<NotificationContent> Notifications { get; } = [];
 
         [ObservableProperty]
-        bool popupVisible;
+        private bool popupVisible;
 
         [ObservableProperty]
-        Visibility loadingVisible = Visibility.Hidden;
+        private Visibility loadingVisible = Visibility.Hidden;
 
         [ObservableProperty]
-        IPage? content;
+        private IPage? content;
 
         [RelayCommand]
-        void ButtonClick(object tag)
+        private void ButtonClick(object? tag)
         {
             if (tag is not null)
                 Content = serviceProvider.GetRequiredKeyedService<IPage>(tag);
