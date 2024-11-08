@@ -10,7 +10,10 @@ namespace ChartEditLibrary.Entitys
 
     public class CacheContent
     {
-        public static readonly string CacheFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ChartEdit\\cache.json");
+        private static readonly string CacheFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "ChartEdit");
+        public static string SingleCacheFile => CacheFile + "\\single\\cache.json";
+        public static string MutiCacheFile => CacheFile + "\\muti\\cache.json";
+
 
         public string FilePath { get; set; } = null!;
         public string FileName { get; set; } = null!;

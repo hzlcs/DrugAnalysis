@@ -10,6 +10,7 @@ namespace ChartEditWPF.Models
     {
         None,
         VerticalIntegral,
+        MutiVerticalIntegral,
         TCheck,
         PCA,
         QualityRange,

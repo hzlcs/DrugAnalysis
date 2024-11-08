@@ -39,6 +39,15 @@
                         <TextBlock Text="&#xf2cb;" />
                     </hc:SideMenuItem.Icon>
                 </hc:SideMenuItem>
+                <hc:SideMenuItem
+                    Margin="5,0,0,0"
+                    Command="{Binding ButtonClickCommand}"
+                    CommandParameter="{x:Static m:Pages.MutiVerticalIntegral}"
+                    Header="二糖积分">
+                    <hc:SideMenuItem.Icon>
+                        <TextBlock Text="&#xf2cb;" />
+                    </hc:SideMenuItem.Icon>
+                </hc:SideMenuItem>
             </hc:SideMenuItem>
             <hc:SideMenuItem Header="统计学评价">
                 <hc:SideMenuItem

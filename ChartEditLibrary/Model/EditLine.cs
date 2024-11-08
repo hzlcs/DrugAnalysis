@@ -84,12 +84,12 @@ namespace ChartEditLibrary.Model
     /// 分割线
     /// </summary>
     [SuppressMessage("ReSharper", "ExplicitCallerInfoArgument")]
-    public partial class SplitLine(CoordinateLine line)
+    public partial class SplitLine(BaseLine baseLine, CoordinateLine line)
         : EditLineBase(line), IComparable<SplitLine>, IEnumerable<string?>
     {
 
-        
-        
+        public BaseLine BaseLine { get; } = baseLine;
+
         public delegate void NextLineChangedEventHandler(SplitLine sender, EditLineBase? oldValue, EditLineBase newValue);
         public event NextLineChangedEventHandler? NextLineChanged;
         /// <summary>
@@ -243,6 +243,7 @@ namespace ChartEditLibrary.Model
     /// </summary>
     public class BaseLine(CoordinateLine line) : EditLineBase(line)
     {
+
         public BaseLine(Coordinates start, Coordinates end) : this(new CoordinateLine(start, end))
         {
         }

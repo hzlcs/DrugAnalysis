@@ -5,6 +5,7 @@ using ChartEditLibrary.ViewModel;
 using ChartEditWPF.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HandyControl.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -20,7 +21,7 @@ using static ChartEditLibrary.ViewModel.DraggableChartVm;
 
 namespace ChartEditWPF.ViewModels
 {
-    public partial class VerticalIntegralViewModel : ObservableObject
+    internal partial class MutiVerticalIntegralViewModel : ObservableObject
     {
         private readonly ISelectDialog _selectDialog;
         private readonly IFileDialog _fileDialog;
@@ -34,24 +35,24 @@ namespace ChartEditWPF.ViewModels
         [ObservableProperty]
         private string hideButtonText = "隐藏数据";
 
-        public VerticalIntegralViewModel(ISelectDialog selectDialog, IFileDialog fileDialog, IMessageBox messageBox, ILogger<VerticalIntegralViewModel> logger)
+        public MutiVerticalIntegralViewModel(ISelectDialog selectDialog, IFileDialog fileDialog, IMessageBox messageBox, ILogger<VerticalIntegralViewModel> logger)
         {
             _selectDialog = selectDialog;
             _fileDialog = fileDialog;
             _messageBox = messageBox;
             this.logger = logger;
             Application.Current.Exit += Current_Exit;
-            if (!File.Exists(CacheContent.SingleCacheFile))
+            if (!File.Exists(CacheContent.MutiCacheFile))
                 return;
             try
             {
-                var temp = JsonConvert.DeserializeObject<CacheContent[]>(File.ReadAllText(CacheContent.SingleCacheFile));
+                var temp = JsonConvert.DeserializeObject<CacheContent[]>(File.ReadAllText(CacheContent.MutiCacheFile));
                 if (temp is null || temp.Length == 0)
                     return;
                 var cacheContents = temp.Where(v => !string.IsNullOrEmpty(v.FilePath)).Select(Create).ToArray();
                 foreach (var vm in cacheContents)
                 {
-                    var chartControl = App.ServiceProvider.GetRequiredService<SingleBaselineChartControl>();
+                    var chartControl = App.ServiceProvider.GetRequiredService<MutiBaselineChartControl>();
                     chartControl.ChartData = vm;
                     var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
                     DataSources.Add(svm);
@@ -69,8 +70,8 @@ namespace ChartEditWPF.ViewModels
         {
             try
             {
-                if (!Directory.Exists(Path.GetDirectoryName(CacheContent.SingleCacheFile)))
-                    Directory.CreateDirectory(Path.GetDirectoryName(CacheContent.SingleCacheFile)!);
+                if (!Directory.Exists(Path.GetDirectoryName(CacheContent.MutiCacheFile)))
+                    Directory.CreateDirectory(Path.GetDirectoryName(CacheContent.MutiCacheFile)!);
                 var contents = DataSources.Select(v =>
                 {
                     var vm = v.DraggableChartVM;
@@ -84,10 +85,10 @@ namespace ChartEditWPF.ViewModels
                     };
                     return cache;
                 });
-                File.WriteAllText(CacheContent.SingleCacheFile, JsonConvert.SerializeObject(contents));
-                
+                File.WriteAllText(CacheContent.MutiCacheFile, JsonConvert.SerializeObject(contents));
+
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.LogError(ex, "缓存文件保存失败");
             }
@@ -100,7 +101,7 @@ namespace ChartEditWPF.ViewModels
         [RelayCommand]
         private async Task Import()
         {
-            var type = (ExportType)_selectDialog.ShowCombboxDialog("选择导入类型", exportTypes);
+            //var type = (ExportType)_selectDialog.ShowCombboxDialog("选择导入类型", exportTypes);
             if (!_fileDialog.ShowDialog(null, out var fileNames))
                 return;
             using var _ = _messageBox.ShowLoading("正在导入数据...");
@@ -108,9 +109,9 @@ namespace ChartEditWPF.ViewModels
             {
                 try
                 {
-                    var vm = await DraggableChartVm.CreateAsync(file, type);
+                    var vm = await DraggableChartVm.CreateAsync(file, default);
                     vm.InitSplitLine(null);
-                    var chartControl = App.ServiceProvider.GetRequiredService<SingleBaselineChartControl>();
+                    var chartControl = App.ServiceProvider.GetRequiredService<MutiBaselineChartControl>();
                     chartControl.ChartData = vm;
                     var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
                     DataSources.Add(svm);
@@ -227,7 +228,7 @@ namespace ChartEditWPF.ViewModels
                     var res = await i.DraggableChartVM.SaveToFile();
                     res.IfFail(v => _messageBox.Show(v.Message));
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     logger.LogError(ex, "保存失败");
                 }

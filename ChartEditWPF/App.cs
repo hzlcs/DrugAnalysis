@@ -53,7 +53,8 @@ namespace ChartEditWPF
                 services.AddSingleton<MainWindow>();
                 services.AddSingleton<IMessageWindow>(provider => provider.GetRequiredService<MainViewModel>());
                 services.AddSingleton<MainViewModel>();
-                services.AddTransient<IChartControl, ChartControl>();
+                services.AddTransient<SingleBaselineChartControl>();
+                services.AddTransient<MutiBaselineChartControl>();
                 services.AddSingleton<IMessageBox, WPFMessageBox>();
                 services.AddSingleton<IInputForm, WPFInputForm>();
                 services.AddSingleton<IFileDialog, WPFFileDialog>();
@@ -61,6 +62,9 @@ namespace ChartEditWPF
 
                 services.AddSingleton<VerticalIntegralViewModel>();
                 services.AddKeyedSingleton<IPage, VerticalIntegralPage>(Models.Pages.VerticalIntegral, (s, v) => new VerticalIntegralPage() { DataContext = s.GetRequiredService<VerticalIntegralViewModel>() });
+
+                services.AddSingleton<MutiVerticalIntegralViewModel>();
+                services.AddKeyedSingleton<IPage, MutiVerticalIntegralPage>(Models.Pages.MutiVerticalIntegral, (s, v) => new MutiVerticalIntegralPage() { DataContext = s.GetRequiredService<MutiVerticalIntegralViewModel>() });
 
                 services.AddSingleton<TCheckPageViewModel>();
                 services.AddKeyedSingleton<IPage, TCheckPage>(Models.Pages.TCheck, (s, v) => new TCheckPage()
