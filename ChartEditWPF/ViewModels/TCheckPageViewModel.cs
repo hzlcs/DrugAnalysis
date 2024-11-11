@@ -26,8 +26,8 @@ namespace ChartEditWPF.ViewModels
                 return;
             for (var i = 0; i < PValues.Count; ++i)
             {
-                var dp = PValues[i].DP;
-                if (!database.TryGetRow(dp, out var row))
+                var description = PValues[i].Description;
+                if (!database.TryGetRow(description, out var row))
                 {
                     PValues[i].Value = double.NaN;
                     continue;

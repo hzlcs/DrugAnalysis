@@ -1,4 +1,6 @@
 ﻿using ChartEditLibrary.Model;
+using ChartEditLibrary.ViewModel;
+using MathNet.Numerics.Distributions;
 using ScottPlot;
 using System;
 using System.Collections.Generic;
@@ -15,6 +17,97 @@ namespace ChartEditLibrary.Interfaces
         public override void BindControl(IPlotControl chartPlot)
         {
             base.BindControl(chartPlot);
+
+            
+            chartPlot.Menu.Add("Add Line", AddLineMenu);
+            chartPlot.Menu.Add("Remove Line", RemoveLineMenu);
+            //chartPlot.Menu.Add("Delete Peak", DeletePeakMenu);
+            chartPlot.Menu.Add("Set Assignment", SetAssignmentMenu);
+        }
+
+        private void SetAssignmentMenu(IPlotControl control)
+        {
+            var lineInfo = ChartData.GetDraggedLine(mouseCoordinates, true);
+            if (!lineInfo.HasValue)
+            {
+                _messageBox.Show("Can't set assignment here");
+            }
+            else if (lineInfo.Value.IsBaseLine)
+            {
+                _messageBox.Show("Can't set baseLine");
+            }
+            else
+            {
+                var line = (SplitLine)lineInfo.Value.DraggedLine;
+                if (_inputForm.TryGetInput(line.Description, out var value))
+                {
+                    if (!TrySetDPIndex(line, value, ChartData.SplitLines))
+                    {
+                        _messageBox.Show("无效的DP值");
+                    }
+                    else
+                    {
+                        ChartData.DraggedLine = null;
+                        ChartData.DraggedLine = DraggableChartVm.GetFocusLineInfo(line);
+                    }
+                }
+
+            }
+        }
+
+        private static bool TrySetDPIndex(SplitLine line, string? value, IList<SplitLine> lines)
+        {
+            if (value is null)
+            {
+                line.Description = null;
+                return true;
+            }
+            line.Description = value;
+            line.UpdateUI();
+            return true;
+        }
+
+        private void DeletePeakMenu(IPlotControl control)
+        {
+            var lineInfo = ChartData.GetDraggedLine(mouseCoordinates);
+            if (!lineInfo.HasValue)
+            {
+                _messageBox.Show("No line here");
+                return;
+            }
+            control.Refresh();
+        }
+
+        private void RemoveLineMenu(IPlotControl control)
+        {
+            var lineInfo = ChartData.GetDraggedLine(mouseCoordinates);
+            if (!lineInfo.HasValue)
+            {
+                _messageBox.Show("No line here");
+                return;
+            }
+            ChartData.RemoveLine(lineInfo.Value.DraggedLine);
+            control.Refresh();
+        }
+
+        private void AddLineMenu(IPlotControl control)
+        {
+            var chartPoint = ChartData.GetChartPoint(mouseCoordinates.X);
+            if (chartPoint is null)
+            {
+                _messageBox.Show("Can't add line here");
+                return;
+            }
+            var point = chartPoint.Value;
+            var baseLine = ChartData.BaseLines.FirstOrDefault(v => v.Include(point.X));
+            if (baseLine is null)
+            {
+                _messageBox.Show("Can't add line without baseLine");
+                return;
+            }
+            var line = ChartData.AddSplitLine(chartPoint.Value);
+            ChartData.DraggedLine = DraggableChartVm.GetFocusLineInfo(line);
+            control.Refresh();
         }
 
         private SplitLine? baseLine_endLine;
@@ -34,7 +127,7 @@ namespace ChartEditLibrary.Interfaces
                 return;
 
             draggedLine = ChartData.GetDraggedLine(mouseCoordinates);
-            if (draggedLine is null)
+            if (draggedLine is null && actived)
             {
                 var baseLine = ChartData.GetBaseLine(mouseCoordinates);
                 if (baseLine is not null)
@@ -102,19 +195,28 @@ namespace ChartEditLibrary.Interfaces
                 {
                     if (editLine.End.Equals(chartPoint.Value))
                         return;
-                    editLine.End = chartPoint.Value;
+
                     if (baseLine_endLine is not null)
                     {
+                        if (chartPoint.Value.X < editLine.Line.Start.X)
+                        {
+                            return;
+                        }
+
                         var linePoint = ChartData.GetChartPoint(editLine.End.X);
                         if (linePoint.HasValue)
                         {
-                            if(baseLine_endLine.Line.Start.X != linePoint.Value.X)
-                            {
-                                baseLine_endLine.Line = baseLine_endLine.BaseLine.CreateSplitLine(linePoint.Value);
-                            }
+                            int index = ChartData.GetDateSourceIndex(editLine.End.X);
+                            var point = linePoint.Value;
+                            if (point.X > editLine.End.X)
+                                point = ChartData.DataSource[index - 1];
+                            baseLine_endLine.Line = baseLine_endLine.BaseLine.CreateSplitLine(point);
+                            Debug.Assert(editLine.End.X >= baseLine_endLine.Start.X);
+
                         }
-                        
+
                     }
+                    editLine.End = chartPoint.Value;
                 }
             }
             else
@@ -124,7 +226,7 @@ namespace ChartEditLibrary.Interfaces
                 if (point.X == editLine.Start.X)
                     return;
                 SplitLine sl = (SplitLine)editLine;
-                if (point.X >= sl.BaseLine.Start.X && point.X <= sl.BaseLine.End.X)
+                if ((point.X >= sl.BaseLine.Start.X || point.X > sl.Start.X) && (point.X <= sl.BaseLine.End.X || point.X < sl.End.X))
                     editLine.Line = sl.BaseLine.CreateSplitLine(point);
             }
         }
@@ -148,6 +250,13 @@ namespace ChartEditLibrary.Interfaces
             PlotControl.Interaction.Enable();
             PlotControl.Refresh();
 
+        }
+
+        private bool actived;
+        public override void ChangeActived(bool actived)
+        {
+            base.ChangeActived(actived);
+            this.actived = actived;
         }
     }
 

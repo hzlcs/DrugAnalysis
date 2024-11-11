@@ -23,6 +23,11 @@
             Command="{Binding ImportCommand}"
             Content="导入样品" />
             <Button
+Width="130"
+Margin="5"
+Command="{Binding RemoveCommand}"
+Content="移除样品" />
+            <Button
             Width="130"
             Margin="5"
             Command="{Binding SaveResultCommand}"
@@ -32,16 +37,18 @@
             Margin="5"
             Command="{Binding ExportCommand}"
             Content="导出结果" />
-            <Button
-            Width="130"
-            Margin="5"
-            Command="{Binding RemoveCommand}"
-            Content="移除样品" />
+            
             <Button
             Width="130"
             Margin="5"
             Command="{Binding ResizeCommand}"
             Content="图表自适应" />
+            <Button
+            Width="130"
+            Margin="5"
+            Background="{Binding ChangeActive}"
+            Command="{Binding ChangeActivedCommand}"
+            Content="手动积分" />
             <Button
             Width="130"
             Margin="5"

@@ -31,12 +31,12 @@ namespace ChartEditWPF.ViewModels
             {
                 List<AreaDatabase> databases = [];
                 AreaDatabase.AreaRow[] rows = new AreaDatabase.AreaRow[Samples[0].Rows.Count];
-                string[] dp = Samples[0].DP;
+                string[] descriptions = Samples[0].Descriptions;
                 for (var i = 0; i < rows.Length; i++)
                 {
-                    rows[i] = new AreaDatabase.AreaRow(dp[i], Samples.SelectMany(v => v.GetValues(i)).ToArray());
+                    rows[i] = new AreaDatabase.AreaRow(descriptions[i], Samples.SelectMany(v => v.GetValues(i)).ToArray());
                 }
-                AreaDatabase database = new("样品", Samples.SelectMany(v => v.GetSampleNames()).ToArray(), dp, rows);
+                AreaDatabase database = new("样品", Samples.SelectMany(v => v.GetSampleNames()).ToArray(), descriptions, rows);
                 databases.Add(database);
                 databases.Add(this.database);
                 result = PCAManager.GetPCA([.. databases]);

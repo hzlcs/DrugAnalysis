@@ -14,7 +14,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ChartEditLibrary;
-using static ChartEditWPF.ViewModels.TCheckPageViewModel;
 
 namespace ChartEditWPF.ViewModels
 {
@@ -25,6 +24,9 @@ namespace ChartEditWPF.ViewModels
         protected readonly ISelectDialog _selectDialog;
         protected readonly ILogger<SamplePageViewModel> logger;
         protected AreaDatabase? database;
+
+        [ObservableProperty]
+        private string description = "-";
 
         public ObservableCollection<TCheckControlViewModel> Samples { get; } = [];
         public ObservableCollection<PValue> PValues { get; } = [];
@@ -42,38 +44,39 @@ namespace ChartEditWPF.ViewModels
         {
             if (data.Count == 0)
                 return;
-            string[]? dp = Samples.FirstOrDefault()?.DP;
+            string[]? descriptions = Samples.FirstOrDefault()?.Descriptions;
             List<string[]> newDp = [];
-            if (dp is not null)
-                newDp.Add(dp);
+            if (descriptions is not null)
+                newDp.Add(descriptions);
             foreach (var sample in data)
             {
-                newDp.Add(sample.DP);
+                newDp.Add(sample.Descriptions);
                 Samples.Add(sample);
             }
-            dp = SampleManager.MergeDP(newDp);
+            descriptions = SampleManager.MergeDescription(newDp);
             foreach (var sample in Samples)
             {
-                sample.ApplyDP(dp);
+                sample.ApplyDescription(descriptions);
             }
             if (PValues.Count == 0)
             {
-                foreach (var t in dp)
+                foreach (var t in descriptions)
                 {
                     PValues.Add(new PValue(t));
                 }
             }
-            for (var i = 0; i < dp.Length; ++i)
+            for (var i = 0; i < descriptions.Length; ++i)
             {
-                if (PValues[i].DP != dp[i])
+                if (PValues[i].Description != descriptions[i])
                 {
-                    PValues.Insert(i, new PValue(dp[i]));
+                    PValues.Insert(i, new PValue(descriptions[i]));
                 }
             }
             if (database is not null)
             {
                 DoWork();
             }
+            Description = Samples[0].Description;
         }
 
         [RelayCommand]
@@ -90,6 +93,11 @@ namespace ChartEditWPF.ViewModels
                     if (!File.Exists(fileName))
                         continue;
                     var sample = await SampleManager.GetSampleAreasAsync(fileName);
+                    if(Samples.Count > 0 && sample.Description != Samples[0].Description)
+                    {
+                        _messageBox.Popup(fileName + "\n样品类型不一致", NotificationType.Warning);
+                        continue;
+                    }
                     datas.Add(new TCheckControlViewModel(sample));
                 }
                 AddData(datas);
@@ -118,6 +126,11 @@ namespace ChartEditWPF.ViewModels
                     if (!File.Exists(fileName))
                         continue;
                     var database = await SampleManager.GetDatabaseAsync(fileName);
+                    if(Samples.Count > 0 && database.Description[0] != Samples[0].Description[0])
+                    {
+                        _messageBox.Popup(fileName + "\n样品类型不一致", NotificationType.Warning);
+                        continue;
+                    }
                     datas.AddRange(GetSample(database));
                 }
                 AddData(datas);
@@ -168,6 +181,11 @@ namespace ChartEditWPF.ViewModels
                 database = await SampleManager.GetDatabaseAsync(fileName[0]);
                 if (Samples.Count == 0)
                     return;
+                if (database.Description[0] != Samples[0].Description[0])
+                {
+                    _messageBox.Popup(fileName + "\n样品类型不一致", NotificationType.Warning);
+                    return;
+                }
                 DoWork();
                 _messageBox.Popup("导入数据库成功", NotificationType.Success);
             }
@@ -208,8 +226,8 @@ namespace ChartEditWPF.ViewModels
             foreach (var pair in sameSamples)
             {
                 var list = pair.Value;
-                var samples = list.Select(v => new SampleArea(pair.Key, [.. database.DP], database.Rows.Select(x => x.Areas[v]).ToArray())).ToArray();
-                datas.Add(new TCheckControlViewModel(samples));
+                var samples = list.Select(v => new SampleArea(pair.Key, [.. database.Descriptions], database.Rows.Select(x => x.Areas[v]).ToArray())).ToArray();
+                datas.Add(new TCheckControlViewModel(database.Description, samples));
             }
             if (@default.Count > 0)
             {
@@ -217,19 +235,19 @@ namespace ChartEditWPF.ViewModels
                     datas.Add(new TCheckControlViewModel(database));
                 else
                 {
-                    AreaDatabase @new = new(database.ClassName, @default.Select(v => database.SampleNames[v]).ToArray(), [.. database.DP],
-                        database.Rows.Select(v => new AreaDatabase.AreaRow(v.DP, @default.Select(i => v.Areas[i]).ToArray())).ToArray());
+                    AreaDatabase @new = new(database.ClassName, @default.Select(v => database.SampleNames[v]).ToArray(), [.. database.Descriptions],
+                        database.Rows.Select(v => new AreaDatabase.AreaRow(v.Description, @default.Select(i => v.Areas[i]).ToArray())).ToArray());
                     datas.Add(new TCheckControlViewModel(@new));
                 }
             }
             return datas;
         }
 
-        public class PValue(string dp) : INotifyPropertyChanged
+        public class PValue(string description) : INotifyPropertyChanged
         {
             public event PropertyChangedEventHandler? PropertyChanged;
 
-            public string DP { get; } = dp;
+            public string Description { get; } = description;
 
             private double? value;
             public double? Value

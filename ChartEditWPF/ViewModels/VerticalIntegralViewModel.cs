@@ -78,6 +78,8 @@ namespace ChartEditWPF.ViewModels
                     {
                         FilePath = vm.FilePath,
                         FileName = vm.FileName,
+                        ExportType = vm.exportType.ToString(),
+                        Description = vm.Description,
                         X = vm.DataSource.Select(x => x.X).ToArray(),
                         Y = vm.DataSource.Select(x => x.Y).ToArray(),
                         SaveContent = vm.GetSaveContent()
@@ -108,7 +110,7 @@ namespace ChartEditWPF.ViewModels
             {
                 try
                 {
-                    var vm = await DraggableChartVm.CreateAsync(file, type);
+                    var vm = await DraggableChartVm.CreateAsync(file, type, "DP");
                     vm.InitSplitLine(null);
                     var chartControl = App.ServiceProvider.GetRequiredService<SingleBaselineChartControl>();
                     chartControl.ChartData = vm;
@@ -151,23 +153,24 @@ namespace ChartEditWPF.ViewModels
                     var saveRow = vm.DraggableChartVM.GetSaveRow();
                     contents[fileKey].Add(saveRow);
                 }
+                string description = DataSources[0].DraggableChartVM.Description;
                 foreach (var content in contents)
                 {
 
                     var path = System.IO.Path.Combine(folderName, content.Key + ".csv");
                     var sb = new StringBuilder();
                     sb.AppendLine("," + string.Join(",,", content.Value.Select(v => v[0].line)));
-                    sb.AppendLine("DP," + string.Join(",,", content.Value.Select(v => v[1].line)));
-                    string[] dps = SampleManager.MergeDP(content.Value.Select(v => v.Skip(2).Select(x => x.dp).ToArray()));
+                    sb.AppendLine(description + "," + string.Join(",,", content.Value.Select(v => v[1].line)));
+                    string[] descriptions = SampleManager.MergeDescription(content.Value.Select(v => v.Skip(2).Select(x => x.description).ToArray()));
                     var count = content.Value[0][0].line.AsSpan().Count(",");
                     var emptyLine = new string(Enumerable.Repeat(',', count).ToArray());
-                    foreach (var dp in dps)
+                    foreach (var descriptionValue in descriptions)
                     {
-                        sb.Append($"DP{dp},");
+                        sb.Append($"{description}{descriptionValue},");
                         sb.Append(string.Join(",,", content.Value.Select(row =>
                         {
-                            var r = row.FirstOrDefault(v => v.dp == dp);
-                            return r.dp is null ? emptyLine : r.line;
+                            var r = row.FirstOrDefault(v => v.description == descriptionValue);
+                            return r.description is null ? emptyLine : r.line;
                         })));
                         sb.AppendLine();
                     }

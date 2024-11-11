@@ -17,6 +17,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using static ChartEditLibrary.ViewModel.DraggableChartVm;
 
 namespace ChartEditWPF.ViewModels
@@ -27,8 +28,6 @@ namespace ChartEditWPF.ViewModels
         private readonly IFileDialog _fileDialog;
         private readonly IMessageBox _messageBox;
         private readonly ILogger logger;
-
-        private readonly ExportType[] exportTypes = Enum.GetValues<ExportType>();
 
         public ObservableCollection<ShowControlViewModel> DataSources { get; set; } = [];
 
@@ -79,6 +78,8 @@ namespace ChartEditWPF.ViewModels
                     {
                         FilePath = vm.FilePath,
                         FileName = vm.FileName,
+                        Description = vm.Description,
+                        ExportType = null,
                         X = vm.DataSource.Select(x => x.X).ToArray(),
                         Y = vm.DataSource.Select(x => x.Y).ToArray(),
                         SaveContent = vm.GetSaveContent()
@@ -109,8 +110,7 @@ namespace ChartEditWPF.ViewModels
             {
                 try
                 {
-                    var vm = await DraggableChartVm.CreateAsync(file, default);
-                    vm.InitSplitLine(null);
+                    var vm = await DraggableChartVm.CreateAsync(file, default, "a");
                     var chartControl = App.ServiceProvider.GetRequiredService<MutiBaselineChartControl>();
                     chartControl.ChartData = vm;
                     var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
@@ -158,17 +158,17 @@ namespace ChartEditWPF.ViewModels
                     var path = System.IO.Path.Combine(folderName, content.Key + ".csv");
                     var sb = new StringBuilder();
                     sb.AppendLine("," + string.Join(",,", content.Value.Select(v => v[0].line)));
-                    sb.AppendLine("DP," + string.Join(",,", content.Value.Select(v => v[1].line)));
-                    string[] dps = SampleManager.MergeDP(content.Value.Select(v => v.Skip(2).Select(x => x.dp).ToArray()));
+                    sb.AppendLine("a," + string.Join(",,", content.Value.Select(v => v[1].line)));
+                    string[] descriptions = SampleManager.MergeDescription(content.Value.Select(v => v.Skip(2).Select(x => x.description).ToArray()));
                     var count = content.Value[0][0].line.AsSpan().Count(",");
                     var emptyLine = new string(Enumerable.Repeat(',', count).ToArray());
-                    foreach (var dp in dps)
+                    foreach (var description in descriptions)
                     {
-                        sb.Append($"DP{dp},");
+                        sb.Append($"a{description},");
                         sb.Append(string.Join(",,", content.Value.Select(row =>
                         {
-                            var r = row.FirstOrDefault(v => v.dp == dp);
-                            return r.dp is null ? emptyLine : r.line;
+                            var r = row.FirstOrDefault(v => v.description == description);
+                            return r.description is null ? emptyLine : r.line;
                         })));
                         sb.AppendLine();
                     }
@@ -234,5 +234,23 @@ namespace ChartEditWPF.ViewModels
                 }
             }
         }
+
+        private bool actived = false;
+
+        [ObservableProperty]
+        Brush changeActive = Brushes.White;
+
+        [RelayCommand]
+        private void ChangeActived()
+        {
+            actived = !actived;
+            ChangeActive = actived ? Brushes.LightGreen : Brushes.White;
+            foreach (var i in DataSources)
+            {
+                i.ChartControl.ChangeActived(actived);
+            }
+        }
+
+       
     }
 }

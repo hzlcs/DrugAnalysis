@@ -25,6 +25,8 @@ namespace ChartEditLibrary.ViewModel
     {
         public event Action<SplitLine>? DraggedLineChanged;
 
+        public string Description { get; }
+
         /// <summary>
         /// x轴单位间距
         /// </summary>
@@ -43,15 +45,13 @@ namespace ChartEditLibrary.ViewModel
 
         public ObservableCollection<BaseLine> BaseLines { get; } = [];
 
-        public bool SingleBaseLine { get; }
-
         public BaseLine? CurrentBaseLine { get; private set; }
 
         public ObservableCollection<SplitLine> SplitLines { get; } = [];
 
         public Coordinates[] DataSource { get; }
 
-        private ExportType exportType;
+        public ExportType exportType;
 
         /// <summary>
         /// 鼠标操作的敏感度
@@ -67,11 +67,12 @@ namespace ChartEditLibrary.ViewModel
         /// </summary>
         private bool initialized = false;
 
-        private DraggableChartVm(string filePath, Coordinates[] dataSource, ExportType exportType)
+        private DraggableChartVm(string filePath, Coordinates[] dataSource, ExportType? exportType, string description)
         {
             this.FilePath = filePath;
             this.FileName = Path.GetFileNameWithoutExtension(filePath);
-            this.exportType = exportType;
+            Description = description;
+            this.exportType = exportType ?? ExportType.Enoxaparin;
             this.DataSource = dataSource;
             Unit = dataSource[1].X - dataSource[0].X;
             yMax = dataSource[0];
@@ -85,8 +86,6 @@ namespace ChartEditLibrary.ViewModel
                     highestIndex = i;
                 }
             }
-            if (exportType != ExportType.None)
-                SingleBaseLine = true;
         }
 
         private BaseLine GetDefaultBaseLine()
@@ -134,8 +133,7 @@ namespace ChartEditLibrary.ViewModel
         public void UpdateBaseLine(BaseLine baseLine)
         {
             var newValue = baseLine.Line;
-            IEnumerable<SplitLine> splitLines = SingleBaseLine ? SplitLines : SplitLines.Where(v => v.BaseLine == baseLine).ToArray();
-            double sumArea = SumArea - splitLines.Sum(v => v.Area);
+            var splitLines = baseLine.SplitLines;
             foreach (SplitLine i in splitLines)
             {
                 var newY1 = newValue.Y(i.Start.X);
@@ -147,11 +145,7 @@ namespace ChartEditLibrary.ViewModel
                 i.Start = new Coordinates(i.Start.X, newY1);
             }
 
-            SumArea = sumArea + splitLines.Sum(x => x.Area);
-            foreach (var i in SplitLines)
-            {
-                i.AreaRatio = i.Area / SumArea;
-            }
+            UpdateArea();
         }
 
 
@@ -274,48 +268,11 @@ namespace ChartEditLibrary.ViewModel
             {
                 --SplitLines[i].Index;
             }
-
-            if (index == 0)
-            {
-                if (SplitLines.Count > 1)
-                {
-                    var changeLine = SplitLines[1];
-                    changeLine.NextLine = line.BaseLine;
-                    changeLine.Area = GetArea(SplitLines[1]);
-                    changeLine.AreaRatio = changeLine.Area / SumArea;
-                    if (DataSource[changeLine.RTIndex].Y < DataSource[line.RTIndex].Y)
-                    {
-                        changeLine.RTIndex = line.RTIndex;
-                        changeLine.RT = DataSource[line.RTIndex].X;
-                    }
-                }
-                else
-                {
-                    SumArea = 0;
-                }
-            }
-            else if (index == SplitLines.Count - 1)
-            {
-                SumArea -= line.Area;
-                foreach (var i in SplitLines)
-                {
-                    i.AreaRatio = i.Area / SumArea;
-                }
-            }
-            else
-            {
-                var changeLine = SplitLines[index + 1];
-                changeLine.NextLine = line.NextLine;
-                changeLine.Area += line.Area;
-                changeLine.AreaRatio = changeLine.Area / SumArea;
-                if (DataSource[changeLine.RTIndex].Y < DataSource[line.RTIndex].Y)
-                {
-                    changeLine.RTIndex = line.RTIndex;
-                    changeLine.RT = DataSource[changeLine.RTIndex].X;
-                }
-            }
-
             SplitLines.Remove(line);
+            line.BaseLine.RemoveSplitLine(line, this);
+            if (line.BaseLine.SplitLines.Count == 0)
+                BaseLines.Remove(line.BaseLine);
+            UpdateArea();
             DraggedLine = null;
         }
 
@@ -665,15 +622,15 @@ namespace ChartEditLibrary.ViewModel
                     }
                 }
 
-                AddSplitLine(CurrentBaseLine, DataSource[i]).DP = dp + "-" + sort;
+                AddSplitLine(CurrentBaseLine, DataSource[i]).Description = dp + "-" + sort;
                 ++sort;
             }
 
-            foreach (var i in SplitLines.GroupBy(v => v.DP![..^2]).ToArray())
+            foreach (var i in SplitLines.GroupBy(v => v.Description![..^2]).ToArray())
             {
                 if (i.Count() == 1)
                 {
-                    i.First().DP = i.Key;
+                    i.First().Description = i.Key;
                 }
             }
         }
@@ -730,6 +687,32 @@ namespace ChartEditLibrary.ViewModel
             return BaseLines.FirstOrDefault(v => v.Start.X <= point.X && v.End.X >= point.X);
         }
 
+        public BaseLine AddBaseLine(BaseLine baseLine)
+        {
+            BaseLines.Add(baseLine);
+            return baseLine;
+        }
+
+        public void RemoveLine(EditLineBase editLine)
+        {
+            if (editLine is BaseLine baseLine)
+            {
+                RemoveBaseLine(baseLine);
+            }
+            else if (editLine is SplitLine splitLine)
+            {
+                RemoveSplitLine(splitLine);
+            }
+        }
+        public void RemoveBaseLine(BaseLine baseLine)
+        {
+            BaseLines.Remove(baseLine);
+            foreach (var i in baseLine.SplitLines)
+            {
+                RemoveSplitLine(i);
+            }
+        }
+
         public SplitLine AddSplitLine(Coordinates point)
         {
             var baseLine = GetBaseLine(point)!;
@@ -742,12 +725,6 @@ namespace ChartEditLibrary.ViewModel
             var line = new SplitLine(baseLine, chartLine);
             AddSplitLine(line);
             return line;
-        }
-
-        public BaseLine AddBaseLine(BaseLine baseLine)
-        {
-            BaseLines.Add(baseLine);
-            return baseLine;
         }
 
         /// <summary>
@@ -764,91 +741,68 @@ namespace ChartEditLibrary.ViewModel
             {
                 ++SplitLines[i].Index;
             }
+            line.BaseLine.AddSplitLine(line, this);
+            UpdateArea();
+        }
 
-            if (index == 0)
+        public void UpdateArea()
+        {
+            SumArea = SplitLines.Sum(x => x.Area);
+            foreach (var i in SplitLines)
             {
-                line.NextLine = line.BaseLine;
-                if (SumArea == 0)
-                    SumArea = line.Area;
-                line.AreaRatio = line.Area / SumArea;
-                if (SplitLines.Count > 1)
-                {
-                    var parentLine = SplitLines[1];
-                    parentLine.NextLine = line;
-                    parentLine.Area = GetArea(SplitLines[1]);
-                    parentLine.AreaRatio = SplitLines[1].Area / SumArea;
-                    if (DataSource[parentLine.RTIndex].X < line.Start.X)
-                    {
-                        parentLine.RTIndex = GetDateSourceIndex(line.Start.X);
-                        parentLine.RT = DataSource[parentLine.RTIndex].X;
-                    }
-                }
-            }
-            else if (index == SplitLines.Count - 1)
-            {
-                line.NextLine = SplitLines[index - 1];
-                SumArea += line.Area;
-                foreach (var i in SplitLines)
-                {
-                    i.AreaRatio = i.Area / SumArea;
-                }
-            }
-            else
-            {
-                line.NextLine = SplitLines[index - 1];
-                line.AreaRatio = line.Area / SumArea;
-                var parentLine = SplitLines[index + 1];
-                parentLine.NextLine = line;
-                parentLine.Area = GetArea(SplitLines[index + 1]);
-                parentLine.AreaRatio = SplitLines[index + 1].Area / SumArea;
-                if (DataSource[parentLine.RTIndex].X < line.Start.X)
-                {
-                    parentLine.RTIndex = GetDateSourceIndex(line.Start.X);
-                    parentLine.RT = DataSource[parentLine.RTIndex].X;
-                }
+                i.AreaRatio = i.Area / SumArea;
             }
         }
 
-        public static async Task<DraggableChartVm> CreateAsync(string filePath, ExportType exportType)
+        public static async Task<DraggableChartVm> CreateAsync(string filePath, ExportType? exportType, string description)
         {
             var (dataSource, saveLine) = await ReadCsv(filePath).ConfigureAwait(false);
 
-            var res = new DraggableChartVm(filePath, dataSource, exportType);
+            var res = new DraggableChartVm(filePath, dataSource, exportType, description);
             if (saveLine != null)
                 res.ApplyResult(saveLine);
             return res;
-        }
-
-        private void ApplyResult(string[] lines)
-        {
-            var baseInfo = lines[0].Split(',');
-            exportType = Enum.Parse<ExportType>(baseInfo[1]);
-            if (SingleBaseLine)
-            {
-                CurrentBaseLine = GetDefaultBaseLine();
-                BaseLines.Add(CurrentBaseLine);
-                CurrentBaseLine.Start = new Coordinates(double.Parse(baseInfo[2]), double.Parse(baseInfo[3]));
-                CurrentBaseLine.End = new Coordinates(double.Parse(baseInfo[4]), double.Parse(baseInfo[5]));
-            }
-            for (var i = 2; i < lines.Length; i++)
-            {
-                string[] data = lines[i].Split(',');
-                var x = double.Parse(data[1]);
-                var point = GetChartPoint(x);
-                if (point.HasValue)
-                    AddSplitLine(point.Value).DP = data[6][2..].TrimEnd('\r');
-            }
-
-            initialized = true;
         }
 
         public static DraggableChartVm Create(CacheContent cache)
         {
             var dataSource = Enumerable.Range(0, cache.X.Length).Select(i => new Coordinates(cache.X[i], cache.Y[i]))
                 .ToArray();
-            var vm = new DraggableChartVm(cache.FilePath, dataSource, ExportType.None);
+            ExportType? type = null;
+            if(cache.ExportType is not null && Enum.TryParse<ExportType>(cache.ExportType, out var t))
+                type = t;
+            var vm = new DraggableChartVm(cache.FilePath, dataSource, type, cache.Description);
             vm.ApplyResult(cache.SaveContent);
             return vm;
+        }
+
+        internal void ApplyResult(string saveContent)
+        {
+            var lines = saveContent.Split(Environment.NewLine);
+            ApplyResult(lines);
+        }
+
+        private void ApplyResult(string[] lines)
+        {
+            var baseInfo = lines[0].Split(',');
+            BaseLine[] baseLines = SaveManager.GetBaseLine(baseInfo);
+
+            foreach (var i in baseLines)
+            {
+                BaseLines.Add(i);
+            }
+            CurrentBaseLine = BaseLines[BaseLines.Count - 1];
+
+            for (var i = 2; i < lines.Length; i++)
+            {
+                string[] data = lines[i].Split(',');
+                var x = double.Parse(data[1]);
+                var point = GetChartPoint(x);
+                if (point.HasValue)
+                    AddSplitLine(point.Value).Description = data[6][Description.Length..].TrimEnd('\r');
+            }
+
+            initialized = true;
         }
 
         /// <summary>
@@ -860,24 +814,26 @@ namespace ChartEditLibrary.ViewModel
             return string.Join(Environment.NewLine, GetSaveRowContent());
         }
 
+
         //ToDo: 多基线保存
         private string[] GetSaveRowContent()
         {
             var baseInfo =
-                $"{FileName},{exportType},{CurrentBaseLine?.Start.X},{CurrentBaseLine?.Start.Y},{CurrentBaseLine?.End.X},{CurrentBaseLine?.End.Y},";
-            var title = "Peak,Start X,End X,Center X,Area,Area Sum %,DP";
+                $"{FileName},{exportType},{SaveManager.GetBaseLineStr(BaseLines)},,,";
+            var title = $"Peak,Start X,End X,Center X,Area,Area Sum %,{Description}";
             IEnumerable<string> lines = SplitLines.Select(x =>
-                $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2},DP{x.DP}");
+                $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2},{Description}{x.Description}");
             return lines.Prepend(title).Prepend(baseInfo).ToArray();
         }
 
         public SaveRow[] GetSaveRow()
         {
+            var baseLineStr = SaveManager.GetBaseLineStr(BaseLines);
             SaveRow baseInfo = new("",
-                $"{FileName},{exportType},{CurrentBaseLine?.Start.X},{CurrentBaseLine?.Start.Y},{CurrentBaseLine?.End.X},{CurrentBaseLine?.End.Y}");
+                $"{FileName},{exportType},{baseLineStr},,,");
             SaveRow title = new("", "Peak,Start X,End X,Center X,Area,Area Sum %");
             var lines = SplitLines.Select(x =>
-                new SaveRow(x.DP!,
+                new SaveRow(x.Description!,
                     $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2}"));
             return lines.Prepend(title).Prepend(baseInfo).ToArray();
         }
@@ -926,17 +882,13 @@ namespace ChartEditLibrary.ViewModel
             }
         }
 
-        public readonly struct SaveRow(string dp, string line)
+        public readonly struct SaveRow(string description, string line)
         {
-            public readonly string dp = dp;
+            public readonly string description = description;
             public readonly string line = line;
         }
 
-        internal void ApplyResult(string saveContent)
-        {
-            var lines = saveContent.Split(Environment.NewLine);
-            ApplyResult(lines);
-        }
+        
 
         /// <summary>
         /// 分割线移动时，检测是否跨过相邻分割线
@@ -946,7 +898,7 @@ namespace ChartEditLibrary.ViewModel
             if (oldValue.Start.X < newValue.Start.X)
             {
                 var after = SplitLines.ElementAtOrDefault(draggedSplitLineIndex + 1);
-                if (after == null || !(oldValue.Start.X >= after.Start.X)) return;
+                if (after == null || after.BaseLine != splitLine.BaseLine || !(oldValue.Start.X >= after.Start.X)) return;
                 SplitLines[draggedSplitLineIndex] = after;
                 SplitLines[draggedSplitLineIndex + 1] = splitLine;
                 after.NextLine = splitLine.NextLine;
@@ -961,7 +913,7 @@ namespace ChartEditLibrary.ViewModel
             {
                 var before = SplitLines.ElementAtOrDefault(draggedSplitLineIndex - 1);
                 //跨过分割线后，交换其与跨过的线在集合中的位置
-                if (before == null || !(oldValue.Start.X <= before.Start.X)) return;
+                if (before == null || before.BaseLine != splitLine.BaseLine || !(oldValue.Start.X <= before.Start.X)) return;
                 SplitLines[draggedSplitLineIndex] = before;
                 SplitLines[draggedSplitLineIndex - 1] = splitLine;
                 splitLine.NextLine = before.NextLine;
@@ -1017,15 +969,8 @@ namespace ChartEditLibrary.ViewModel
             //更新面积
             line.Area += change;
             line.AreaRatio = line.Area / SumArea;
-            //当前是最后一个分割线时更新总面积及分割线的面积比例
-            if (line.Index == SplitLines.Count)
-            {
-                SumArea += change;
-                foreach (var temp in SplitLines)
-                {
-                    temp.AreaRatio = temp.Area / SumArea;
-                }
-            }
+
+
 
             //更新RT值
             if (right)
@@ -1047,11 +992,17 @@ namespace ChartEditLibrary.ViewModel
                 }
             }
 
+            //当前是最后一个分割线时更新总面积及分割线的面积比例
+            if (line == line.BaseLine.SplitLines.Last())
+            {
+                UpdateArea();
+                return;
+            }
 
 
             //处理移动对右边一条线的影响
             var rightLine = SplitLines.ElementAtOrDefault(line.Index);
-            if (rightLine is null)
+            if (rightLine is null || rightLine.BaseLine != line.BaseLine)
                 return;
 
             //此时面积为减去变化量
@@ -1157,5 +1108,27 @@ namespace ChartEditLibrary.ViewModel
                 throw new Exception(Path.GetFileNameWithoutExtension(path) + "数据格式错误");
             }
         }
+
+        class SaveManager
+        {
+            public static BaseLine[] GetBaseLine(string[] columns)
+            {
+                var baseLineStrs = columns[2];
+                return baseLineStrs.Split(';').Select(v =>
+                {
+                    var temp = v.Split(':');
+                    var start = temp[0][1..^1].Split(' ').Select(double.Parse).ToArray();
+                    var end = temp[1][1..^1].Split(' ').Select(double.Parse).ToArray();
+                    return new BaseLine(new Coordinates(start[0], start[1]),
+                        new Coordinates(end[0], end[1]));
+                }).ToArray();
+            }
+
+            public static string GetBaseLineStr(IEnumerable<BaseLine> baseLines)
+            {
+                return string.Join(";", baseLines.Select(x => $"({x.Start.X} {x.Start.Y}):({x.End.X} {x.End.Y})").ToArray());
+            }
+        }
+
     }
 }

@@ -7,38 +7,38 @@ using System.Threading.Tasks;
 
 namespace ChartEditLibrary.Model
 {
-    internal readonly struct DPString
+    internal readonly struct DescriptionString
     {
-        public string DP { get; }
+        public string Description { get; }
 
-        public DPString(string dp)
+        public DescriptionString(string description)
         {
-            if(dp.Contains('-'))
-                DP = dp;
+            if(description.Contains('-'))
+                Description = description;
             else
-                DP = dp + "-1";
+                Description = description + "-1";
         }
 
-        public static bool operator ==(DPString left, DPString right)
+        public static bool operator ==(DescriptionString left, DescriptionString right)
         {
-            return left.DP == right.DP;
+            return left.Description == right.Description;
         }
-        public static bool operator !=(DPString left, DPString right)
+        public static bool operator !=(DescriptionString left, DescriptionString right)
         {
-            return left.DP != right.DP;
+            return left.Description != right.Description;
         }
         public override bool Equals([NotNullWhen(true)] object? obj)
         {
-            if(obj is DPString other)
+            if(obj is DescriptionString other)
             {
-                return DP == other.DP;
+                return Description == other.Description;
             }
             return false;
         }
 
         public override int GetHashCode()
         {
-            return DP.GetHashCode();
+            return Description.GetHashCode();
         }
     }
 }

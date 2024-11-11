@@ -53,7 +53,7 @@ namespace ChartEditWPF.Windows
             ScottPlot.Palettes.Category10 palette = new();
             List<Bar> bars = new List<Bar>();
             var legendItems = legend.ManualItems;
-            var rowCount = samples[0].DP.Length;
+            var rowCount = samples[0].Descriptions.Length;
             var colCount = samples.Length;
 
             for (var col = 0; col < colCount; ++col)
@@ -90,7 +90,7 @@ namespace ChartEditWPF.Windows
             var ticks = new Tick[rowCount];
             for (var i = 0; i < rowCount; ++i)
             {
-                ticks[i] = new Tick(i * (colCount + 1) + colCount / 2 - 1, "dp" + samples[0].DP[i]);
+                ticks[i] = new Tick(i * (colCount + 1) + colCount / 2 - 1, samples[0].Description + samples[0].Descriptions[i]);
             }
             myPlot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.NumericManual(ticks);
 

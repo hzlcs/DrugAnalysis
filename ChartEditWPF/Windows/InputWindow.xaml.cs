@@ -27,6 +27,8 @@ namespace ChartEditWPF.Windows
         public InputWindow(string? value, Action<string> callback) : this()
         {
             txt.Text = value;
+            txt.Focus();
+            txt.SelectAll();
             this.callback = callback;
         }
 

@@ -13,24 +13,25 @@ namespace ChartEditLibrary.Model
     public static class SampleManager
     {
 
-        public static async Task<SampleArea[]> GetSampleAreasAsync(string fileName)
+        public static async Task<SampleResult> GetSampleAreasAsync(string fileName)
         {
             if (!File.Exists(fileName))
                 throw new FileNotFoundException("未找到样品文件", fileName);
             using StreamReader sr = new(File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
             var text = (await sr.ReadToEndAsync()).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
             var title = text[0];
+            string description = text[1][0];
             var sampleAreas = new SampleArea[(title.Length - 1) / 6];
-            var dps = text.Skip(2).Select(v => v[0][2..]).ToArray();
+            var descriptions = text.Skip(2).Select(v => v[0][description.Length..]).ToArray();
             for (var i = 0; i < sampleAreas.Length; ++i)
             {
-                sampleAreas[i] = new SampleArea(title[1 + i * 7], dps, text.Skip(2).Select(v =>
+                sampleAreas[i] = new SampleArea(title[1 + i * 7], descriptions, text.Skip(2).Select(v =>
                 {
                     var value = v[1 + i * 7 + 5];
                     return string.IsNullOrEmpty(value) ? null : new float?(float.Parse(value));
                 }).ToArray());
             }
-            return sampleAreas;
+            return new SampleResult(description, sampleAreas);
         }
 
         /// <summary>
@@ -53,14 +54,15 @@ namespace ChartEditLibrary.Model
             {
                 string[][] lines = text.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
                 string[] sampleNames = lines[0].Skip(1).ToArray();
-                string[] dps = lines.Skip(1).Select(v =>
+                string description = new string(lines[1][0].TakeWhile(v => !char.IsDigit(v)).ToArray());
+                string[] descriptions = lines.Skip(1).Select(v =>
                 {
-                    var t = v[0].ToUpper();
-                    return t[(t.IndexOf("DP") + 2)..];
+                    var t = v[0];
+                    return t[(t.IndexOf(description) + description.Length)..];
 
                 }).ToArray();
-                AreaRow[] rows = new AreaRow[dps.Length];
-                for (var i = 0; i < dps.Length; i++)
+                AreaRow[] rows = new AreaRow[descriptions.Length];
+                for (var i = 0; i < descriptions.Length; i++)
                 {
                     var areas = new float?[sampleNames.Length];
                     for (var j = 0; j < sampleNames.Length; j++)
@@ -70,9 +72,9 @@ namespace ChartEditLibrary.Model
                             areas[j] = value;
                         }
                     }
-                    rows[i] = new AreaRow(dps[i], areas);
+                    rows[i] = new AreaRow(descriptions[i], areas);
                 }
-                return new AreaDatabase(Path.GetFileNameWithoutExtension(fileName), sampleNames, dps, rows);
+                return new AreaDatabase(Path.GetFileNameWithoutExtension(fileName), sampleNames, descriptions, rows);
             }
             catch (Exception ex)
             {
@@ -81,10 +83,10 @@ namespace ChartEditLibrary.Model
 
         }
 
-        public static string[] MergeDP(IEnumerable<string[]> dps)
+        public static string[] MergeDescription(IEnumerable<string[]> descriptions)
         {
-            var temp = dps.SelectMany(v => v).Distinct().ToList();
-            var single = temp.Where(v => !v.Contains('-')).ToArray();
+            var temp = descriptions.SelectMany(v => v).Distinct().ToList();
+            var single = temp.Where(v => v is not null && !v.Contains('-')).ToArray();
             foreach (var s in single)
             {
                 if (temp.Contains(s + "-1"))
@@ -93,11 +95,11 @@ namespace ChartEditLibrary.Model
                 }
             }
             string[] res = [.. temp];
-            Array.Sort(res, DPCompare);
+            Array.Sort(res, DescriptionCompare);
             return res;
         }
 
-        private static int DPCompare(string l, string r)
+        private static int DescriptionCompare(string l, string r)
         {
             var ls = l.Split('-').Select(int.Parse).ToArray();
             var rs = r.Split('-').Select(int.Parse).ToArray();
@@ -237,31 +239,33 @@ namespace ChartEditLibrary.Model
     {
         public string ClassName { get; }
         public string[] SampleNames { get; }
-        private readonly List<string> dp;
-        public IReadOnlyList<string> DP => dp;
-        private IReadOnlyList<DPString> DPString { get; }
+        public string Description { get; }
+        private readonly List<string> descriptions;
+        public IReadOnlyList<string> Descriptions => descriptions;
+        private IReadOnlyList<DescriptionString> DescriptionString { get; }
         public AreaRow[] Rows { get; }
 
-        public AreaRow this[string dp]
+        public AreaRow this[string description]
         {
             get
             {
 
-                var index = this.dp.IndexOf(dp);
+                var index = this.descriptions.IndexOf(description);
                 if (index == -1)
                 {
-                    throw new IndexOutOfRangeException("DP not found");
+                    throw new IndexOutOfRangeException("Description not found");
                 }
                 return Rows[index];
             }
         }
 
-        public AreaDatabase(string className, string[] sampleNames, string[] dps, AreaRow[] rows)
+        public AreaDatabase(string className, string[] sampleNames, string[] descriptions, AreaRow[] rows)
         {
             this.ClassName = className;
             this.SampleNames = sampleNames;
-            this.dp = new List<string>(dps);
-            this.DPString = this.DP.Select(v => new DPString(v)).ToList();
+            this.Description = new string(descriptions[0].TakeWhile(v => !char.IsDigit(v)).ToArray());
+            this.descriptions = new List<string>(descriptions);
+            this.DescriptionString = this.Descriptions.Select(v => new DescriptionString(v)).ToList();
             this.Rows = rows;
         }
 
@@ -269,17 +273,18 @@ namespace ChartEditLibrary.Model
         {
             ClassName = database.ClassName;
             SampleNames = database.SampleNames;
-            dp = database.dp;
-            DPString = database.DPString;
+            descriptions = database.descriptions;
+            Description = database.Description;
+            DescriptionString = database.DescriptionString;
             Rows = database.Rows;
         }
 
-        public bool TryGetRow(string dp, [MaybeNullWhen(false)] out AreaRow row)
+        public bool TryGetRow(string description, [MaybeNullWhen(false)] out AreaRow row)
         {
-            DPString dPString = new(dp);
-            for (int i = 0; i < DPString.Count; i++)
+            DescriptionString descriptionString = new(description);
+            for (int i = 0; i < DescriptionString.Count; i++)
             {
-                if (DPString[i] == dPString)
+                if (DescriptionString[i] == descriptionString)
                 {
                     row = Rows[i];
                     return true;
@@ -293,15 +298,15 @@ namespace ChartEditLibrary.Model
 
         public class AreaRow
         {
-            public string DP { get; }
+            public string Description { get; }
             public float?[] Areas { get; }
             public float? Average { get; }
             public double StdDev { get; }
             public double RSD { get; }
 
-            public AreaRow(string dp, float?[] areas)
+            public AreaRow(string description, float?[] areas)
             {
-                this.DP = dp;
+                this.Description = description;
                 this.Areas = areas;
                 var values = areas.Where(v => v.HasValue).Select(v => v!.Value).ToArray();
                 if (values.Length <= 0)
@@ -345,5 +350,7 @@ namespace ChartEditLibrary.Model
         }
     }
 
-    public record SampleArea(string SampleName, string[] DP, float?[] Area);
+    public record SampleResult(string Description, SampleArea[] SampleAreas);
+
+    public record SampleArea(string SampleName, string[] Descriptions, float?[] Area);
 }

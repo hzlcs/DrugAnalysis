@@ -19,7 +19,9 @@ namespace ChartEditWPF.ViewModels
     {
         public string SampleName { get; }
 
-        public string[] DP { get; private set; }
+        public string Description { get; }
+
+        public string[] Descriptions { get; private set; }
 
         public string[] Columns { get; }
 
@@ -31,18 +33,24 @@ namespace ChartEditWPF.ViewModels
 
         public ObservableCollection<DataRow> DataRows { get; } = [];
 
-        public TCheckControlViewModel(SampleArea[] sampleAreas)
+        public TCheckControlViewModel(SampleResult sample) : this(sample.Description, sample.SampleAreas)
+        {
+
+        }
+
+        public TCheckControlViewModel(string description, SampleArea[] sampleAreas)
         {
             SampleName = sampleAreas[0].SampleName;
             SampleName = SampleName[..SampleName.LastIndexOf('-')];
             Samples = sampleAreas;
             Columns = sampleAreas.Select(s => s.SampleName).ToArray();
             ColumnDatas = new ObservableCollection<Data>(Columns.Select(v => new Data(v, 125)).Concat(SourceArray.Select(v => new Data(v, 50))).ToList());
-            DP = sampleAreas[0].DP;
-            for (var i = 0; i < DP.Length; i++)
+            Descriptions = sampleAreas[0].Descriptions;
+            Description = description;
+            for (var i = 0; i < Descriptions.Length; i++)
             {
                 var values = sampleAreas.Select(s => s.Area[i]).ToArray();
-                Rows.Add(new AreaDatabase.AreaRow(DP[i], values));
+                Rows.Add(new AreaDatabase.AreaRow(Descriptions[i], values));
                 DataRows.Add(GetDataRow(Rows[i]));
             }
         }
@@ -52,11 +60,14 @@ namespace ChartEditWPF.ViewModels
             SampleName = database.ClassName;
             Columns = [.. database.SampleNames];
             ColumnDatas = new ObservableCollection<Data>(Columns.Select(v => new Data(v, 125)).Concat(SourceArray.Select(v => new Data(v, 50))).ToList());
-            DP = [.. database.DP];
+            Descriptions = [.. database.Descriptions];
+            Description = database.Description;
             Rows = new ObservableCollection<AreaDatabase.AreaRow>(database.Rows);
             DataRows = new ObservableCollection<DataRow>(database.Rows.Select(GetDataRow));
             Samples = null;
         }
+
+        
 
         private static DataRow GetDataRow(AreaDatabase.AreaRow row)
         {
@@ -68,22 +79,22 @@ namespace ChartEditWPF.ViewModels
             ]).ToList());
         }
 
-        public void ApplyDP(string[] dp)
+        public void ApplyDescription(string[] description)
         {
-            DP = dp;
+            Descriptions = description;
             int i;
-            for (i = 0; i < DP.Length && i < Rows.Count; i++)
+            for (i = 0; i < Descriptions.Length && i < Rows.Count; i++)
             {
-                if (Rows[i].DP == dp[i])
+                if (Rows[i].Description == description[i])
                     continue;
-                Rows.Insert(i, new AreaDatabase.AreaRow(dp[i], new float?[Rows[0].Areas.Length]));
+                Rows.Insert(i, new AreaDatabase.AreaRow(description[i], new float?[Rows[0].Areas.Length]));
                 DataRows.Insert(i, GetDataRow(Rows[i]));
             }
-            if (i < DP.Length)
+            if (i < Descriptions.Length)
             {
-                for (; i < DP.Length; i++)
+                for (; i < Descriptions.Length; i++)
                 {
-                    Rows.Add(new AreaDatabase.AreaRow(dp[i], new float?[Rows[0].Areas.Length]));
+                    Rows.Add(new AreaDatabase.AreaRow(description[i], new float?[Rows[0].Areas.Length]));
                     DataRows.Add(GetDataRow(Rows[i]));
                 }
             }

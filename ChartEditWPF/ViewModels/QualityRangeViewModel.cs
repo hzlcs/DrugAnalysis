@@ -20,7 +20,10 @@ namespace ChartEditWPF.ViewModels
     public partial class QualityRangeViewModel(IFileDialog _fileDialog, IMessageBox _messageBox, ISelectDialog _selectDialog, ILogger<QualityRangeViewModel> logger) : ObservableObject
     {
         [ObservableProperty]
-        private string[]? dp = [];
+        private string[]? descriptions = [];
+
+        [ObservableProperty]
+        private string description = "-";
 
         public ObservableCollection<QualityRangeControlViewModel> QualityRanges { get; } = [];
 
@@ -28,21 +31,22 @@ namespace ChartEditWPF.ViewModels
         {
             if (data.Count == 0)
                 return;
-            string[]? dp = QualityRanges.FirstOrDefault()?.DP;
-            List<string[]> newDp = [];
-            if (dp is not null)
-                newDp.Add(dp);
+            string[]? descriptions = QualityRanges.FirstOrDefault()?.Descriptions;
+            List<string[]> newDescriptions = [];
+            if (descriptions is not null)
+                newDescriptions.Add(descriptions);
             foreach (var sample in data)
             {
-                newDp.Add(sample.DP);
+                newDescriptions.Add(sample.Descriptions);
                 QualityRanges.Add(sample);
             }
-            dp = SampleManager.MergeDP(newDp);
+            descriptions = SampleManager.MergeDescription(newDescriptions);
             foreach (var sample in QualityRanges)
             {
-                sample.ApplyDP(dp);
+                sample.ApplyDescription(descriptions);
             }
-            Dp = dp;
+            Descriptions = descriptions;
+            Description = QualityRanges[0].Description;
             //if (database is not null)
             //{
             //    DoWork();
@@ -66,6 +70,11 @@ namespace ChartEditWPF.ViewModels
                         if (!File.Exists(fileName))
                             continue;
                         var sample = await SampleManager.GetSampleAreasAsync(fileName);
+                        if (QualityRanges.Count > 0 && sample.Description != QualityRanges[0].Description)
+                        {
+                            _messageBox.Popup(fileName + "\n样品类型不一致", NotificationType.Warning);
+                            continue;
+                        }
                         datas.Add(new QualityRangeControlViewModel(sample));
                     }
                     catch (Exception ex)
@@ -136,8 +145,8 @@ namespace ChartEditWPF.ViewModels
             foreach (var pair in sameSamples)
             {
                 var list = pair.Value;
-                var samples = list.Select(v => new SampleArea(pair.Key, [.. database.DP], database.Rows.Select(x => x.Areas[v]).ToArray())).ToArray();
-                datas.Add(new QualityRangeControlViewModel(samples));
+                var samples = list.Select(v => new SampleArea(pair.Key, [.. database.Descriptions], database.Rows.Select(x => x.Areas[v]).ToArray())).ToArray();
+                datas.Add(new QualityRangeControlViewModel(database.Description, samples));
             }
             if (@default.Count > 0)
             {
@@ -145,8 +154,8 @@ namespace ChartEditWPF.ViewModels
                     datas.Add(new QualityRangeControlViewModel(database));
                 else
                 {
-                    AreaDatabase @new = new(database.ClassName, @default.Select(v => database.SampleNames[v]).ToArray(), [.. database.DP],
-                        database.Rows.Select(v => new AreaDatabase.AreaRow(v.DP, @default.Select(i => v.Areas[i]).ToArray())).ToArray());
+                    AreaDatabase @new = new(database.ClassName, @default.Select(v => database.SampleNames[v]).ToArray(), [.. database.Descriptions],
+                        database.Rows.Select(v => new AreaDatabase.AreaRow(v.Description, @default.Select(i => v.Areas[i]).ToArray())).ToArray());
                     datas.Add(new QualityRangeControlViewModel(@new));
                 }
             }
@@ -191,7 +200,7 @@ namespace ChartEditWPF.ViewModels
                 return;
             foreach (var obj in objs)
                 QualityRanges.Remove(QualityRanges.First(v => v.SampleName == (string)obj));
-            Dp = QualityRanges.FirstOrDefault()?.DP;
+            Descriptions = QualityRanges.FirstOrDefault()?.Descriptions;
         }
 
         [RelayCommand]
@@ -205,19 +214,20 @@ namespace ChartEditWPF.ViewModels
             try
             {
                 var sb = new StringBuilder();
-                string[] dps = QualityRanges[0].DP;
+                string[] descriptions = QualityRanges[0].Descriptions;
+                string description = QualityRanges[0].Description;
                 var saveDatas = QualityRanges.Select(v => v.GetSaveData()).ToArray();
-                sb.AppendLine($"DP," + string.Join(",,", saveDatas.Select(v => string.Join(",", v.Column))));
-                for (var i = 0; i < dps.Length; ++i)
+                sb.AppendLine($"{description}," + string.Join(",,", saveDatas.Select(v => string.Join(",", v.Column))));
+                for (var i = 0; i < descriptions.Length; ++i)
                 {
-                    sb.Append("DP" + dps[i] + ",");
+                    sb.Append($"{description}{descriptions[i]},");
                     foreach (var data in saveDatas)
                     {
                         sb.Append(string.Join(",", data.Rows[i]));
                         sb.Append(",,");
                     }
                     sb.Remove(sb.Length - 2, 2);
-                    if (i != dps.Length - 1)
+                    if (i != descriptions.Length - 1)
                         sb.AppendLine();
                 }
                 File.WriteAllText(fileNames[0], sb.ToString(), Encoding.UTF8);

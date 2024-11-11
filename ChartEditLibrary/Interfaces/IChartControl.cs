@@ -40,6 +40,8 @@ namespace ChartEditLibrary.Interfaces
 
         void BindControl(IPlotControl chartPlot);
 
+        void ChangeActived(bool actived);
+
     }
 
     public abstract class ChartControl(IMessageBox messageBox, IFileDialog dialog, IInputForm inputForm) : IChartControl
@@ -86,14 +88,13 @@ namespace ChartEditLibrary.Interfaces
                 chartPlot.AddSplitLine(i);
             }
             ChartData.SplitLines.CollectionChanged += VerticalLines_CollectionChanged;
-            //chartData.SplitLines[chartData.SplitLines.Count - 1].TrySetDPIndex(2);
-            //chartPlot.PerformAutoScale();
+
             var plot = chartPlot.Plot;
             plot.FigureBackground.Color = System.Drawing.Color.White.ToScottColor();
             plot.Grid.IsVisible = false;
             chartPlot.Plot.Axes.AutoScale();
             chartPlot.Refresh();
-
+            chartPlot.Menu.Clear();
         }
 
         private void BaseLines_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -182,6 +183,7 @@ namespace ChartEditLibrary.Interfaces
         public abstract void MouseMove(object? sender, PointF mousePoint);
 
         public abstract void MouseUp(object? sender);
+        public virtual void ChangeActived(bool actived) { }
     }
 
 

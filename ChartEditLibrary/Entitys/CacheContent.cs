@@ -17,6 +17,8 @@ namespace ChartEditLibrary.Entitys
 
         public string FilePath { get; set; } = null!;
         public string FileName { get; set; } = null!;
+        public string? ExportType { get; set; }
+        public string Description { get; set; } = null!;
         public double[] X { get; set; } = null!;
         public double[] Y { get; set; } = null!;
         public string SaveContent { get; set; } = null!;

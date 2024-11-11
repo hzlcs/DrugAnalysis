@@ -38,7 +38,7 @@
                     ItemsSource="{Binding PValues}"
                     RowHeight="30">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Binding="{Binding DP}" Header="DP" />
+                        <DataGridTextColumn Binding="{Binding Description}" Header="{Binding Source={StaticResource bind}, Path=Data.Description}" />
                         <DataGridTemplateColumn>
                             <DataGridTemplateColumn.Header>
                                 <StackPanel

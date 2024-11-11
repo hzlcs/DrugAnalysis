@@ -34,7 +34,9 @@ namespace ChartEditWPF.ViewModels
 
         public string SampleName { get; }
 
-        public string[] DP { get; private set; }
+        public string Description { get; }
+
+        public string[] Descriptions { get; private set; }
 
         public string[] Columns { get; }
 
@@ -44,17 +46,23 @@ namespace ChartEditWPF.ViewModels
 
         public ObservableCollection<RangeRow> DataRows { get; } = [];
 
-        public QualityRangeControlViewModel(SampleArea[] sampleAreas)
+        public QualityRangeControlViewModel(SampleResult sample) : this(sample.Description, sample.SampleAreas)
+        {
+
+        }
+
+        public QualityRangeControlViewModel(string description, SampleArea[] sampleAreas)
         {
             Columns = sampleAreas.Select(s => s.SampleName).ToArray();
             DataColumns = [[.. Columns.Select(v => new Data(v, 125)), .. SourceArray.Select(v => new Data(v, 50))]];
             SampleName = Columns[0][..Columns[0].LastIndexOf('-')];
-            DP = sampleAreas[0].DP;
-            for (var i = 0; i < DP.Length; i++)
+            Descriptions = sampleAreas[0].Descriptions;
+            Description = description;
+            for (var i = 0; i < Descriptions.Length; i++)
             {
                 var values = sampleAreas.Select(s => s.Area[i]).ToArray();
-                RangeRow row = new RangeRow(DP[i]);
-                row.Data.Add(new RangeData(new AreaDatabase.AreaRow(DP[i], values)));
+                RangeRow row = new RangeRow(Descriptions[i]);
+                row.Data.Add(new RangeData(new AreaDatabase.AreaRow(Descriptions[i], values)));
                 DataRows.Add(row);
             }
         }
@@ -65,12 +73,13 @@ namespace ChartEditWPF.ViewModels
             Columns = database.SampleNames;
             DataColumns = Columns.Select(v => new Data[] { new(v, 125) }).ToArray();
             SampleName = database.ClassName;
-            DP = [.. database.DP];
-            for (var i = 0; i < DP.Length; i++)
+            Descriptions = [.. database.Descriptions];
+            Description = database.Description;
+            for (var i = 0; i < Descriptions.Length; i++)
             {
-                if (database.TryGetRow(DP[i], out var row))
+                if (database.TryGetRow(Descriptions[i], out var row))
                 {
-                    var rangeRow = new RangeRow(DP[i]);
+                    var rangeRow = new RangeRow(Descriptions[i]);
                     foreach (var area in row.Areas)
                         rangeRow.Data.Add(new RangeData(area.GetValueOrDefault()));
                     DataRows.Add(rangeRow);
@@ -80,18 +89,18 @@ namespace ChartEditWPF.ViewModels
 
 
 
-        public void ApplyDP(string[] dp)
+        public void ApplyDescription(string[] descriptions)
         {
-            DP = dp;
-            for (var i = 0; i < DP.Length; i++)
+            Descriptions = descriptions;
+            for (var i = 0; i < Descriptions.Length; i++)
             {
-                string rowDP = DataRows[i].DP;
-                if (rowDP == dp[i])
+                string rowDescription = DataRows[i].Description;
+                if (rowDescription == descriptions[i])
                     continue;
-                else if (!rowDP.Contains('-') && rowDP + "-1" == dp[i])
-                    DataRows[i].DP = dp[i];
+                else if (!rowDescription.Contains('-') && rowDescription + "-1" == descriptions[i])
+                    DataRows[i].Description = descriptions[i];
                 else
-                    DataRows.Insert(i, DataRows[0].NewRow(dp[i]));
+                    DataRows.Insert(i, DataRows[0].NewRow(descriptions[i]));
             }
         }
 
@@ -118,8 +127,8 @@ namespace ChartEditWPF.ViewModels
         {
             foreach (var row in DataRows)
             {
-                var dp = row.DP;
-                if (!database.TryGetRow(dp, out var dataRow))
+                var description = row.Description;
+                if (!database.TryGetRow(description, out var dataRow))
                 {
                     if (sample is null)
                     {
@@ -170,17 +179,17 @@ namespace ChartEditWPF.ViewModels
 
 
 
-    public class RangeRow(string dp)
+    public class RangeRow(string description)
     {
-        public string DP { get; set; } = dp;
+        public string Description { get; set; } = description;
         public ObservableCollection<RangeData> Data { get; set; } = [];
 
-        public RangeRow NewRow(string dp)
+        public RangeRow NewRow(string description)
         {
-            return new RangeRow(dp, Data.Select(d => new RangeData(d.Datas)));
+            return new RangeRow(description, Data.Select(d => new RangeData(d.Datas)));
         }
 
-        public RangeRow(string dp, IEnumerable<RangeData> data) : this(dp)
+        public RangeRow(string description, IEnumerable<RangeData> data) : this(description)
         {
             foreach (var d in data)
                 Data.Add(d);
