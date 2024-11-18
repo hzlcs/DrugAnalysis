@@ -11,12 +11,12 @@ Console.WriteLine(b.Value); // base
 
 class BaseClass
 {
-    public string Value { get; set; } = "base";
+    public virtual string Value { get; set; } = "base";
 }
 
 class MyClass : BaseClass
 {
-    public new string Value { get; set; } = "my";
+    public override string Value { get; set; } = "my";
 }
 
 
@@ -484,4 +484,11 @@ internal class PrincipalComponentProgram
         Console.WriteLine("");
     }
 
+}
+
+
+internal interface IMinMaxValue<TSelf> where TSelf : IMinMaxValue<TSelf>?
+{
+    static abstract TSelf MaxValue { get; }
+    static abstract TSelf MinValue { get; }
 }

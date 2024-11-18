@@ -26,7 +26,7 @@
             <StackPanel Orientation="Horizontal">
                 <DataGrid ItemsSource="{Binding Descriptions}" b:ReadonlyDataGrid.Default="True" RowHeight="30">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="{Binding Source={StaticResource bind},Path=Data.Description}" Binding="{Binding}" Width="50"/>
+                        <DataGridTextColumn Header="{Binding Source={StaticResource bind},Path=Data.Description}" Binding="{Binding}"/>
                     </DataGrid.Columns>
                 </DataGrid>
                 <ItemsControl ItemsSource="{Binding QualityRanges}">

@@ -11,7 +11,7 @@
     xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
     d:DataContext="{d:DesignInstance vm:ShowControlViewModel}"
     d:DesignHeight="450"
-    d:DesignWidth="800"
+    d:DesignWidth="550"
     mc:Ignorable="d">
     <UserControl.Resources>
         <ini:BindingProxy x:Key="bind" Data="{Binding}" />
@@ -25,38 +25,34 @@
         CanUserReorderColumns="False"
         CanUserResizeColumns="False"
         CanUserSortColumns="False"
-        ColumnWidth="70"
         EnableRowVirtualization="True"
         IsReadOnly="True"
         ItemsSource="{Binding DraggableChartVM.SplitLines}"
         RowHeight="25"
         SelectedItem="{Binding DraggedLine}"
-        VerticalScrollBarVisibility="Visible">
+        VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Hidden">
 
         <DataGrid.Columns>
             <DataGridTextColumn
-                Width="55"
+                Width="52"
                 Binding="{Binding Path=[0], Mode=OneWay}"
                 Header="Peak" />
-            <DataGridTextColumn Binding="{Binding Path=[3], Mode=OneWay}" Header="Start X" />
+            <DataGridTextColumn Width="75" Binding="{Binding Path=[3], Mode=OneWay}" Header="Start X" />
+            <DataGridTextColumn Width="75" Binding="{Binding Path=[1]}" Header="Center X" />
+            <DataGridTextColumn Width="70" Binding="{Binding Path=[4], Mode=OneWay}" Header="End X" />
+            <DataGridTextColumn Width="60" Binding="{Binding Path=[2], Mode=OneWay}" Header="Area" />
             <DataGridTextColumn
-                Width="75"
-                Binding="{Binding Path=[1]}"
-                Header="Center X" />
-            <DataGridTextColumn Binding="{Binding Path=[4], Mode=OneWay}" Header="End X" />
-            <DataGridTextColumn Binding="{Binding Path=[2], Mode=OneWay}" Header="Area" />
-            <DataGridTextColumn
-                Width="80"
+                Width="95"
                 Binding="{Binding Path=[5]}"
                 Header="Area Sum %" />
-            <DataGridTextColumn Width="65" Binding="{Binding Path=[6], Mode=OneWay}">
+            <DataGridTextColumn Width="120" Binding="{Binding Path=[6], Mode=OneWay}">
                 <DataGridTextColumn.HeaderTemplate>
                     <DataTemplate>
                         <StackPanel
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Orientation="Horizontal">
-                            <TextBlock Text="{Binding Source={StaticResource bind}, Path=Data.DraggableChartVM.Description}" />
+                            <TextBlock d:Text="assignment" Text="{Binding Source={StaticResource bind}, Path=Data.DraggableChartVM.Description}" />
                             <Button
                                 Width="15"
                                 Height="15"

@@ -126,7 +126,7 @@ namespace ChartEditWPF.ViewModels
                     if (!File.Exists(fileName))
                         continue;
                     var database = await SampleManager.GetDatabaseAsync(fileName);
-                    if(Samples.Count > 0 && database.Description[0] != Samples[0].Description[0])
+                    if(Samples.Count > 0 && database.Description != Samples[0].Description)
                     {
                         _messageBox.Popup(fileName + "\n样品类型不一致", NotificationType.Warning);
                         continue;
@@ -181,7 +181,7 @@ namespace ChartEditWPF.ViewModels
                 database = await SampleManager.GetDatabaseAsync(fileName[0]);
                 if (Samples.Count == 0)
                     return;
-                if (database.Description[0] != Samples[0].Description[0])
+                if (database.Description != Samples[0].Description)
                 {
                     _messageBox.Popup(fileName + "\n样品类型不一致", NotificationType.Warning);
                     return;
@@ -235,7 +235,7 @@ namespace ChartEditWPF.ViewModels
                     datas.Add(new TCheckControlViewModel(database));
                 else
                 {
-                    AreaDatabase @new = new(database.ClassName, @default.Select(v => database.SampleNames[v]).ToArray(), [.. database.Descriptions],
+                    AreaDatabase @new = new(database.ClassName, @default.Select(v => database.SampleNames[v]).ToArray(), database.Description, [.. database.Descriptions],
                         database.Rows.Select(v => new AreaDatabase.AreaRow(v.Description, @default.Select(i => v.Areas[i]).ToArray())).ToArray());
                     datas.Add(new TCheckControlViewModel(@new));
                 }

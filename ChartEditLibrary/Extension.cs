@@ -25,6 +25,7 @@ namespace ChartEditLibrary
             if (startLine.HasValue)
             {
                 var baseLine_StartLine = chart.Plot.Add.Line(new CoordinateLine(line.Start, startLine.Value));
+                baseLine_StartLine.LineStyle.Pattern = LinePattern.Dotted;
                 baseline_StartLineWeakTable.AddOrUpdate(line, new BaseLineInfo(baseLine_StartLine, vm));
             }
             return linePlot;

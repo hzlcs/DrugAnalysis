@@ -58,7 +58,7 @@ namespace ChartEditLibrary.Interfaces
 
         protected Vector2d GetSensitivity()
         {
-            return new Vector2d(PlotControl.Plot.Axes.Bottom.Width / 50, PlotControl.Plot.Axes.Left.Height / 50);
+            return new Vector2d(PlotControl.Plot.Axes.Bottom.Width / 50, PlotControl.Plot.Axes.Left.Height / 100);
         }
 
         public void AutoFit()

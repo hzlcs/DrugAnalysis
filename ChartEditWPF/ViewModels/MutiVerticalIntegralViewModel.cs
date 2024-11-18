@@ -110,7 +110,7 @@ namespace ChartEditWPF.ViewModels
             {
                 try
                 {
-                    var vm = await DraggableChartVm.CreateAsync(file, default, "a");
+                    var vm = await DraggableChartVm.CreateAsync(file, default, "assignment");
                     var chartControl = App.ServiceProvider.GetRequiredService<MutiBaselineChartControl>();
                     chartControl.ChartData = vm;
                     var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
@@ -137,13 +137,22 @@ namespace ChartEditWPF.ViewModels
             using var _ = _messageBox.ShowLoading("正在导出数据...");
             try
             {
-                var contents = new Dictionary<string, List<SaveRow[]>>();
-                foreach (var obj in objs)
+                var data = objs.Select(v=> DataSources.First(x => x.DraggableChartVM.FileName == (string)v)).ToArray();
+                foreach(var vm in data)
                 {
-                    var fileName = (string)obj;
-                    var vm = DataSources.First(v => v.DraggableChartVM.FileName == fileName);
+                    if (vm.DraggableChartVM.SplitLines.Any(v => string.IsNullOrWhiteSpace(v.Description)))
+                    {
+                        _messageBox.Show($"请设置样品'{vm.DraggableChartVM.FileName}'所有峰的{vm.DraggableChartVM.Description}值");
+                        return;
+                    }
+                }
+                var contents = new Dictionary<string, List<SaveRow[]>>();
+                foreach (var vm in data)
+                {
                     vm.DraggableChartVM.SaveToFile().ContinueWith(v => v.Result.IfFail(e => _messageBox.Show(e.Message)));
                     var bytes = vm.ChartControl.GetImage();
+
+                    var fileName = vm.DraggableChartVM.FileName;
                     File.WriteAllBytes(System.IO.Path.Combine(folderName, fileName + ".png"), bytes);
 
                     var fileKey = fileName[..fileName.LastIndexOf('-')];
@@ -152,22 +161,23 @@ namespace ChartEditWPF.ViewModels
                     var saveRow = vm.DraggableChartVM.GetSaveRow();
                     contents[fileKey].Add(saveRow);
                 }
+                string description = data[0].DraggableChartVM.Description;
                 foreach (var content in contents)
                 {
-
                     var path = System.IO.Path.Combine(folderName, content.Key + ".csv");
+                    File.Delete(path);
                     var sb = new StringBuilder();
                     sb.AppendLine("," + string.Join(",,", content.Value.Select(v => v[0].line)));
-                    sb.AppendLine("a," + string.Join(",,", content.Value.Select(v => v[1].line)));
+                    sb.AppendLine(description + "," + string.Join(",,", content.Value.Select(v => v[1].line)));
                     string[] descriptions = SampleManager.MergeDescription(content.Value.Select(v => v.Skip(2).Select(x => x.description).ToArray()));
                     var count = content.Value[0][0].line.AsSpan().Count(",");
                     var emptyLine = new string(Enumerable.Repeat(',', count).ToArray());
-                    foreach (var description in descriptions)
+                    foreach (var descriptionValue in descriptions)
                     {
-                        sb.Append($"a{description},");
+                        sb.Append($"{descriptionValue},");
                         sb.Append(string.Join(",,", content.Value.Select(row =>
                         {
-                            var r = row.FirstOrDefault(v => v.description == description);
+                            var r = row.FirstOrDefault(v => v.description == descriptionValue);
                             return r.description is null ? emptyLine : r.line;
                         })));
                         sb.AppendLine();
@@ -176,6 +186,10 @@ namespace ChartEditWPF.ViewModels
                     File.WriteAllText(path, sb.ToString(0, sb.Length - Environment.NewLine.Length));
                 }
                 _messageBox.Popup("导出成功", NotificationType.Success);
+            }
+            catch(IOException ie)
+            {
+                _messageBox.Popup("导出失败：" + ie.Message, NotificationType.Error);
             }
             catch (Exception ex)
             {

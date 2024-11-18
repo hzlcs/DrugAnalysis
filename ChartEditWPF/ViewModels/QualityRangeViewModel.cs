@@ -154,7 +154,7 @@ namespace ChartEditWPF.ViewModels
                     datas.Add(new QualityRangeControlViewModel(database));
                 else
                 {
-                    AreaDatabase @new = new(database.ClassName, @default.Select(v => database.SampleNames[v]).ToArray(), [.. database.Descriptions],
+                    AreaDatabase @new = new(database.ClassName, @default.Select(v => database.SampleNames[v]).ToArray(), database.Description, [.. database.Descriptions],
                         database.Rows.Select(v => new AreaDatabase.AreaRow(v.Description, @default.Select(i => v.Areas[i]).ToArray())).ToArray());
                     datas.Add(new QualityRangeControlViewModel(@new));
                 }

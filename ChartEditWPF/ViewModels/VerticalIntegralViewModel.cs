@@ -138,13 +138,21 @@ namespace ChartEditWPF.ViewModels
             using var _ = _messageBox.ShowLoading("正在导出数据...");
             try
             {
-                var contents = new Dictionary<string, List<SaveRow[]>>();
-                foreach (var obj in objs)
+                var data = objs.Select(v => DataSources.First(x => x.DraggableChartVM.FileName == (string)v)).ToArray();
+                foreach (var vm in data)
                 {
-                    var fileName = (string)obj;
-                    var vm = DataSources.First(v => v.DraggableChartVM.FileName == fileName);
+                    if (vm.DraggableChartVM.SplitLines.Any(v => string.IsNullOrWhiteSpace(v.Description)))
+                    {
+                        _messageBox.Show($"请设置样品'{vm.DraggableChartVM.FileName}'所有峰的{vm.DraggableChartVM.Description}值");
+                        return;
+                    }
+                }
+                var contents = new Dictionary<string, List<SaveRow[]>>();
+                foreach (var vm in data)
+                {
                     vm.DraggableChartVM.SaveToFile().ContinueWith(v => v.Result.IfFail(e => _messageBox.Show(e.Message)));
                     var bytes = vm.ChartControl.GetImage();
+                    var fileName = vm.DraggableChartVM.FileName;
                     File.WriteAllBytes(System.IO.Path.Combine(folderName, fileName + ".png"), bytes);
 
                     var fileKey = fileName[..fileName.LastIndexOf('-')];

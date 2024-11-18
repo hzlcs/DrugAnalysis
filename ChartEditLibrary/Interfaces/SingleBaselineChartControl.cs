@@ -33,7 +33,7 @@ namespace ChartEditLibrary.Interfaces
 
             Pixel mousePixel = new(mousePoint.X, mousePoint.Y);
             mouseCoordinates = PlotControl.Plot.GetCoordinates(mousePixel);
-            Debug.WriteLine(mouseCoordinates);
+
             ChartData.Sensitivity = GetSensitivity();
 
 
@@ -180,7 +180,15 @@ namespace ChartEditLibrary.Interfaces
                     string[] dps = line.Description.Split('-');
                     if (dps.Length > 1 && int.TryParse(dps[0], out var dp) && int.TryParse(dps[1], out var index))
                     {
-                        var lines = ChartData.SplitLines.Where(v => (v.Description?.StartsWith(dps[0])).GetValueOrDefault()).Reverse().ToArray();
+                        var lines = ChartData.SplitLines.Where(v =>
+                        {
+                            if(string.IsNullOrWhiteSpace(v.Description))
+                                return false;
+                            var _dps = v.Description.Split('-');
+                            if (_dps[0] == dps[0])
+                                return true;
+                            return false;
+                        }).Reverse().ToArray();
                         if (lines.Length == 1)
                         {
                             lines[0].Description = dps[0];

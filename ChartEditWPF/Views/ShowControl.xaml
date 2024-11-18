@@ -37,7 +37,7 @@
         <local:ChartDataControl
             x:Name="data" 
             Grid.Column="1"
-            Width="500"
+            Width="550"
             DataContext="{Binding}" />
     </Grid>
 </UserControl>

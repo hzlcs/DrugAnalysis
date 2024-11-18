@@ -291,7 +291,6 @@ namespace ChartEditLibrary.Model
                 changeLine.Area += line.Area;
                 if (vm.DataSource[changeLine.RTIndex].Y < vm.DataSource[line.RTIndex].Y)
                 {
-                    Debugger.Break();
                     changeLine.RTIndex = line.RTIndex;
                     changeLine.RT = vm.DataSource[changeLine.RTIndex].X;
                 }
@@ -315,12 +314,12 @@ namespace ChartEditLibrary.Model
 
         public bool Equals(DraggedLineInfo x, DraggedLineInfo y)
         {
-            return x.DraggedLine.Equals(y.DraggedLine);
+            return x.DraggedLine.Equals(y.DraggedLine) && x.IsStart == y.IsStart;
         }
 
         public bool Equals(DraggedLineInfo other)
         {
-            return object.Equals(DraggedLine, other.DraggedLine);
+            return object.Equals(DraggedLine, other.DraggedLine) && IsStart == other.IsStart;
         }
 
         public int GetHashCode([DisallowNull] DraggedLineInfo obj)

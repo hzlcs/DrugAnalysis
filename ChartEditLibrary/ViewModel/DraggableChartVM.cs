@@ -109,6 +109,7 @@ namespace ChartEditLibrary.ViewModel
         /// </summary>
         partial void OnDraggedLineChanged(DraggedLineInfo? oldValue, DraggedLineInfo? newValue)
         {
+            Debug.WriteLine("draggedline changed");
             if (oldValue is { DraggedLine: SplitLine oldLine })
                 oldLine.SplitLineMoving -= OnLineMoving;
 
@@ -137,14 +138,12 @@ namespace ChartEditLibrary.ViewModel
             foreach (SplitLine i in splitLines)
             {
                 var newY1 = newValue.Y(i.Start.X);
-                var newY2 = newValue.Y(i.NextLine.Start.X);
-                var width = i.Start.X - i.NextLine.Start.X;
-                var y1 = i.Start.Y - newY1;
-                var y2 = i.NextLine.Start.Y - newY2;
-                i.Area += (y1 + y2) * width / 2;
                 i.Start = new Coordinates(i.Start.X, newY1);
             }
-
+            foreach (SplitLine i in splitLines)
+            {
+                i.Area = GetArea(i);
+            }
             UpdateArea();
         }
 
@@ -166,14 +165,14 @@ namespace ChartEditLibrary.ViewModel
                 l.IsSelected = false;
             foreach (var baseLine in BaseLines)
             {
-                if (baseLine.Start.Distance(dataPoint) < Sensitivity.Y)
+                if (baseLine.Start.Distance(dataPoint) < Sensitivity.Length)
                 {
                     DraggedLine = GetFocusLineInfo(baseLine, true);
                     CurrentBaseLine = baseLine;
                     baseLine.IsSelected = true;
                     return DraggedLine;
                 }
-                else if (baseLine.End.Distance(dataPoint) < Sensitivity.Y)
+                else if (baseLine.End.Distance(dataPoint) < Sensitivity.Length)
                 {
                     DraggedLine = GetFocusLineInfo(baseLine, false);
                     CurrentBaseLine = baseLine;
@@ -489,6 +488,7 @@ namespace ChartEditLibrary.ViewModel
                         if (minDots.Contains(add.Value))
                             continue;
                         minDots.Add(add.Value);
+                        maxDots.Add(add.Value);
                         ++endMin;
                         if (add.Value > dp6Start)
                         {
@@ -499,7 +499,7 @@ namespace ChartEditLibrary.ViewModel
             }
 
             minDots.Sort();
-
+            maxDots.Sort();
             //dp4
             startMin = endMin;
             endMin = startMin + 1;
@@ -526,6 +526,7 @@ namespace ChartEditLibrary.ViewModel
                         if (minDots.Contains(add))
                             continue;
                         minDots.Add(add);
+                        maxDots.Add(add);
                         ++endMin;
                         if (add > dp4Start)
                         {
@@ -536,7 +537,7 @@ namespace ChartEditLibrary.ViewModel
             }
 
             minDots.Sort();
-
+            maxDots.Sort();
             //dp3
             startMin = endMin;
             endMin = startMin + 1;
@@ -561,6 +562,7 @@ namespace ChartEditLibrary.ViewModel
                         if (minDots.Contains(add))
                             continue;
                         minDots.Add(add);
+                        maxDots.Add(add);
                         ++endMin;
                         if (add > dp3Start)
                         {
@@ -573,6 +575,7 @@ namespace ChartEditLibrary.ViewModel
             }
 
             minDots.Sort();
+            maxDots.Sort();
 
             //dp2
             startMin = endMin;
@@ -588,6 +591,7 @@ namespace ChartEditLibrary.ViewModel
             }
 
             minDots.Sort();
+            maxDots.Sort();
             var dp = 2;
             var sort = 1;
             foreach (var i in minDots.Distinct().Reverse())
@@ -707,7 +711,7 @@ namespace ChartEditLibrary.ViewModel
         public void RemoveBaseLine(BaseLine baseLine)
         {
             BaseLines.Remove(baseLine);
-            foreach (var i in baseLine.SplitLines)
+            foreach (var i in baseLine.SplitLines.ToArray())
             {
                 RemoveSplitLine(i);
             }
@@ -715,7 +719,8 @@ namespace ChartEditLibrary.ViewModel
 
         public SplitLine AddSplitLine(Coordinates point)
         {
-            var baseLine = GetBaseLine(point)!;
+            var baseLine = GetBaseLine(point);
+            baseLine ??= BaseLines[0];
             return AddSplitLine(baseLine, point);
         }
 
@@ -756,7 +761,13 @@ namespace ChartEditLibrary.ViewModel
 
         public static async Task<DraggableChartVm> CreateAsync(string filePath, ExportType? exportType, string description)
         {
-            var (dataSource, saveLine) = await ReadCsv(filePath).ConfigureAwait(false);
+            float start = 0, end = float.MaxValue;
+            if (exportType is not null)
+            {
+                start = 20;
+                end = 60;
+            }
+            var (dataSource, saveLine) = await ReadCsv(filePath, start, end).ConfigureAwait(false);
 
             var res = new DraggableChartVm(filePath, dataSource, exportType, description);
             if (saveLine != null)
@@ -769,7 +780,7 @@ namespace ChartEditLibrary.ViewModel
             var dataSource = Enumerable.Range(0, cache.X.Length).Select(i => new Coordinates(cache.X[i], cache.Y[i]))
                 .ToArray();
             ExportType? type = null;
-            if(cache.ExportType is not null && Enum.TryParse<ExportType>(cache.ExportType, out var t))
+            if (cache.ExportType is not null && Enum.TryParse<ExportType>(cache.ExportType, out var t))
                 type = t;
             var vm = new DraggableChartVm(cache.FilePath, dataSource, type, cache.Description);
             vm.ApplyResult(cache.SaveContent);
@@ -778,28 +789,41 @@ namespace ChartEditLibrary.ViewModel
 
         internal void ApplyResult(string saveContent)
         {
-            var lines = saveContent.Split(Environment.NewLine);
+            var lines = saveContent.Split(Environment.NewLine).Select(v => v.Split(',')).ToArray();
             ApplyResult(lines);
         }
 
-        private void ApplyResult(string[] lines)
+        private void ApplyResult(string[][] lines)
         {
-            var baseInfo = lines[0].Split(',');
+            var baseInfo = lines[0];
             BaseLine[] baseLines = SaveManager.GetBaseLine(baseInfo);
-
-            foreach (var i in baseLines)
+            try
             {
-                BaseLines.Add(i);
+                foreach (var i in baseLines)
+                {
+                    BaseLines.Add(i);
+                }
+                CurrentBaseLine = BaseLines[BaseLines.Count - 1];
+
+                for (var i = 2; i < lines.Length; i++)
+                {
+                    string[] data = lines[i];
+                    var x = double.Parse(data[1]);
+                    var point = GetChartPoint(x);
+                    if (point.HasValue)
+                    {
+                        var line = AddSplitLine(point.Value);
+                        int length = Description.Length;
+                        if (data[6].Length > 1 && data[6][0] == 'a' && data[6][1] != 's')
+                            length = 1;
+                        line.Description = data[6][Description.Length..].TrimEnd('\r');
+                    }
+                }
             }
-            CurrentBaseLine = BaseLines[BaseLines.Count - 1];
-
-            for (var i = 2; i < lines.Length; i++)
+            catch
             {
-                string[] data = lines[i].Split(',');
-                var x = double.Parse(data[1]);
-                var point = GetChartPoint(x);
-                if (point.HasValue)
-                    AddSplitLine(point.Value).Description = data[6][Description.Length..].TrimEnd('\r');
+                foreach (var b in BaseLines.ToArray())
+                    RemoveBaseLine(b);
             }
 
             initialized = true;
@@ -814,12 +838,10 @@ namespace ChartEditLibrary.ViewModel
             return string.Join(Environment.NewLine, GetSaveRowContent());
         }
 
-
-        //ToDo: 多基线保存
         private string[] GetSaveRowContent()
         {
             var baseInfo =
-                $"{FileName},{exportType},{SaveManager.GetBaseLineStr(BaseLines)},,,";
+                $"{FileName},{exportType},{SaveManager.GetBaseLineStr(BaseLines)},,,,";
             var title = $"Peak,Start X,End X,Center X,Area,Area Sum %,{Description}";
             IEnumerable<string> lines = SplitLines.Select(x =>
                 $"{x.Index},{x.Start.X:f3},{x.NextLine.Start.X:f3},{x.RT:f3},{x.Area:f2},{x.AreaRatio * 100:f2},{Description}{x.Description}");
@@ -840,33 +862,44 @@ namespace ChartEditLibrary.ViewModel
 
         public async Task<Result<bool>> SaveToFile()
         {
+
+            foreach (var i in BaseLines)
+            {
+                foreach (var line in i.SplitLines)
+                {
+                    if (!i.Include(line.Start.X))
+                    {
+                        return new Result<bool>(new Exception($"样品'{FileName}'的分割线'x={line.Start.X:F2}'不在基线范围内!"));
+                    }
+                }
+            }
             try
             {
-                static string GetDataLine(string line)
+                static string GetDataLine(string line, int index)
                 {
-                    var index = 0;
-                    for (var i = 0; i < 3; ++i)
+                    int position = 0;
+                    for (int i = 0; i < index - 1; ++i)
                     {
-                        index = line.IndexOf(',', index) + 1;
-                        if (index == 0)
-                            return line;
+                        position = line.IndexOf(',', position) + 1;
                     }
-
-                    return line[0..(index - 1)];
+                    return position == 0 ? line : line[..(position - 1)];
                 }
 
                 string[] save = GetSaveRowContent();
                 string[] datas = File.ReadAllLines(FilePath);
                 File.Delete(FilePath);
-                using StreamWriter writer = new(File.Create(FilePath));
+                using StreamWriter writer = new(File.Create(FilePath), Encoding.UTF8);
+                bool hasResult = datas[1].Contains("Peak");
+                int index = hasResult ? Array.IndexOf(datas[1].Split(spe), "Peak") : 0;
                 for (var i = 0; i < datas.Length; ++i)
                 {
                     var line = datas[i];
                     if (i < save.Length)
                     {
-                        line = GetDataLine(line) + ",," + save[i];
+                        line = (hasResult ? GetDataLine(line, index) : line) + ",," + save[i];
                     }
-
+                    else if(hasResult && i < 50)
+                        line = GetDataLine(line, index);
                     await writer.WriteLineAsync(line);
                 }
 
@@ -888,7 +921,7 @@ namespace ChartEditLibrary.ViewModel
             public readonly string line = line;
         }
 
-        
+
 
         /// <summary>
         /// 分割线移动时，检测是否跨过相邻分割线
@@ -1043,65 +1076,65 @@ namespace ChartEditLibrary.ViewModel
             sender.RTIndex = GetDateSourceIndex(DataSource[startIndex..endIndex].MaxBy(v => v.Y).X);
             sender.RT = DataSource[sender.RTIndex].X;
         }
+        private static readonly char[] spe = { ',', '\t' };
 
-        private static async Task<(Coordinates[], string[]?)> ReadCsv(string path)
+        private static async Task<(Coordinates[], string[][]?)> ReadCsv(string path, float start, float end)
         {
-            char[] spe = [',', '\t'];
-            string[] data;
+            string[][] data;
             var hasResult = false;
             var fileName = Path.GetFileNameWithoutExtension(path);
-            List<string> saveContent = new List<string>();
+            List<string[]> saveContent = new List<string[]>();
 
-            static string? GetSaveLine(string line)
+            static string[]? GetSaveLine(string[] line, int index)
             {
-                var index = 0;
-                for (var i = 0; i < 4; ++i)
-                {
-                    index = line.IndexOf(',', index) + 1;
-                    if (index == 0)
-                        return null;
-                }
-
-                return line[index..];
+                if (line.Length <= index || string.IsNullOrWhiteSpace(line[index]))
+                    return null;
+                return line.Skip(index).ToArray();
             }
 
             using (StreamReader sr = new(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
             {
-                var first = sr.ReadLine();
-                if (first is not null)
-                {
-                    var temp = GetSaveLine(first);
-                    if (temp is not null)
-                    {
-                        saveContent.Add(temp);
-                        hasResult = true;
-                    }
-                }
-
-                var second = sr.ReadLine();
-                if (hasResult && second != null)
-                    saveContent.Add(GetSaveLine(second)!);
                 data = (await sr.ReadToEndAsync().ConfigureAwait(false)).Split(Environment.NewLine,
-                    StringSplitOptions.RemoveEmptyEntries);
+                    StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(spe)).ToArray();
+            }
+
+
+
+            try
+            {
+                var second = data[1] ?? throw new Exception("数据格式错误");
+                int index = Array.IndexOf(second, "Peak");
+                hasResult = index > 0;
                 if (hasResult)
                 {
                     for (var i = 0; i < data.Length; ++i)
                     {
-                        var temp = GetSaveLine(data[i]);
-                        if (temp is null)
+                        var t = GetSaveLine(data[i], index);
+                        if (t is null)
                             break;
-                        saveContent.Add(temp);
+                        saveContent.Add(t);
                     }
                 }
-            }
-
-            try
-            {
-                double[][] temp = data
-                    .Select(v => v.Split(spe).Skip(1).Take(2).Select(v1 => double.Parse(v1)).ToArray())
-                    .Where(v => v[0] >= 20 && v[0] <= 60).ToArray();
+                int dataRow = -1, dataCol = -1;
+                for (int i = 0; i < data.Length; ++i)
+                {
+                    var row = data[i];
+                    if (!float.TryParse(row[0], out float t))
+                        continue;
+                    dataRow = i;
+                    if (row.Length > 2 && float.TryParse(row[2], out t))
+                        dataCol = 1;
+                    else
+                        dataCol = 0;
+                    break;
+                }
+                if (dataRow == -1)
+                    throw new Exception();
+                double[][] temp = data.Skip(dataRow)
+                    .Select(v => v.Skip(dataCol).Take(2).Select(v1 => double.Parse(v1)).ToArray())
+                    .Where(v => v[0] >= start && v[0] <= end).ToArray();
                 return (temp.Select(v => new Coordinates(v[0], v[1])).ToArray(),
-                    hasResult ? saveContent.ToArray() : null);
+                    hasResult ? [.. saveContent] : null);
             }
             catch
             {
@@ -1114,6 +1147,11 @@ namespace ChartEditLibrary.ViewModel
             public static BaseLine[] GetBaseLine(string[] columns)
             {
                 var baseLineStrs = columns[2];
+                if (!baseLineStrs.StartsWith('('))
+                {
+                    double[] line = columns[2..6].Select(double.Parse).ToArray();
+                    return [new BaseLine(new Coordinates(line[0], line[1]), new Coordinates(line[2], line[3]))];
+                }
                 return baseLineStrs.Split(';').Select(v =>
                 {
                     var temp = v.Split(':');

@@ -22,7 +22,7 @@ namespace ChartEditLibrary.Model
             var title = text[0];
             string description = text[1][0];
             var sampleAreas = new SampleArea[(title.Length - 1) / 6];
-            var descriptions = text.Skip(2).Select(v => v[0][description.Length..]).ToArray();
+            var descriptions = text.Skip(2).Select(v => v[0].Replace(description, "")).ToArray();
             for (var i = 0; i < sampleAreas.Length; ++i)
             {
                 sampleAreas[i] = new SampleArea(title[1 + i * 7], descriptions, text.Skip(2).Select(v =>
@@ -54,13 +54,8 @@ namespace ChartEditLibrary.Model
             {
                 string[][] lines = text.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
                 string[] sampleNames = lines[0].Skip(1).ToArray();
-                string description = new string(lines[1][0].TakeWhile(v => !char.IsDigit(v)).ToArray());
-                string[] descriptions = lines.Skip(1).Select(v =>
-                {
-                    var t = v[0];
-                    return t[(t.IndexOf(description) + description.Length)..];
-
-                }).ToArray();
+                string description = lines[0][0];
+                string[] descriptions = lines.Skip(1).Select(v => v[0].Replace(description, "")).ToArray();
                 AreaRow[] rows = new AreaRow[descriptions.Length];
                 for (var i = 0; i < descriptions.Length; i++)
                 {
@@ -74,7 +69,7 @@ namespace ChartEditLibrary.Model
                     }
                     rows[i] = new AreaRow(descriptions[i], areas);
                 }
-                return new AreaDatabase(Path.GetFileNameWithoutExtension(fileName), sampleNames, descriptions, rows);
+                return new AreaDatabase(Path.GetFileNameWithoutExtension(fileName), sampleNames, description, descriptions, rows);
             }
             catch (Exception ex)
             {
@@ -259,11 +254,11 @@ namespace ChartEditLibrary.Model
             }
         }
 
-        public AreaDatabase(string className, string[] sampleNames, string[] descriptions, AreaRow[] rows)
+        public AreaDatabase(string className, string[] sampleNames, string description, string[] descriptions, AreaRow[] rows)
         {
             this.ClassName = className;
             this.SampleNames = sampleNames;
-            this.Description = new string(descriptions[0].TakeWhile(v => !char.IsDigit(v)).ToArray());
+            this.Description = description;
             this.descriptions = new List<string>(descriptions);
             this.DescriptionString = this.Descriptions.Select(v => new DescriptionString(v)).ToList();
             this.Rows = rows;
@@ -298,7 +293,7 @@ namespace ChartEditLibrary.Model
 
         public class AreaRow
         {
-            public string Description { get; }
+            public string Description { get; set; }
             public float?[] Areas { get; }
             public float? Average { get; }
             public double StdDev { get; }

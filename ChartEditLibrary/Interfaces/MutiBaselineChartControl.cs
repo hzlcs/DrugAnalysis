@@ -21,7 +21,7 @@ namespace ChartEditLibrary.Interfaces
             
             chartPlot.Menu.Add("Add Line", AddLineMenu);
             chartPlot.Menu.Add("Remove Line", RemoveLineMenu);
-            //chartPlot.Menu.Add("Delete Peak", DeletePeakMenu);
+            chartPlot.Menu.Add("Delete Peak", DeletePeakMenu);
             chartPlot.Menu.Add("Set Assignment", SetAssignmentMenu);
         }
 
@@ -69,12 +69,56 @@ namespace ChartEditLibrary.Interfaces
 
         private void DeletePeakMenu(IPlotControl control)
         {
-            var lineInfo = ChartData.GetDraggedLine(mouseCoordinates);
+            var lineInfo = ChartData.GetDraggedLine(mouseCoordinates, true);
             if (!lineInfo.HasValue)
             {
                 _messageBox.Show("No line here");
                 return;
             }
+            if (lineInfo.Value.IsBaseLine)
+            {
+                _messageBox.Show("Can't delete baseLine");
+                return;
+            }
+            var line = (SplitLine)lineInfo.Value.DraggedLine;
+            var baseLine = line.BaseLine;
+            var lines = baseLine.SplitLines;
+            if(lines.Count == 1)
+            {
+                ChartData.RemoveBaseLine(baseLine);
+            }
+            else
+            {
+                int index = lines.IndexOf(line);
+                ChartData.RemoveSplitLine(line);
+                if (index == 0)
+                {
+                    baseLine.Start = line.Start;
+                }
+                else if (index == lines.Count)
+                {
+                    baseLine.End = lines[^1].Start;
+                }
+                else
+                {
+                    var left = lines[..index];
+                    var right = lines[index..];
+                    ChartData.RemoveBaseLine(baseLine);
+                    var lbaseLine = new BaseLine(baseLine.Start, left[^1].Start);
+                    ChartData.AddBaseLine(lbaseLine);
+                    foreach (var l in left)
+                    {
+                        ChartData.AddSplitLine(lbaseLine, l.End).Description = l.Description;
+                    }
+                    var rbaseLine = new BaseLine(line.Start, baseLine.End);
+                    ChartData.AddBaseLine(rbaseLine);
+                    foreach (var r in right)
+                    {
+                        ChartData.AddSplitLine(rbaseLine, r.End).Description = r.Description;
+                    }
+                }
+            }
+
             control.Refresh();
         }
 
@@ -125,7 +169,6 @@ namespace ChartEditLibrary.Interfaces
 
             if (!left)
                 return;
-
             draggedLine = ChartData.GetDraggedLine(mouseCoordinates);
             if (draggedLine is null && actived)
             {
@@ -133,6 +176,8 @@ namespace ChartEditLibrary.Interfaces
                 if (baseLine is not null)
                     return;
                 int index = ChartData.GetDateSourceIndex(mouseCoordinates.X);
+                if (ChartData.DataSource[index].Y < mouseCoordinates.Y || mouseCoordinates.Y <= PlotControl.Plot.Axes.Left.Min)
+                    return;
                 baseLine = new Model.BaseLine(mouseCoordinates, new Coordinates(ChartData.DataSource[index + 1].X, mouseCoordinates.Y));
                 draggedLine = new DraggedLineInfo(baseLine, false);
                 ChartData.AddBaseLine(baseLine);
@@ -208,8 +253,8 @@ namespace ChartEditLibrary.Interfaces
                         {
                             int index = ChartData.GetDateSourceIndex(editLine.End.X);
                             var point = linePoint.Value;
-                            if (point.X > editLine.End.X)
-                                point = ChartData.DataSource[index - 1];
+                            while (point.X > editLine.End.X)
+                                point = ChartData.DataSource[--index];
                             baseLine_endLine.Line = baseLine_endLine.BaseLine.CreateSplitLine(point);
                             Debug.Assert(editLine.End.X >= baseLine_endLine.Start.X);
 
@@ -240,7 +285,18 @@ namespace ChartEditLibrary.Interfaces
             var line = draggedLine.Value;
             if (line.DraggedLine is BaseLine baseLine)
             {
-                ChartData.UpdateBaseLine(baseLine);
+                if(baseLine_endLine is not null)
+                {
+                    if(Math.Abs(baseLine.Start.X - baseLine.End.X) < ChartData.Unit * 2)
+                    {
+                        ChartData.RemoveBaseLine(baseLine);
+                    }
+                }
+                else
+                {
+                    ChartData.UpdateBaseLine(baseLine);
+                }
+                
                 baseLine_endLine = null;
             }
             draggedLine = null;
