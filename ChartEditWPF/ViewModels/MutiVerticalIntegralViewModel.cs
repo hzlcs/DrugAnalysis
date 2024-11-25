@@ -29,6 +29,12 @@ namespace ChartEditWPF.ViewModels
         private readonly IMessageBox _messageBox;
         private readonly ILogger logger;
 
+        [ObservableProperty]
+        private double panelHeight = 1080;
+
+        [ObservableProperty]
+        private double controlHeight = 320;
+
         public ObservableCollection<ShowControlViewModel> DataSources { get; set; } = [];
 
         [ObservableProperty]
@@ -56,6 +62,7 @@ namespace ChartEditWPF.ViewModels
                     var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
                     DataSources.Add(svm);
                 }
+                UpdateHeight();
             }
             catch (Exception ex)
             {
@@ -98,6 +105,18 @@ namespace ChartEditWPF.ViewModels
                 DataSources.Clear();
             }
         }
+        partial void OnPanelHeightChanged(double value)
+        {
+            UpdateHeight();
+        }
+        private void UpdateHeight()
+        {
+            if (DataSources.Count > 0)
+            {
+                int showCount = Math.Min(DataSources.Count, GlobalConfig.Instance.MaxShowCount);
+                ControlHeight = (int)(PanelHeight / showCount);
+            }
+        }
 
         [RelayCommand]
         private async Task Import()
@@ -122,6 +141,7 @@ namespace ChartEditWPF.ViewModels
                     _messageBox.Popup(Path.GetFileNameWithoutExtension(file) + "导入失败", NotificationType.Error);
                 }
             }
+            UpdateHeight();
             _messageBox.Popup("导入完成", NotificationType.Success);
         }
         [RelayCommand]
@@ -208,6 +228,7 @@ namespace ChartEditWPF.ViewModels
                 return;
             foreach (var obj in objs)
                 DataSources.Remove(DataSources.First(v => v.DraggableChartVM.FileName == (string)obj));
+            UpdateHeight();
         }
 
         [RelayCommand]
@@ -265,6 +286,10 @@ namespace ChartEditWPF.ViewModels
             }
         }
 
-       
+        [RelayCommand]
+        private void PanelLoaded(double height)
+        {
+            PanelHeight = height - 75;
+        }
     }
 }

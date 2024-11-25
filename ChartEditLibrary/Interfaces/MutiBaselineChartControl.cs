@@ -22,7 +22,19 @@ namespace ChartEditLibrary.Interfaces
             chartPlot.Menu.Add("Add Line", AddLineMenu);
             chartPlot.Menu.Add("Remove Line", RemoveLineMenu);
             chartPlot.Menu.Add("Delete Peak", DeletePeakMenu);
+            chartPlot.Menu.Add("Clear these lines", ClearTheseLineMenu);
             chartPlot.Menu.Add("Set Assignment", SetAssignmentMenu);
+        }
+
+        private void ClearTheseLineMenu(IPlotControl control)
+        {
+            var range = control.Plot.Axes.Bottom.Range;
+            var lines = ChartData.SplitLines.Where(v => v.Start.X > range.Min && v.Start.X < range.Max).ToArray();
+            if (!_messageBox.ConfirmOperation($"是否删除这{lines.Length}条分割线?"))
+                return;
+            foreach (var line in lines)
+                ChartData.RemoveSplitLine(line);
+            control.Refresh();
         }
 
         private void SetAssignmentMenu(IPlotControl control)
@@ -290,6 +302,10 @@ namespace ChartEditLibrary.Interfaces
                     if(Math.Abs(baseLine.Start.X - baseLine.End.X) < ChartData.Unit * 2)
                     {
                         ChartData.RemoveBaseLine(baseLine);
+                    }
+                    else
+                    {
+                        ChartData.GenerateSplitLine(baseLine);
                     }
                 }
                 else

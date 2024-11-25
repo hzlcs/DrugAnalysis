@@ -27,6 +27,9 @@ namespace ChartEditWPF.ViewModels
             DraggedLine = obj;
         }
 
+        [ObservableProperty]
+        private double controlHeight;
+
         public IChartControl ChartControl { get; set; }
 
         public DraggableChartVm DraggableChartVM { get; set; }

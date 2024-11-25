@@ -29,6 +29,12 @@ namespace ChartEditWPF.ViewModels
 
         private readonly ExportType[] exportTypes = Enum.GetValues<ExportType>();
 
+        [ObservableProperty]
+        private double panelHeight = 1080;
+
+        [ObservableProperty]
+        private double controlHeight = 320;
+
         public ObservableCollection<ShowControlViewModel> DataSources { get; set; } = [];
 
         [ObservableProperty]
@@ -56,6 +62,7 @@ namespace ChartEditWPF.ViewModels
                     var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
                     DataSources.Add(svm);
                 }
+                UpdateHeight();
             }
             catch (Exception ex)
             {
@@ -63,6 +70,11 @@ namespace ChartEditWPF.ViewModels
                 messageBox.Show("缓存文件加载失败");
             }
 
+        }
+
+        partial void OnPanelHeightChanged(double value)
+        {
+            UpdateHeight();
         }
 
         private void Current_Exit(object? sender, EventArgs e)
@@ -99,6 +111,15 @@ namespace ChartEditWPF.ViewModels
             }
         }
 
+        private void UpdateHeight()
+        {
+            if (DataSources.Count > 0)
+            {
+                int showCount = Math.Min(DataSources.Count, GlobalConfig.Instance.MaxShowCount);
+                ControlHeight = (int)(PanelHeight / showCount);
+            }
+        }
+
         [RelayCommand]
         private async Task Import()
         {
@@ -122,8 +143,11 @@ namespace ChartEditWPF.ViewModels
                     logger.LogError(ex, "{file}导入失败", file);
                     _messageBox.Popup(Path.GetFileNameWithoutExtension(file) + "导入失败", NotificationType.Error);
                 }
+                UpdateHeight();
             }
+            
             _messageBox.Popup("导入完成", NotificationType.Success);
+            
         }
         [RelayCommand]
         private void Export()
@@ -204,6 +228,7 @@ namespace ChartEditWPF.ViewModels
                 return;
             foreach (var obj in objs)
                 DataSources.Remove(DataSources.First(v => v.DraggableChartVM.FileName == (string)obj));
+            UpdateHeight();
         }
 
         [RelayCommand]
@@ -243,6 +268,12 @@ namespace ChartEditWPF.ViewModels
                     logger.LogError(ex, "保存失败");
                 }
             }
+        }
+
+        [RelayCommand]
+        private void PanelLoaded(double height)
+        {
+            PanelHeight = height - 75;
         }
     }
 }

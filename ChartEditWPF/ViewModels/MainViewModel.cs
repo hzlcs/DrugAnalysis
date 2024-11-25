@@ -46,13 +46,16 @@ namespace ChartEditWPF.ViewModels
                 Content = serviceProvider.GetRequiredKeyedService<IPage>(tag);
         }
 
+        private readonly SemaphoreSlim semaphore = new(1, 1);
         public async void Popup(string message, NotificationType type)
         {
+            await semaphore.WaitAsync();
             if (Notifications.Count >= 3)
                 Notifications.RemoveAt(0);
             PopupVisible = true;
             var content = new NotificationContent(type.ToString(), message, type);
             Notifications.Add(content);
+            semaphore.Release();
             await Task.Delay(3000);
             if (content == Notifications.FirstOrDefault())
             {
