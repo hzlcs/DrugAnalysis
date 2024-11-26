@@ -400,23 +400,23 @@ namespace ChartEditLibrary.ViewModel
             GetPoints(range, 0, range.Length, out var minDots, out var maxDots);
 
             List<int> tPoints = [];
-            var t = GetT(range, 0, range.Length - 2);
-            GetPoints(t, 0, t.Length, out var _minDots, out var _maxDots);
-            for (int i = 0; i < _minDots.Length; ++i)
-            {
-                if (t[_maxDots[i]].Y < 0 || t[_minDots[i]].Y > 0)
-                {
-                    var add = _maxDots[i];
-                    if (minDots.Contains(add))
-                        continue;
-                    tPoints.Add(add);
-                }
-            }
+            //var t = GetT(range, 0, range.Length - 2);
+            //GetPoints(t, 0, t.Length, out var _minDots, out var _maxDots);
+            //for (int i = 0; i < _minDots.Length; ++i)
+            //{
+            //    if (t[_maxDots[i]].Y < 0 || t[_minDots[i]].Y > 0)
+            //    {
+            //        var add = _maxDots[i];
+            //        if (minDots.Contains(add))
+            //            continue;
+            //        tPoints.Add(add);
+            //    }
+            //}
 
             foreach (var i in minDots.Concat(tPoints))
             {
                 var point = DataSource[start + i];
-                if (baseLine.SplitLines.Any(v => Math.Abs(v.Start.X - point.X) < Unit * 5))
+                if (point.Y < 5 || baseLine.SplitLines.Any(v => Math.Abs(v.Start.X - point.X) < Unit * 5))
                     continue;
                 AddSplitLine(baseLine, point);
             }
@@ -801,6 +801,11 @@ namespace ChartEditLibrary.ViewModel
             {
                 start = 20;
                 end = 60;
+            }
+            if(exportType == ExportType.Other)
+            {
+                start = 0;
+                end = 100;
             }
             var (dataSource, saveLine) = await ReadCsv(filePath, start, end).ConfigureAwait(false);
 

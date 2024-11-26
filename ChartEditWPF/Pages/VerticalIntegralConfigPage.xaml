@@ -26,6 +26,7 @@
                 SelectedItem="{Binding CurrentType}" />
             <Button
                 Width="150"
+                Height="30"
                 Margin="5"
                 Command="{Binding SaveConfigCommand}"
                 Content="保存" />

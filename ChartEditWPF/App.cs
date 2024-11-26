@@ -18,6 +18,7 @@ using System.Windows.Controls;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Serilog.Core;
+using System.Windows.Threading;
 
 namespace ChartEditWPF
 {
@@ -38,8 +39,16 @@ namespace ChartEditWPF
             app.MainWindow.DataContext = host.Services.GetRequiredService<MainViewModel>();
             app.MainWindow.Visibility = Visibility.Visible;
             app.Resources.MergedDictionaries.Add(LoadComponent(new Uri("MyResource.xaml", UriKind.Relative)) as System.Windows.ResourceDictionary);
+            app.DispatcherUnhandledException += UnhandledException;
             app.Run();
             host.StopAsync().Wait();
+        }
+
+        private static void UnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            var logger = ServiceProvider.GetRequiredService<ILogger<App>>();
+            logger.LogError(e.Exception, "Unhandled exception");
+            e.Handled = false;
         }
 
         private static IHostBuilder CreateHostBuilder(string[] args) =>
