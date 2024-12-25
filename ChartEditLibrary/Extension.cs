@@ -3,6 +3,7 @@ using ChartEditLibrary.ViewModel;
 using ScottPlot;
 using ScottPlot.Plottables;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -13,6 +14,7 @@ namespace ChartEditLibrary
         private record BaseLineInfo(LinePlot LinePlot, DraggableChartVm Vm);
 
         private static readonly ConditionalWeakTable<EditLineBase, LinePlot> LinePlotWeakTable = [];
+        private static readonly ConditionalWeakTable<SplitLine, SplitLineLabelInfo> lineMark = [];
         private static readonly ConditionalWeakTable<BaseLine, BaseLineInfo> baseline_StartLineWeakTable = [];
 
         public static LinePlot AddBaseLine(this IPlotControl chart, BaseLine line, DraggableChartVm vm)
@@ -35,6 +37,9 @@ namespace ChartEditLibrary
         {
             var linePlot = chart.Plot.Add.Line(line.Line);
             LinePlotWeakTable.AddOrUpdate(line, linePlot);
+            var mark = chart.Plot.Add.Text(line.Description ?? "", line.End);
+            mark.IsVisible = false;
+            lineMark.AddOrUpdate(line, new SplitLineLabelInfo(mark, false));
             line.PropertyChanged += OnLineChanged;
             return linePlot;
         }
@@ -45,6 +50,8 @@ namespace ChartEditLibrary
                 chart.Plot.Remove(linePlot);
             if (line is BaseLine baseLine && baseline_StartLineWeakTable.TryGetValue(baseLine, out var baseLine_StartLine))
                 chart.Plot.Remove(baseLine_StartLine.LinePlot);
+            if (line is SplitLine sl && lineMark.TryGetValue(sl, out var mark))
+                chart.Plot.Remove(mark.Text);
         }
 
         private static void OnLineChanged(object? sender, PropertyChangedEventArgs e)
@@ -52,20 +59,28 @@ namespace ChartEditLibrary
             if (sender is not EditLineBase line)
                 return;
 
-            if (e.PropertyName != nameof(line.Line))
-                return;
-            if (!line.TryGetLinePlot(out var linePlot))
-                return;
-            linePlot.End = line.End;
-            if(linePlot.Start != line.Start)
+            if (e.PropertyName == nameof(line.Line))
             {
-                linePlot.Start = line.Start;
-                if (line is BaseLine baseLine && baseline_StartLineWeakTable.TryGetValue(baseLine, out var baseLine_StartLine))
+                if (line.TryGetLinePlot(out var linePlot))
                 {
-                    baseLine_StartLine.LinePlot.Start = line.Start;
-                    var end = baseLine_StartLine.Vm.GetChartPoint(baseLine.Start.X)!;
-                    baseLine_StartLine.LinePlot.End = end.Value;
+                    linePlot.End = line.End;
+                    if (linePlot.Start != line.Start)
+                    {
+                        linePlot.Start = line.Start;
+                        if (line is BaseLine baseLine && baseline_StartLineWeakTable.TryGetValue(baseLine, out var baseLine_StartLine))
+                        {
+                            baseLine_StartLine.LinePlot.Start = line.Start;
+                            var end = baseLine_StartLine.Vm.GetChartPoint(baseLine.Start.X)!;
+                            baseLine_StartLine.LinePlot.End = end.Value;
+                        }
+                    }
                 }
+            }
+
+            if (line is SplitLine sl && e.PropertyName == nameof(sl.Description))
+            {
+                if (lineMark.TryGetValue(sl, out var mark))
+                    mark.Text.LabelText = sl.Description ?? "";
             }
         }
 
@@ -79,7 +94,45 @@ namespace ChartEditLibrary
             return info.IsStart ? info.DraggedLine.Start : info.DraggedLine.End;
         }
 
-
+        private static SplitLine? currentMark;
+        public static void ShowMark(this SplitLine line, Coordinates mouse, bool always = false)
+        {
+            if (!lineMark.TryGetValue(line, out var markInfo))
+                return;
+            if (always)
+                markInfo.Always = true;
+            if (markInfo.Always && !always)
+                return;
+            if (currentMark == line)
+            {
+                markInfo.Text.Location = new Coordinates(mouse.X, mouse.Y);
+                return;
+            }
+            if (!always && currentMark is not null && lineMark.TryGetValue(currentMark, out var mark))
+                mark.Text.IsVisible = false;
+            currentMark = line;
+            if (lineMark.TryGetValue(line, out mark))
+            {
+                mark.Text.Location = new Coordinates(mouse.X, mouse.Y);
+                mark.Text.IsVisible = true;
+            }
+        }
+        public static void HideMark(this SplitLine line, bool always = false)
+        {
+            if (!lineMark.TryGetValue(line, out var markInfo))
+                return;
+            if (always)
+                markInfo.Always = false;
+            else if (markInfo.Always)
+                return;
+            markInfo.Text.IsVisible = false;
+            currentMark = null;
+        }
+        public static void HideMark()
+        {
+            if(currentMark != null && lineMark.TryGetValue(currentMark, out var mark) && !mark.Always)
+                mark.Text.IsVisible = false;
+        }
 
         private static int BinaryInsert<T>(this IList<T> list, T item, IComparer<T> comparer)
         {
@@ -105,6 +158,12 @@ namespace ChartEditLibrary
         public static Color ToScottColor(this System.Drawing.Color color)
         {
             return new Color(color.R, color.G, color.B, color.A);
+        }
+
+        class SplitLineLabelInfo(Text text, bool always)
+        {
+            public Text Text { get; } = text;
+            public bool Always { get; set; } = always;
         }
     }
 }

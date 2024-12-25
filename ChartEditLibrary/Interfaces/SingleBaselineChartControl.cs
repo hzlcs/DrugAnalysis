@@ -25,38 +25,6 @@ namespace ChartEditLibrary.Interfaces
             chartPlot.Menu.Add("Set DP", SetDPMenu);
         }
 
-        
-        public override void MouseDown(object? sender, PointF mousePoint, bool left)
-        {
-            if (ChartData is null)
-                return;
-
-            Pixel mousePixel = new(mousePoint.X, mousePoint.Y);
-            mouseCoordinates = PlotControl.Plot.GetCoordinates(mousePixel);
-
-            ChartData.Sensitivity = GetSensitivity();
-
-
-            if (left)
-            {
-                draggedLine = ChartData.GetDraggedLine(mouseCoordinates);
-                if (draggedLine is not null)
-                {
-                    if (draggedLine.Value.IsBaseLine)
-                        oldBaseLine = draggedLine.Value.DraggedLine.Line;
-                    var value = draggedLine.Value.GetMarkPoint();
-                    if (MyHighlightText is not null)
-                    {
-                        MyHighlightText.IsVisible = true;
-                        MyHighlightText.Location = value;
-                        MyHighlightText.LabelText = $"({value.X: 0.000}, {value.Y: 0.000})";
-                    }
-                    PlotControl.Refresh();
-                    PlotControl.Interaction.Disable();
-                }
-            }
-        }
-
         private void MoveLine(Coordinates? chartPoint, Coordinates mouseLocation)
         {
             if (!draggedLine.HasValue)
@@ -86,22 +54,18 @@ namespace ChartEditLibrary.Interfaces
                 if (point.X == editLine.Start.X)
                     return;
                 SplitLine sl = (SplitLine)editLine;
-                if(point.X >= sl.BaseLine.Start.X && point.X <= sl.BaseLine.End.X)
+                if (point.X >= sl.BaseLine.Start.X && point.X <= sl.BaseLine.End.X)
                     editLine.Line = sl.BaseLine.CreateSplitLine(point);
             }
         }
 
-        public override void MouseMove(object? sender, PointF mousePoint)
+        public override void MouseMove(Coordinates mousePoint)
         {
-            if (ChartData is null)
-                return;
             if (draggedLine is null)
                 return;
-            Pixel mousePixel = new(mousePoint.X, mousePoint.Y);
-            var mouseLocation = PlotControl.Plot.GetCoordinates(mousePixel);
             var line = draggedLine.Value;
-            var chartPoint = ChartData.GetChartPoint(mouseLocation.X, line.IsBaseLine ? mouseLocation.Y : null);
-            MoveLine(chartPoint, mouseLocation);
+            var chartPoint = ChartData.GetChartPoint(mousePoint.X, line.IsBaseLine ? mousePoint.Y : null);
+            MoveLine(chartPoint, mousePoint);
             var markPoint = draggedLine.Value.GetMarkPoint();
             if (MyHighlightText is not null)
             {
@@ -112,10 +76,8 @@ namespace ChartEditLibrary.Interfaces
             PlotControl.Refresh();
         }
 
-        public override void MouseUp(object? sender)
+        public override void MouseUp()
         {
-            if (ChartData is null)
-                return;
             if (draggedLine is null)
                 return;
             var line = draggedLine.Value;
@@ -124,10 +86,6 @@ namespace ChartEditLibrary.Interfaces
                 ChartData.UpdateBaseLine(baseLine);
             }
             draggedLine = null;
-            //ChartData.DraggedLine = null;
-            if (MyHighlightText is not null)
-                MyHighlightText.IsVisible = false;
-            PlotControl.Interaction.Enable();
             PlotControl.Refresh();
         }
 
@@ -182,7 +140,7 @@ namespace ChartEditLibrary.Interfaces
                     {
                         var lines = ChartData.SplitLines.Where(v =>
                         {
-                            if(string.IsNullOrWhiteSpace(v.Description))
+                            if (string.IsNullOrWhiteSpace(v.Description))
                                 return false;
                             var _dps = v.Description.Split('-');
                             if (_dps[0] == dps[0])
@@ -342,6 +300,5 @@ namespace ChartEditLibrary.Interfaces
                 sameLines[0].Description = dpValue.ToString();
             }
         }
-
     }
 }

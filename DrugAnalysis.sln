@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChartEditWPF", "ChartEditWP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChartEditLibrary", "ChartEditLibrary\ChartEditLibrary.csproj", "{E3AD3A8C-ADE5-459C-BA72-0EF0C7693392}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{0D9C5E04-226B-41A9-80DC-0D5269C79550}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{0D9C5E04-226B-41A9-80DC-0D5269C79550}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

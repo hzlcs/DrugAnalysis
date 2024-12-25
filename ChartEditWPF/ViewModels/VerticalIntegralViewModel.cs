@@ -29,7 +29,7 @@ namespace ChartEditWPF.ViewModels
 
         private readonly ExportType[] exportTypes = Enum.GetValues<ExportType>();
 
-        [ObservableProperty]
+
         private double panelHeight = 1080;
 
         [ObservableProperty]
@@ -40,12 +40,16 @@ namespace ChartEditWPF.ViewModels
         [ObservableProperty]
         private string hideButtonText = "隐藏数据";
 
+        [ObservableProperty]
+        private string linkButtonText = "链接坐标";
+
         public VerticalIntegralViewModel(ISelectDialog selectDialog, IFileDialog fileDialog, IMessageBox messageBox, ILogger<VerticalIntegralViewModel> logger)
         {
             _selectDialog = selectDialog;
             _fileDialog = fileDialog;
             _messageBox = messageBox;
             this.logger = logger;
+            DataSources.CollectionChanged += DataSources_CollectionChanged;
             Application.Current.Exit += Current_Exit;
             if (!File.Exists(CacheContent.SingleCacheFile))
                 return;
@@ -72,9 +76,34 @@ namespace ChartEditWPF.ViewModels
 
         }
 
-        partial void OnPanelHeightChanged(double value)
+        private void DataSources_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            UpdateHeight();
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+            {
+                foreach (ShowControlViewModel item in e.NewItems!)
+                {
+                    item.ChartControl.ChartAreaChanged += ChartControl_ChartAreaChanged;
+                }
+            }
+            else if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Remove)
+            {
+                foreach (ShowControlViewModel item in e.OldItems!)
+                {
+                    item.ChartControl.ChartAreaChanged -= ChartControl_ChartAreaChanged;
+                }
+            }
+        }
+
+        private void ChartControl_ChartAreaChanged(IChartControl obj)
+        {
+            if (LinkButtonText == "链接坐标")
+                return;
+            foreach (var i in DataSources.Select(v => v.ChartControl))
+            {
+                if (i.Equals(obj))
+                    continue;
+                i.UpdateChartArea(obj);
+            }
         }
 
         private void Current_Exit(object? sender, EventArgs e)
@@ -99,9 +128,9 @@ namespace ChartEditWPF.ViewModels
                     return cache;
                 });
                 File.WriteAllText(CacheContent.SingleCacheFile, JsonConvert.SerializeObject(contents));
-                
+
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.LogError(ex, "缓存文件保存失败");
             }
@@ -116,7 +145,7 @@ namespace ChartEditWPF.ViewModels
             if (DataSources.Count > 0)
             {
                 int showCount = Math.Min(DataSources.Count, GlobalConfig.Instance.MaxShowCount);
-                ControlHeight = (int)(PanelHeight / showCount);
+                ControlHeight = (int)(panelHeight / showCount);
             }
         }
 
@@ -143,11 +172,11 @@ namespace ChartEditWPF.ViewModels
                     logger.LogError(ex, "{file}导入失败", file);
                     _messageBox.Popup(Path.GetFileNameWithoutExtension(file) + "导入失败", NotificationType.Error);
                 }
-                UpdateHeight();
+
             }
-            
+            UpdateHeight();
             _messageBox.Popup("导入完成", NotificationType.Success);
-            
+
         }
         [RelayCommand]
         private void Export()
@@ -240,6 +269,13 @@ namespace ChartEditWPF.ViewModels
             }
         }
 
+
+        [RelayCommand]
+        private void LinkAxe()
+        {
+            LinkButtonText = LinkButtonText == "链接坐标" ? "取消链接" : "链接坐标";
+        }
+
         [RelayCommand]
         private void HideData()
         {
@@ -253,6 +289,8 @@ namespace ChartEditWPF.ViewModels
             HideButtonText = hided ? "显示数据" : "隐藏数据";
         }
 
+
+
         [RelayCommand]
         private async Task SaveResult()
         {
@@ -263,7 +301,7 @@ namespace ChartEditWPF.ViewModels
                     var res = await i.DraggableChartVM.SaveToFile();
                     res.IfFail(v => _messageBox.Show(v.Message));
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     logger.LogError(ex, "保存失败");
                 }
@@ -273,7 +311,9 @@ namespace ChartEditWPF.ViewModels
         [RelayCommand]
         private void PanelLoaded(double height)
         {
-            PanelHeight = height - 75;
+            if (panelHeight == 1080)
+                panelHeight = height - 10;
+            UpdateHeight();
         }
     }
 }

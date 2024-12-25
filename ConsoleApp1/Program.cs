@@ -1,24 +1,57 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Running;
 using ChartEditLibrary.Model;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Factorization;
+using ScottPlot.Plottables;
+using System.Text;
+using System;
+#if DEBUG
+new BenchmarkProgram().GetDataLineSpan();
+#else
+BenchmarkRunner.Run<BenchmarkProgram>();
+#endif
 
-MyClass my = new();
-BaseClass b = my;
-Console.WriteLine(b.Value); // base
-
-
-class BaseClass
+public class BenchmarkProgram
 {
-    public virtual string Value { get; set; } = "base";
-}
+    [Benchmark]
+    public string GetDataLine()
+    {
+        string line = "1\t,2\t,3\t,4\t,5\t,6\t,7\t,\t,8\t,9\t,10\t";
+        int index = line.IndexOf(',');
+        if (index == -1)
+            return line;
+        while (true)
+        {
+            int next = line.IndexOf(',', index + 1);
+            if (next == -1)
+            {
+                return line;
+            }
+            int length = next - index;
+            if (length == 1 || (length == 2 && line[index + 1] == '\t'))
+                return line[..index];
+            index = next;
+        }
+    }
 
-class MyClass : BaseClass
-{
-    public override string Value { get; set; } = "my";
-}
+    [Benchmark]
+    public string GetDataLineSpan()
+    {
+        string line = "1\t,2\t,3\t,4\t,5\t,6\t,7\t,\t,8\t,9\t,10\t";
+        var span = line.AsSpan();
+        foreach(var range in span.Split(','))
+        {
+            int length = range.End.Value - range.Start.Value;
+            if(length == 1 && span[range.Start] == '\t')
+                return line[..(range.Start.Value - 1)];
+        }
+        return line;
+    }
 
+}
 
 
 internal class PrincipalComponentProgram

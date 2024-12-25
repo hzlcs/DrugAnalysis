@@ -2,6 +2,7 @@
 using ScottPlot.Plottables;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -9,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using static ChartEditLibrary.Model.PCAManager;
 
 namespace ChartEditWPF.Behaviors
@@ -29,29 +31,52 @@ namespace ChartEditWPF.Behaviors
             }
         }
 
+        protected override void OnGotFocus(RoutedEventArgs e)
+        {
+            Debug.WriteLine("OnGotFocus");
+            ChartControl.OnFocusChanged(true);
+            base.OnGotFocus(e);
+        }
+
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+            Debug.WriteLine("OnLostFocus");
+            ChartControl.OnFocusChanged(false);
+            base.OnLostFocus(e);
+        }
+
+        protected override void OnMouseWheel(MouseWheelEventArgs e)
+        {
+            base.OnMouseWheel(e);
+            //ChartControl.AfterMouseWheel();
+        }
+
+
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
-            var point = e.GetPosition((IInputElement)e.Source);
-            ChartControl.MouseDown(this, new System.Drawing.PointF((float)point.X * DisplayScale, (float)point.Y * DisplayScale), e.LeftButton == MouseButtonState.Pressed);
+            var point = e.GetPosition(this);
+            var mousePoint = Plot.GetCoordinates(new ScottPlot.Pixel((float)point.X * DisplayScale, (float)point.Y * DisplayScale));
+            ChartControl.MouseDown(mousePoint, e.LeftButton == MouseButtonState.Pressed);
             base.OnMouseDown(e);
         }
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
-            ChartControl.MouseUp(this);
+            ChartControl.MouseUp();
             base.OnMouseUp(e);
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
             var point = e.GetPosition(this);
-            ChartControl.MouseMove(this, new System.Drawing.PointF((float)point.X * DisplayScale, (float)point.Y * DisplayScale));
+            var mousePoint = Plot.GetCoordinates(new ScottPlot.Pixel((float)point.X * DisplayScale, (float)point.Y * DisplayScale));
+            ChartControl.MouseMove(mousePoint);
             base.OnMouseMove(e);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            ChartControl.KeyDown(this, e.Key.ToString());
+            ChartControl.KeyDown(e.Key.ToString());
             base.OnKeyDown(e);
         }
 
@@ -64,6 +89,7 @@ namespace ChartEditWPF.Behaviors
             var chartPlot = (ChartPlot)d;
             if (e.NewValue is IChartControl chartControl)
             {
+                
                 chartPlot.chartControl = chartControl;
                 chartControl.BindControl(chartPlot);
             }

@@ -19,6 +19,11 @@
     <Page.Resources>
         <b:BindingProxy Data="{Binding}" x:Key="Bind"/>
     </Page.Resources>
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <i:InvokeCommandAction Command="{Binding PanelLoadedCommand}" CommandParameter="{Binding  ElementName=page, Path=ActualHeight}"/>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
@@ -53,16 +58,17 @@
             <Button
                 Width="130"
                 Margin="5"
+                Command="{Binding LinkAxeCommand}"
+                Content="{Binding LinkButtonText}" />
+            <Button
+                Width="130"
+                Margin="5"
                 Command="{Binding HideDataCommand}"
                 Content="{Binding HideButtonText}" />
         </StackPanel>
         <ScrollViewer>
             <StackPanel x:Name="panel">
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="Loaded">
-                        <i:InvokeCommandAction Command="{Binding PanelLoadedCommand}" CommandParameter="{Binding  ElementName=panel, Path=ActualHeight}"/>
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
+                
                 <ItemsControl ItemsSource="{Binding DataSources}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
