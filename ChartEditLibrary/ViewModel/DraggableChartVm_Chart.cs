@@ -11,6 +11,53 @@ namespace ChartEditLibrary.ViewModel
 {
     public partial class DraggableChartVm
     {
+        private bool IsEndPoint(Coordinates point)
+        {
+            int index = GetDateSourceIndex(point.X);
+            if (index == -1)
+                return false;
+            return new CoordinateLine(point, DataSource[index]).Length < 1E-6;
+        }
+
+
+        private CoordinateLine GetEndPointLine(BaseLine baseLine)
+        {
+            Debug.Assert(BaseLines.Contains(baseLine));
+            var line = baseLine.Line;
+            Coordinates start = line.Start;
+            if (!IsEndPoint(line.Start))
+            {
+                int index = GetDateSourceIndex(line.Start.X);
+                int lineIndex = BaseLines.IndexOf(baseLine);
+                int endIndex = lineIndex == 0 ? 0 : GetDateSourceIndex(BaseLines[lineIndex - 1].End.X);
+                for (int i = index - 1; i > endIndex; --i)
+                {
+                    double y = line.Y(DataSource[i].X);
+                    if (Math.Abs(y - DataSource[i].Y) < 1E-6)
+                    {
+                        start = DataSource[i];
+                        break;
+                    }
+                }
+            }
+            Coordinates end = line.End;
+            if (!IsEndPoint(line.End))
+            {
+                int index = GetDateSourceIndex(line.End.X);
+                int lineIndex = BaseLines.IndexOf(baseLine);
+                int endIndex = lineIndex == BaseLines.Count - 1 ? DataSource.Length - 1 : GetDateSourceIndex(BaseLines[lineIndex + 1].Start.X);
+                for (int i = index + 1; i < endIndex; ++i)
+                {
+                    double y = line.Y(DataSource[i].X);
+                    if (Math.Abs(y - DataSource[i].Y) < 1E-6)
+                    {
+                        end = DataSource[i];
+                        break;
+                    }
+                }
+            }
+            return new CoordinateLine(start, end);
+        }
 
         private bool IsVstreetPoint(Coordinates point)
         {
@@ -32,14 +79,15 @@ namespace ChartEditLibrary.ViewModel
 
         private Coordinates GetVstreetPoint(int index)
         {
+            int interval = 10;
             Coordinates point = DataSource[index];
-            int end = index + 5;
-            for (int i = index - 5; i < end; ++i)
+            int end = index + interval;
+            for (int i = index - interval; i < end; ++i)
             {
                 if (DataSource[i].Y < point.Y)
                     point = DataSource[i];
             }
-            if(!IsVstreetPoint(point))
+            if (!IsVstreetPoint(point))
                 return DataSource[index];
             return point;
         }

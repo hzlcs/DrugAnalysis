@@ -137,6 +137,8 @@ namespace ChartEditLibrary.ViewModel
                 return -1;
             if (Math.Abs(DataSource[index].X - x) > Math.Abs(DataSource[index + 1].X - x))
                 index += 1;
+            else if(Math.Abs(DataSource[index].X - x) > Math.Abs(DataSource[index - 1].X - x))
+                index -= 1;
             return index;
         }
 
@@ -294,31 +296,52 @@ namespace ChartEditLibrary.ViewModel
         public void ApplyTemplate(DraggableChartVm template)
         {
             var tHighest = template.SplitLines.MaxBy(v => DataSource[v.RTIndex].Y)!.RT;
-            var offset = yMax.X - tHighest;
+            var xOffset = yMax.X - tHighest;
             foreach (var baseline in template.BaseLines)
             {
-                double startYOffset = template.GetYOffset(baseline.Start);
-                Coordinates start = GetDataSource(baseline.Start.X + offset);
-                start = new Coordinates(start.X, start.Y - startYOffset);
-                if (template.IsVstreetPoint(baseline.Start))
-                {
-                    var vstreet = GetVstreetPoint(start);
-                    start = new Coordinates(vstreet.X, vstreet.Y - startYOffset);
-                }
+                CoordinateLine templateEndPoingLine = template.GetEndPointLine(baseline);
+                CoordinateLine endPointLine;
 
-                double endYOffset = template.GetYOffset(baseline.End);
-                Coordinates end = GetDataSource(baseline.End.X + offset);
-                end = new Coordinates(end.X, end.Y - endYOffset);
+                Coordinates start;
+                var startX = templateEndPoingLine.Start.X + xOffset;
+                var startIndex = GetDateSourceIndex(startX);
+                if (template.IsVstreetPoint(templateEndPoingLine.Start))
+                    start = GetVstreetPoint(startIndex);
+                else
+                    start = DataSource[startIndex];
+                if(!template.IsEndPoint(templateEndPoingLine.Start))
+                    start = new Coordinates(start.X, start.Y - template.GetYOffset(templateEndPoingLine.Start));
+
+                Coordinates end;
+                var endX = templateEndPoingLine.End.X + xOffset;
+                var endIndex = GetDateSourceIndex(endX);
+                if (template.IsVstreetPoint(templateEndPoingLine.End))
+                    end = GetVstreetPoint(endIndex);
+                else
+                    end = DataSource[endIndex];
+                if (!template.IsEndPoint(templateEndPoingLine.End))
+                    end = new Coordinates(end.X, end.Y - template.GetYOffset(templateEndPoingLine.End));
+                endPointLine = new CoordinateLine(start, end);
+
+                startX = baseline.Start.X + xOffset;
+                if(template.IsVstreetPoint(baseline.Start))
+                    start = GetVstreetPoint(GetDateSourceIndex(startX));
+                else
+                    start = GetDataSource(startX);
+                start = new Coordinates(start.X, endPointLine.Y(start.X));
+
+                endX = baseline.End.X + xOffset;
                 if (template.IsVstreetPoint(baseline.End))
-                {
-                    var vstreet = GetVstreetPoint(end);
-                    end = new Coordinates(vstreet.X, vstreet.Y - endYOffset);
-                }
+                    end = GetVstreetPoint(GetDateSourceIndex(endX));
+                else
+                    end = GetDataSource(endX);
+                end = new Coordinates(end.X, endPointLine.Y(end.X));
                 AddBaseLine(new BaseLine(start, end));
+
             }
             foreach (var sl in template.SplitLines)
             {
-                int index = GetDateSourceIndex(sl.Start.X + offset);
+                int index = GetDateSourceIndex(sl.Start.X + xOffset);
                 var baseline = GetBaseLineOrNearest(DataSource[index]);
                 var point = GetVstreetPoint(index);
 
