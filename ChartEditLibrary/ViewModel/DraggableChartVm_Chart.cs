@@ -1,4 +1,5 @@
-﻿using ChartEditLibrary.Model;
+﻿using ChartEditLibrary.Entitys;
+using ChartEditLibrary.Model;
 using ScottPlot;
 using System;
 using System.Collections.Generic;
@@ -77,9 +78,18 @@ namespace ChartEditLibrary.ViewModel
             return GetVstreetPoint(GetDateSourceIndex(point.X));
         }
 
+        private int GetNearestMinDot(int index)
+        {
+            return minDots.MinBy(v => Math.Abs(v - index));
+        }
+
         private Coordinates GetVstreetPoint(int index)
         {
-            int interval = 10;
+            if(MutiConfig.Instance.NearestVstreet)
+            {
+                return DataSource[GetNearestMinDot(index)];
+            }
+            int interval = MutiConfig.Instance.VstreetInterval;
             Coordinates point = DataSource[index];
             int end = index + interval;
             for (int i = index - interval; i < end; ++i)

@@ -148,7 +148,7 @@ namespace ChartEditWPF.ViewModels
         {
             if (DataSources.Count > 0)
             {
-                int showCount = Math.Min(DataSources.Count, GlobalConfig.Instance.MaxShowCount);
+                int showCount = Math.Min(DataSources.Count, MutiConfig.Instance.MaxShowCount);
                 ControlHeight = (int)(panelHeight / showCount);
             }
         }
@@ -171,6 +171,7 @@ namespace ChartEditWPF.ViewModels
             if (DataSources.FirstOrDefault(v => v.DraggableChartVM.exportType == ExportType.Standard) != null)
                 DataSources.RemoveAt(0);
             DataSources.Insert(0, svm);
+            chartControl.ChangeActived(actived);
         }
 
         [RelayCommand]
@@ -189,8 +190,8 @@ namespace ChartEditWPF.ViewModels
                     var chartControl = App.ServiceProvider.GetRequiredService<MutiBaselineChartControl>();
                     chartControl.ChartData = vm;
                     var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
-                    
                     DataSources.Add(svm);
+                    chartControl.ChangeActived(actived);
                     ShowMark(svm);
                 }
                 catch (Exception ex)
@@ -231,6 +232,7 @@ namespace ChartEditWPF.ViewModels
                     chartControl.ChartData = vm;
                     var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
                     DataSources.Add(svm);
+                    chartControl.ChangeActived(actived);
                     ShowMark(svm);
                 }
                 catch (Exception ex)

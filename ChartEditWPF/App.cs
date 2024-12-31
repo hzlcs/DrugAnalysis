@@ -91,6 +91,10 @@ namespace ChartEditWPF
                 services.AddKeyedSingleton<IPage, PCAPage>(Models.Pages.PCA, (s, v) => new PCAPage()
                 { DataContext = s.GetRequiredService<PCAPageViewModel>() });
 
+                services.AddSingleton<MutiConfigViewModel>();
+                services.AddKeyedSingleton<IPage, MutiConfigPage>(Models.Pages.MutiConfig, (s, v) => new MutiConfigPage()
+                { DataContext = s.GetRequiredService<MutiConfigViewModel>() });
+
                 services.AddTransient<QualityRangeChartWindow>();
                 ConfigureLog();
             });

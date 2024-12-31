@@ -144,7 +144,7 @@ namespace ChartEditWPF.ViewModels
         {
             if (DataSources.Count > 0)
             {
-                int showCount = Math.Min(DataSources.Count, GlobalConfig.Instance.MaxShowCount);
+                int showCount = Math.Min(DataSources.Count, MutiConfig.Instance.MaxShowCount);
                 ControlHeight = (int)(panelHeight / showCount);
             }
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ChartEditWPF.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,11 +17,11 @@ using System.Windows.Shapes;
 namespace ChartEditWPF.Pages
 {
     /// <summary>
-    /// GlobalConfigPage.xaml 的交互逻辑
+    /// MutiConfigPage.xaml 的交互逻辑
     /// </summary>
-    public partial class GlobalConfigPage : Page
+    public partial class MutiConfigPage : Page, IPage
     {
-        public GlobalConfigPage()
+        public MutiConfigPage()
         {
             InitializeComponent();
         }

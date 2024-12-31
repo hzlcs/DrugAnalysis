@@ -136,12 +136,10 @@ namespace ChartEditLibrary.ViewModel
                 Coordinates point = DataSource[start + i];
                 range[i] = new Coordinates(point.X, point.Y - baseLine.GetY(point.X));
             }
-            int startRange = 0;
+            int startRange = 1;
             for (; startRange < range.Length; ++startRange)
             {
-                if (range[startRange].Y > range[startRange + 1].Y)
-                    ++startRange;
-                else
+                if (range[startRange].Y > range[startRange - 1].Y)
                     break;
             }
             GetPoints(range, startRange, range.Length, out var minDots, out var maxDots);
@@ -166,7 +164,7 @@ namespace ChartEditLibrary.ViewModel
                 //for (int k = i - 1; k <= i + 1; ++k)
                 //    if (DataSource[start + k].Y < point.Y)
                 //        point = DataSource[start + k];
-                if (point.Y < 5 || baseLine.SplitLines.Any(v => Math.Abs(v.Start.X - point.X) < Unit * 5))
+                if (point.Y < MutiConfig.Instance.MinHeight || baseLine.SplitLines.Any(v => Math.Abs(v.Start.X - point.X) < Unit * 5))
                     continue;
                 AddSplitLine(baseLine, DataSource[start + minDots[index]]);
             }

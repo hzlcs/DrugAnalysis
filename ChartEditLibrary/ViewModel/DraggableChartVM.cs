@@ -63,6 +63,10 @@ namespace ChartEditLibrary.ViewModel
 
         private readonly int highestIndex;
 
+        private int[] minDots;
+
+        private int[] maxDots;
+
         /// <summary>
         /// 是否初始化
         /// </summary>
@@ -88,6 +92,7 @@ namespace ChartEditLibrary.ViewModel
                 }
             }
             yMax = dataSource[highestIndex];
+            GetPoints(dataSource, 1, dataSource.Length - 1, out minDots, out maxDots);
         }
 
         private BaseLine GetDefaultBaseLine()
@@ -137,7 +142,7 @@ namespace ChartEditLibrary.ViewModel
                 return -1;
             if (Math.Abs(DataSource[index].X - x) > Math.Abs(DataSource[index + 1].X - x))
                 index += 1;
-            else if(Math.Abs(DataSource[index].X - x) > Math.Abs(DataSource[index - 1].X - x))
+            else if (Math.Abs(DataSource[index].X - x) > Math.Abs(DataSource[index - 1].X - x))
                 index -= 1;
             return index;
         }
@@ -223,19 +228,23 @@ namespace ChartEditLibrary.ViewModel
             {
                 BaseLines.Add(baseLine);
             }
-            for (int i = 0; i < BaseLines.Count; ++i)
+            else
             {
-                if (baseLine.Start.X < BaseLines[i].Start.X)
+                for (int i = 0; i < BaseLines.Count; ++i)
                 {
-                    BaseLines.Insert(i, baseLine);
-                    break;
-                }
-                else if(i == BaseLines.Count - 1)
-                {
-                    BaseLines.Add(baseLine);
-                    break;
+                    if (baseLine.Start.X < BaseLines[i].Start.X)
+                    {
+                        BaseLines.Insert(i, baseLine);
+                        break;
+                    }
+                    else if (i == BaseLines.Count - 1)
+                    {
+                        BaseLines.Add(baseLine);
+                        break;
+                    }
                 }
             }
+
             return baseLine;
         }
 
@@ -309,7 +318,7 @@ namespace ChartEditLibrary.ViewModel
                     start = GetVstreetPoint(startIndex);
                 else
                     start = DataSource[startIndex];
-                if(!template.IsEndPoint(templateEndPoingLine.Start))
+                if (!template.IsEndPoint(templateEndPoingLine.Start))
                     start = new Coordinates(start.X, start.Y - template.GetYOffset(templateEndPoingLine.Start));
 
                 Coordinates end;
@@ -324,7 +333,7 @@ namespace ChartEditLibrary.ViewModel
                 endPointLine = new CoordinateLine(start, end);
 
                 startX = baseline.Start.X + xOffset;
-                if(template.IsVstreetPoint(baseline.Start))
+                if (template.IsVstreetPoint(baseline.Start))
                     start = GetVstreetPoint(GetDateSourceIndex(startX));
                 else
                     start = GetDataSource(startX);
