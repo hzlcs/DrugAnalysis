@@ -1,38 +1,27 @@
 ﻿using ChartEditLibrary.Model;
 using ChartEditLibrary.ViewModel;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json.Linq;
 using OpenTK.Mathematics;
-using OpenTK.Windowing.GraphicsLibraryFramework;
 using ScottPlot;
-using ScottPlot.Palettes;
 using ScottPlot.Plottables;
-using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ChartEditLibrary.Interfaces
 {
     public interface IChartControl
     {
+        event Action<IChartControl>? ChartAreaChanged;
+
         IPlotControl PlotControl { get; }
 
         DraggableChartVm ChartData { get; set; }
 
-        void MouseDown(object? sender, PointF mousePoint, bool left);
+        void MouseDown(Coordinates mousePoing, bool left);
 
-        void MouseMove(object? sender, PointF mousePoint);
+        void MouseMove(Coordinates mousePoing);
 
-        void MouseUp(object? sender);
+        void MouseUp();
 
-        void KeyDown(object? sender, string key);
+        void KeyDown(string key);
 
         void AutoFit();
 
@@ -42,23 +31,32 @@ namespace ChartEditLibrary.Interfaces
 
         void ChangeActived(bool actived);
 
+        void UpdateChartArea(IChartControl chartControl);
+
+        void OnFocusChanged(bool focused);
     }
 
     public abstract class ChartControl(IMessageBox messageBox, IFileDialog dialog, IInputForm inputForm) : IChartControl
     {
+        private bool focused;
         public IPlotControl PlotControl { get; set; } = null!;
         public DraggableChartVm ChartData { get; set; } = null!;
+        protected bool mouseDown;
         protected Text? MyHighlightText;
         protected Coordinates mouseCoordinates;
         protected DraggedLineInfo? draggedLine;
-        protected CoordinateLine oldBaseLine;
+        protected Vector2d sensitivity;
         protected readonly IMessageBox _messageBox = messageBox;
         protected readonly IFileDialog _dialog = dialog;
         protected readonly IInputForm _inputForm = inputForm;
 
+
+        public event Action<IChartControl>? ChartAreaChanged;
+
         protected Vector2d GetSensitivity()
         {
-            return new Vector2d(PlotControl.Plot.Axes.Bottom.Width / 50, PlotControl.Plot.Axes.Left.Height / 100);
+            sensitivity = new Vector2d(PlotControl.Plot.Axes.Bottom.Width / 50, PlotControl.Plot.Axes.Left.Height / 100);
+            return sensitivity;
         }
 
         public void AutoFit()
@@ -74,7 +72,7 @@ namespace ChartEditLibrary.Interfaces
             chartPlot.Plot.XLabel(ChartData.FileName);
             MyHighlightText = chartPlot.Plot.Add.Text("", 0, 0);
             MyHighlightText.IsVisible = false;
-
+            GetSensitivity();
             var source = chartPlot.Plot.Add.ScatterPoints(ChartData.DataSource);
             source.Color = ScottPlot.Color.FromARGB((uint)System.Drawing.Color.SkyBlue.ToArgb());
             source.MarkerSize = 3;
@@ -95,11 +93,12 @@ namespace ChartEditLibrary.Interfaces
             chartPlot.Plot.Axes.AutoScale();
             chartPlot.Refresh();
             chartPlot.Menu.Clear();
+
         }
 
         private void BaseLines_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            if(e.Action == NotifyCollectionChangedAction.Add)
+            if (e.Action == NotifyCollectionChangedAction.Add)
             {
                 foreach (BaseLine item in e.NewItems!)
                 {
@@ -139,7 +138,7 @@ namespace ChartEditLibrary.Interfaces
             return PlotControl.Plot.GetImageBytes((int)size.Width, (int)size.Height, ImageFormat.Png);
         }
 
-        public void KeyDown(object? sender, string key)
+        public void KeyDown(string key)
         {
             Coordinates? markPoint = null;
             if (key == "A")
@@ -178,13 +177,118 @@ namespace ChartEditLibrary.Interfaces
             PlotControl.Refresh();
         }
 
-        public abstract void MouseDown(object? sender, PointF mousePoint, bool left);
+        public virtual void MouseDown(Coordinates mousePoint, bool left)
+        {
+            ArgumentNullException.ThrowIfNull(ChartData);
+            mouseDown = true;
+            mouseCoordinates = mousePoint;
+            ChartData.Sensitivity = GetSensitivity();
+            if (!left)
+                return;
+            draggedLine = ChartData.GetDraggedLine(mouseCoordinates);
 
-        public abstract void MouseMove(object? sender, PointF mousePoint);
+            if (draggedLine is not null)
+            {
+                if (MyHighlightText is not null)
+                {
+                    var value = draggedLine.Value.GetMarkPoint();
+                    MyHighlightText.IsVisible = true;
+                    MyHighlightText.Location = value;
+                    MyHighlightText.LabelText = $"({value.X: 0.000}, {value.Y: 0.000})";
+                    PlotControl.Refresh();
+                }
+                PlotControl.Interaction.Disable();
+            }
+        }
 
-        public abstract void MouseUp(object? sender);
-        public virtual void ChangeActived(bool actived) { }
+        public virtual void MouseMove(Coordinates mousePoint)
+        {
+            ArgumentNullException.ThrowIfNull(ChartData);
+            if (!mouseDown)
+            {
+                var index = ChartData.GetDateSourceIndex(mousePoint.X);
+                SplitLine? sl = null;
+                if (draggedLine is not null && draggedLine.Value.DraggedLine is SplitLine s)
+                {
+                    sl = s;
+                }
+                else
+                {
+                    if (index > 0)
+                        sl = ChartData.SplitLines.FirstOrDefault(v => v.Start.X > mousePoint.X);
+                }
+
+                if (sl is not null)
+                {
+                    var baseline = sl.BaseLine;
+                    if (baseline.Line.Y(mousePoint.X) < mousePoint.Y && ChartData.DataSource[index].Y > mousePoint.Y)
+                        sl.ShowMark(new Coordinates(mousePoint.X, mousePoint.Y + sensitivity.Y * 2));
+                    else
+                        sl.HideMark();
+                    
+                }
+                else
+                {
+                    Extension.HideMark();
+                }
+            }
+            else
+            {
+                Extension.HideMark();
+            }
+            PlotControl.Refresh();
+        }
+
+        public virtual void MouseUp()
+        {
+            ArgumentNullException.ThrowIfNull(ChartData);
+            mouseDown = false;
+            if (MyHighlightText is not null)
+                MyHighlightText.IsVisible = false;
+            PlotControl.Interaction.Enable();
+        }
+
+        public virtual void ChangeActived(bool actived)
+        {
+
+        }
+
+        public void UpdateChartArea(IChartControl chartControl)
+        {
+            PlotControl.Plot.Axes.Left.Min = chartControl.PlotControl.Plot.Axes.Left.Min;
+            PlotControl.Plot.Axes.Left.Max = chartControl.PlotControl.Plot.Axes.Left.Max;
+            PlotControl.Plot.Axes.Bottom.Min = chartControl.PlotControl.Plot.Axes.Bottom.Min;
+            PlotControl.Plot.Axes.Bottom.Max = chartControl.PlotControl.Plot.Axes.Bottom.Max;
+            PlotControl.Refresh();
+        }
+
+        double[] axes = [];
+        public async void OnFocusChanged(bool focused)
+        {
+            this.focused = focused;
+            if (!focused)
+                return;
+            axes = GetAxeValue().ToArray();
+            while (this.focused)
+            {
+                await Task.Delay(1000);
+                if (axes.SequenceEqual(GetAxeValue()))
+                {
+                    continue;
+                }
+                GetSensitivity();
+                axes = GetAxeValue().ToArray();
+                ChartAreaChanged?.Invoke(this);
+            }
+        }
+
+        private IEnumerable<double> GetAxeValue()
+        {
+            yield return PlotControl.Plot.Axes.Left.Min;
+            yield return PlotControl.Plot.Axes.Left.Max;
+            yield return PlotControl.Plot.Axes.Bottom.Min;
+            yield return PlotControl.Plot.Axes.Bottom.Max;
+        }
     }
-
 
 }

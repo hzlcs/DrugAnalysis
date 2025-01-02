@@ -1,0 +1,28 @@
+﻿<Page x:Class="ChartEditWPF.Pages.MutiConfigPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:ChartEditWPF.Pages"
+      xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
+      xmlns:hc="https://handyorg.github.io/handycontrol"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      Title="MutiConfigPage" d:DataContext="{d:DesignInstance vm:MutiConfigViewModel}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" HorizontalAlignment="Left">
+            <Button
+                Width="150"
+                Height="30"
+                Margin="5"
+                Command="{Binding SaveConfigCommand}"
+                Content="保存" />
+        </StackPanel>
+        <hc:PropertyGrid Grid.Row="1" SelectedObject="{Binding MutiConfig}"/>
+    </Grid>
+</Page>

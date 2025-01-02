@@ -12,7 +12,11 @@
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="MutiVerticalIntegralPage">
-
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <i:InvokeCommandAction Command="{Binding PanelLoadedCommand}" CommandParameter="{Binding  ElementName=page, Path=ActualHeight}"/>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
@@ -22,13 +26,23 @@
             <Button
             Width="130"
             Margin="5"
+            Command="{Binding ImportStdCommand}"
+            Content="导入标准品" />
+            <Button
+            Width="130"
+            Margin="5"
             Command="{Binding ImportCommand}"
             Content="导入样品" />
             <Button
-Width="130"
-Margin="5"
-Command="{Binding RemoveCommand}"
-Content="移除样品" />
+            Width="130"
+            Margin="5"
+            Command="{Binding TemplateImportCommand}"
+            Content="模板导入" />
+            <Button
+            Width="130"
+            Margin="5"
+            Command="{Binding RemoveCommand}"
+            Content="移除样品" />
             <Button
             Width="130"
             Margin="5"
@@ -39,12 +53,17 @@ Content="移除样品" />
             Margin="5"
             Command="{Binding ExportCommand}"
             Content="导出结果" />
-            
+
             <Button
             Width="130"
             Margin="5"
             Command="{Binding ResizeCommand}"
             Content="图表自适应" />
+            <Button
+    Width="130"
+    Margin="5"
+    Command="{Binding LinkAxeCommand}"
+    Content="{Binding LinkButtonText}" />
             <Button
             Width="130"
             Margin="5"
@@ -56,14 +75,15 @@ Content="移除样品" />
             Margin="5"
             Command="{Binding HideDataCommand}"
             Content="{Binding HideButtonText}" />
+            <Button
+            Width="130"
+            Margin="5"
+            Command="{Binding ShowDescCommand}"
+            Content="{Binding ShowDescText}" />
         </StackPanel>
         <ScrollViewer>
             <StackPanel x:Name="panel">
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="Loaded">
-                        <i:InvokeCommandAction Command="{Binding PanelLoadedCommand}" CommandParameter="{Binding  ElementName=panel, Path=ActualHeight}"/>
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
+
                 <ItemsControl ItemsSource="{Binding DataSources}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>

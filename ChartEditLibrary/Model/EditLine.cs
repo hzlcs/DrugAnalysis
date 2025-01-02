@@ -60,7 +60,7 @@ namespace ChartEditLibrary.Model
         {
             if (this is not SplitLine splitLine || Math.Abs(oldValue.Start.X - newValue.Start.X) < Utility.Tolerance)
                 return;
-
+            
             SplitLineMoving?.Invoke(splitLine, oldValue, newValue);
         }
 
@@ -110,7 +110,17 @@ namespace ChartEditLibrary.Model
 
         public double RT { get; set; }
 
-        public string? Description { get; set; }
+        private string? description;
+        public string? Description
+        {
+            get => description; set
+            {
+                if (description == value)
+                    return;
+                description = value;
+                OnPropertyChanged(nameof(Description));
+            }
+        }
 
         /// <summary>
         /// 用于显示在DataGridView中的Columns

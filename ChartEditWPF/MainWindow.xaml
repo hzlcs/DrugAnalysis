@@ -72,6 +72,11 @@
                     Command="{Binding ButtonClickCommand}"
                     CommandParameter="{x:Static m:Pages.VerticalIntegralConfig}"
                     Header="垂直积分" />
+                <hc:SideMenuItem
+                    Margin="5,0,0,0"
+                    Command="{Binding ButtonClickCommand}"
+                    CommandParameter="{x:Static m:Pages.MutiConfig}"
+                    Header="二糖积分" />
             </hc:SideMenuItem>
         </hc:SideMenu>
         <Border
