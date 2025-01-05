@@ -78,6 +78,7 @@ namespace ChartEditLibrary.Interfaces
 
         public override void MouseUp()
         {
+            base.MouseUp();
             if (draggedLine is null)
                 return;
             var line = draggedLine.Value;

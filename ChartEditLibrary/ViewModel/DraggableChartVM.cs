@@ -232,6 +232,10 @@ namespace ChartEditLibrary.ViewModel
             {
                 for (int i = 0; i < BaseLines.Count; ++i)
                 {
+                    if(baseLine.Start.X == BaseLines[i].Start.X)
+                    {
+                        break;
+                    }
                     if (baseLine.Start.X < BaseLines[i].Start.X)
                     {
                         BaseLines.Insert(i, baseLine);
