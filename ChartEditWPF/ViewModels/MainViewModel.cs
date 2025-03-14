@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace ChartEditWPF.ViewModels
 {
@@ -54,15 +55,14 @@ namespace ChartEditWPF.ViewModels
                 Notifications.RemoveAt(0);
             PopupVisible = true;
             var content = new NotificationContent(type.ToString(), message, type);
+ 
             Notifications.Add(content);
             semaphore.Release();
             await Task.Delay(3000);
-            if (content == Notifications.FirstOrDefault())
-            {
-                Notifications.RemoveAt(0);
-                if (Notifications.Count == 0)
-                    PopupVisible = false;
-            }
+            Notifications.Remove(content);
+            if (Notifications.Count == 0)
+                PopupVisible = false;
+
 
         }
 

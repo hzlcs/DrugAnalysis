@@ -61,17 +61,12 @@ namespace ChartEditLibrary.Interfaces
 
         public override void MouseMove(Coordinates mousePoint)
         {
+            base.MouseMove(mousePoint);
             if (draggedLine is null)
                 return;
             var line = draggedLine.Value;
             var chartPoint = ChartData.GetChartPoint(mousePoint.X, line.IsBaseLine ? mousePoint.Y : null);
             MoveLine(chartPoint, mousePoint);
-            var markPoint = draggedLine.Value.GetMarkPoint();
-            if (MyHighlightText is not null)
-            {
-                MyHighlightText.Location = markPoint;
-                MyHighlightText.LabelText = $"({markPoint.X: 0.000}, {markPoint.Y: 0.000})";
-            }
 
             PlotControl.Refresh();
         }

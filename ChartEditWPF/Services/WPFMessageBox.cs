@@ -18,17 +18,15 @@ namespace ChartEditWPF.Services
         //todo
         public bool ConfirmOperation(string message)
         {
-            Debug.WriteLine(message);
-            return MessageBox.Show(message, "", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
+            return HandyControl.Controls.MessageBox.Ask(message, "请确认") == MessageBoxResult.OK;
         }
 
         public void Show(string message)
         {
-            Debug.WriteLine(message);
             MessageBox.Show(message);
         }
 
-        public void Popup(string message, ChartEditLibrary.Interfaces.NotificationType type)
+        public void Popup(string message, NotificationType type)
         {
             messageWindow.Popup(message, type);
         }

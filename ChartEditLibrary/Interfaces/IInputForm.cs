@@ -10,5 +10,9 @@ namespace ChartEditLibrary.Interfaces
     public interface IInputForm
     {
         bool TryGetInput(object? data, [MaybeNullWhen(false)] out string value);
+
+        T ShowCombboxDialog<T>(string title, T[] options, bool canEdit = false);
+
+        T[]? ShowListDialog<T>(string title, string itemName, T[] options);
     }
 }

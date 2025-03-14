@@ -20,6 +20,7 @@ namespace ChartEditLibrary
         public static LinePlot AddBaseLine(this IPlotControl chart, BaseLine line, DraggableChartVm vm)
         {
             var linePlot = chart.Plot.Add.Line(line.Line);
+            linePlot.LineWidth = 1.5f;
             LinePlotWeakTable.AddOrUpdate(line, linePlot);
             line.PropertyChanged += OnLineChanged;
 
@@ -36,6 +37,7 @@ namespace ChartEditLibrary
         public static LinePlot AddSplitLine(this IPlotControl chart, SplitLine line)
         {
             var linePlot = chart.Plot.Add.Line(line.Line);
+            linePlot.LineWidth = 1.5f;
             LinePlotWeakTable.AddOrUpdate(line, linePlot);
             var mark = chart.Plot.Add.Text(line.Description ?? "", line.End);
             mark.IsVisible = false;
@@ -153,6 +155,30 @@ namespace ChartEditLibrary
         public static int BinaryInsert<T>(this IList<T> list, T item) where T : IComparable<T>
         {
             return list.BinaryInsert(item, Comparer<T>.Create((l, r) => l.CompareTo(r)));
+        }
+
+        public static int FirstIndex<T>(this IEnumerable<T> values, Func<T, bool> predicate)
+        {
+            var index = 0;
+            foreach (var value in values)
+            {
+                if (predicate(value))
+                    return index;
+                index++;
+            }
+            throw new InvalidOperationException("No element found");
+        }
+
+        public static int FirstOrDefaultIndex<T>(this IEnumerable<T> values, Func<T, bool> predicate)
+        {
+            var index = 0;
+            foreach (var value in values)
+            {
+                if (predicate(value))
+                    return index;
+                index++;
+            }
+            return -1;
         }
 
         public static Color ToScottColor(this System.Drawing.Color color)

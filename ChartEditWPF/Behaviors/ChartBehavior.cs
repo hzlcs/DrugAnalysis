@@ -33,14 +33,12 @@ namespace ChartEditWPF.Behaviors
 
         protected override void OnGotFocus(RoutedEventArgs e)
         {
-            Debug.WriteLine("OnGotFocus");
             ChartControl.OnFocusChanged(true);
             base.OnGotFocus(e);
         }
 
         protected override void OnLostFocus(RoutedEventArgs e)
         {
-            Debug.WriteLine("OnLostFocus");
             ChartControl.OnFocusChanged(false);
             base.OnLostFocus(e);
         }
@@ -50,7 +48,6 @@ namespace ChartEditWPF.Behaviors
             base.OnMouseWheel(e);
             //ChartControl.AfterMouseWheel();
         }
-
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
@@ -76,9 +73,12 @@ namespace ChartEditWPF.Behaviors
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
+            if (e.KeyboardDevice.Modifiers == ModifierKeys.Alt)
+                return;
             ChartControl.KeyDown(e.Key.ToString());
             base.OnKeyDown(e);
         }
+
 
         // Using a DependencyProperty as the backing store for ChartControl.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty ChartControlProperty =

@@ -60,7 +60,7 @@ namespace ChartEditLibrary.Model
         {
             if (this is not SplitLine splitLine || Math.Abs(oldValue.Start.X - newValue.Start.X) < Utility.Tolerance)
                 return;
-            
+
             SplitLineMoving?.Invoke(splitLine, oldValue, newValue);
         }
 
@@ -113,12 +113,14 @@ namespace ChartEditLibrary.Model
         private string? description;
         public string? Description
         {
-            get => description; set
+            get => description;
+            set
             {
                 if (description == value)
                     return;
                 description = value;
                 OnPropertyChanged(nameof(Description));
+                OnPropertyChanged("Item[]");
             }
         }
 
@@ -194,6 +196,11 @@ namespace ChartEditLibrary.Model
         {
             OnPropertyChanged("Item[]");
         }
+
+        public double GetHeight(Coordinates[] dataSource)
+        {
+            return dataSource[RTIndex].Y - BaseLine.GetY(RT);
+        }
     }
 
     /// <summary>
@@ -202,6 +209,11 @@ namespace ChartEditLibrary.Model
     public class BaseLine(CoordinateLine line) : EditLineBase(line)
     {
         public List<SplitLine> SplitLines { get; } = [];
+
+        /// <summary>
+        /// 延伸线
+        /// </summary>
+        public CoordinateLine EndPointLine { get; set; }
 
         public BaseLine(Coordinates start, Coordinates end) : this(new CoordinateLine(start, end))
         {
@@ -234,40 +246,10 @@ namespace ChartEditLibrary.Model
         public int AddSplitLine(SplitLine line, DraggableChartVm vm)
         {
             var index = SplitLines.BinaryInsert(line);
-            if (index == 0)
+            line.NextLine = index == 0 ? line.BaseLine : SplitLines[index - 1];
+            if (index < SplitLines.Count - 1)
             {
-                line.NextLine = line.BaseLine;
-                if (SplitLines.Count > 1)
-                {
-                    var parentLine = SplitLines[1];
-
-                    parentLine.NextLine = line;
-                    parentLine.Area = vm.GetArea(SplitLines[1]);
-                    if (vm.DataSource[parentLine.RTIndex].X < line.Start.X)
-                    {
-                        //Debugger.Break();
-                        parentLine.RTIndex = vm.GetDateSourceIndex(line.Start.X);
-                        parentLine.RT = vm.DataSource[parentLine.RTIndex].X;
-                    }
-
-                }
-            }
-            else if (index == SplitLines.Count - 1)
-            {
-                line.NextLine = SplitLines[index - 1];
-            }
-            else
-            {
-                line.NextLine = SplitLines[index - 1];
-                var parentLine = SplitLines[index + 1];
-                parentLine.NextLine = line;
-                parentLine.Area = vm.GetArea(SplitLines[index + 1]);
-                if (vm.DataSource[parentLine.RTIndex].X < line.Start.X)
-                {
-                    //Debugger.Break();
-                    parentLine.RTIndex = vm.GetDateSourceIndex(line.Start.X);
-                    parentLine.RT = vm.DataSource[parentLine.RTIndex].X;
-                }
+                SplitLines[index + 1].NextLine = line;
             }
             return index;
         }
@@ -306,6 +288,11 @@ namespace ChartEditLibrary.Model
                 }
             }
             SplitLines.Remove(line);
+        }
+
+        public override string ToString()
+        {
+            return $"{Start.X}, {End.X}";
         }
     }
 

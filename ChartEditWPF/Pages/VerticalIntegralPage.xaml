@@ -38,6 +38,11 @@
             <Button
                 Width="130"
                 Margin="5"
+                Command="{Binding ImportNewCommand}"
+                Content="重新导入样品" />
+            <Button
+                Width="130"
+                Margin="5"
                 Command="{Binding SaveResultCommand}"
                 Content="保存结果" />
             <Button

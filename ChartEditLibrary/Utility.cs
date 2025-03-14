@@ -12,5 +12,7 @@ namespace ChartEditLibrary
     {
         public const double Tolerance = 1e-6;
 
+        public static bool ToleranceEqual(double a, double b) => Math.Abs(a - b) <= Tolerance;
+
     }
 }

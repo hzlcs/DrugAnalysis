@@ -2,6 +2,7 @@
 using ChartEditLibrary.ViewModel;
 using MathNet.Numerics.Distributions;
 using ScottPlot;
+using ScottPlot.Plottables;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,10 +15,12 @@ namespace ChartEditLibrary.Interfaces
 {
     public class MutiBaselineChartControl(IMessageBox messageBox, IFileDialog dialog, IInputForm inputForm) : ChartControl(messageBox, dialog, inputForm)
     {
+        
         public override void BindControl(IPlotControl chartPlot)
         {
             base.BindControl(chartPlot);
-
+            vstreetMarker = chartPlot.Plot.Add.Marker(0, 0, size: 2, color: System.Drawing.Color.Red.ToScottColor());
+            vstreetMarker.IsVisible = false;
 
             chartPlot.Menu.Add("Add Line", AddLineMenu);
             chartPlot.Menu.Add("Remove Line", RemoveLineMenu);
@@ -51,23 +54,22 @@ namespace ChartEditLibrary.Interfaces
             else
             {
                 var line = (SplitLine)lineInfo.Value.DraggedLine;
-                if (_inputForm.TryGetInput(line.Description, out var value))
+                string dp = _inputForm.ShowCombboxDialog("Set Assignment", SampleDescription.GluDescriptions);
+                if (!TrySetDPIndex(line, dp))
                 {
-                    if (!TrySetDPIndex(line, value, ChartData.SplitLines))
-                    {
-                        _messageBox.Show("无效的DP值");
-                    }
-                    else
-                    {
-                        ChartData.DraggedLine = null;
-                        ChartData.DraggedLine = DraggableChartVm.GetFocusLineInfo(line);
-                    }
+                    _messageBox.Show("无效的DP值");
                 }
+                else
+                {
+                    ChartData.DraggedLine = null;
+                    ChartData.DraggedLine = DraggableChartVm.GetFocusLineInfo(line);
+                }
+
 
             }
         }
 
-        private static bool TrySetDPIndex(SplitLine line, string? value, IList<SplitLine> lines)
+        private static bool TrySetDPIndex(SplitLine line, string? value)
         {
             if (value is null)
             {
@@ -186,7 +188,7 @@ namespace ChartEditLibrary.Interfaces
                 baseLine_endLine = ChartData.AddSplitLine(baseLine, baseLine.End);
                 PlotControl.Interaction.Disable();
             }
-            
+
         }
 
         public override void MouseMove(Coordinates mousePoint)
@@ -197,12 +199,8 @@ namespace ChartEditLibrary.Interfaces
             var line = draggedLine.Value;
             var chartPoint = ChartData.GetChartPoint(mousePoint.X, line.IsBaseLine ? mousePoint.Y : null);
             MoveLine(chartPoint, mousePoint);
-            var markPoint = draggedLine.Value.GetMarkPoint();
-            if (MyHighlightText is not null)
-            {
-                MyHighlightText.Location = markPoint;
-                MyHighlightText.LabelText = $"({markPoint.X: 0.000}, {markPoint.Y: 0.000})";
-            }
+            
+            
 
             PlotControl.Refresh();
         }
@@ -265,7 +263,7 @@ namespace ChartEditLibrary.Interfaces
         public override void MouseUp()
         {
             base.MouseUp();
-
+            
             if (draggedLine is null)
                 return;
             var line = draggedLine.Value;
@@ -282,18 +280,24 @@ namespace ChartEditLibrary.Interfaces
                     {
                         ChartData.GenerateSplitLine(baseLine);
                     }
+                    baseLine_endLine = null;
                 }
                 else
                 {
                     ChartData.UpdateBaseLine(baseLine);
                 }
-
-                baseLine_endLine = null;
+                if (ChartData.CheckCrossBaseLine(baseLine, out var point))
+                {
+                    if (_messageBox.ConfirmOperation("基线存在交叉，是否校正为切点？"))
+                    {
+                        baseLine.Start = point;
+                        ChartData.UpdateBaseLine(baseLine);
+                    };
+                }
             }
-            draggedLine = null; 
-            
-            PlotControl.Refresh();
+            draggedLine = null;
 
+            PlotControl.Refresh();
         }
 
         private bool actived;

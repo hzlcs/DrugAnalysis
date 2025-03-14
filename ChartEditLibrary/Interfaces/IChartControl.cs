@@ -13,6 +13,8 @@ namespace ChartEditLibrary.Interfaces
 
         IPlotControl PlotControl { get; }
 
+        System.Drawing.Color? SerialColor { get; set; }
+
         DraggableChartVm ChartData { get; set; }
 
         void MouseDown(Coordinates mousePoing, bool left);
@@ -41,8 +43,19 @@ namespace ChartEditLibrary.Interfaces
         private bool focused;
         public IPlotControl PlotControl { get; set; } = null!;
         public DraggableChartVm ChartData { get; set; } = null!;
+        private System.Drawing.Color? serialColor;
+        public System.Drawing.Color? SerialColor
+        {
+            get => serialColor;
+            set
+            {
+
+            }
+        }
+
         protected bool mouseDown;
         protected Text? MyHighlightText;
+        protected Marker? vstreetMarker;
         protected Coordinates mouseCoordinates;
         protected DraggedLineInfo? draggedLine;
         protected Vector2d sensitivity;
@@ -55,7 +68,7 @@ namespace ChartEditLibrary.Interfaces
 
         protected Vector2d GetSensitivity()
         {
-            sensitivity = new Vector2d(PlotControl.Plot.Axes.Bottom.Width / 50, PlotControl.Plot.Axes.Left.Height / 100);
+            sensitivity = new Vector2d(PlotControl.Plot.Axes.Bottom.Width / 50, PlotControl.Plot.Axes.Left.Height / 50);
             return sensitivity;
         }
 
@@ -68,14 +81,18 @@ namespace ChartEditLibrary.Interfaces
         public virtual void BindControl(IPlotControl chartPlot)
         {
             PlotControl = chartPlot;
+
             chartPlot.Plot.Clear();
             chartPlot.Plot.XLabel(ChartData.FileName);
             MyHighlightText = chartPlot.Plot.Add.Text("", 0, 0);
             MyHighlightText.IsVisible = false;
+            vstreetMarker = chartPlot.Plot.Add.Marker(0, 0, MarkerShape.FilledCircle, 3.5f, 
+                Color.FromColor(System.Drawing.Color.Red));
+            vstreetMarker.IsVisible = false;
             GetSensitivity();
             var source = chartPlot.Plot.Add.ScatterPoints(ChartData.DataSource);
-            source.Color = ScottPlot.Color.FromARGB((uint)System.Drawing.Color.SkyBlue.ToArgb());
-            source.MarkerSize = 3;
+            source.Color = ScottPlot.Color.FromColor(System.Drawing.Color.DodgerBlue);
+            source.MarkerSize = 2;
             foreach (var baseLine in ChartData.BaseLines)
             {
                 chartPlot.AddBaseLine(baseLine, ChartData);
@@ -197,8 +214,17 @@ namespace ChartEditLibrary.Interfaces
                     MyHighlightText.LabelText = $"({value.X: 0.000}, {value.Y: 0.000})";
                     PlotControl.Refresh();
                 }
+                if (vstreetMarker is not null)
+                {
+                    var value = draggedLine.Value.GetMarkPoint();
+                    vstreetMarker.Location = ChartData.GetVstreetPoint(value.X);
+                    vstreetMarker.IsVisible = true;
+                    PlotControl.Refresh();
+                }
+
                 PlotControl.Interaction.Disable();
             }
+
         }
 
         public virtual void MouseMove(Coordinates mousePoint)
@@ -225,7 +251,7 @@ namespace ChartEditLibrary.Interfaces
                         sl.ShowMark(new Coordinates(mousePoint.X, mousePoint.Y + sensitivity.Y * 2));
                     else
                         sl.HideMark();
-                    
+
                 }
                 else
                 {
@@ -234,8 +260,26 @@ namespace ChartEditLibrary.Interfaces
             }
             else
             {
+                if (draggedLine is not null)
+                {
+                    var markPoint = draggedLine.Value.GetMarkPoint();
+                    if (MyHighlightText is not null)
+                    {
+                        MyHighlightText.Location = markPoint;
+                        MyHighlightText.LabelText = $"({markPoint.X: 0.000}, {markPoint.Y: 0.000})";
+                    }
+                    if (vstreetMarker is not null)
+                    {
+                        var location = ChartData.GetVstreetPoint(markPoint.X);
+                        if (vstreetMarker.Location != location)
+                        {
+                            vstreetMarker.Location = location;
+                        }
+                    }
+                }
                 Extension.HideMark();
             }
+
             PlotControl.Refresh();
         }
 
@@ -245,6 +289,8 @@ namespace ChartEditLibrary.Interfaces
             mouseDown = false;
             if (MyHighlightText is not null)
                 MyHighlightText.IsVisible = false;
+            if (vstreetMarker is not null)
+                vstreetMarker.IsVisible = false;
             PlotControl.Interaction.Enable();
         }
 

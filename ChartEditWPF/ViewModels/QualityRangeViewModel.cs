@@ -17,7 +17,7 @@ using static ChartEditWPF.ViewModels.SamplePageViewModel;
 
 namespace ChartEditWPF.ViewModels
 {
-    public partial class QualityRangeViewModel(IFileDialog _fileDialog, IMessageBox _messageBox, ISelectDialog _selectDialog, ILogger<QualityRangeViewModel> logger) : ObservableObject
+    public partial class QualityRangeViewModel(IFileDialog _fileDialog, IMessageBox _messageBox, IInputForm _selectDialog, ILogger<QualityRangeViewModel> logger) : ObservableObject
     {
         [ObservableProperty]
         private string[]? descriptions = [];

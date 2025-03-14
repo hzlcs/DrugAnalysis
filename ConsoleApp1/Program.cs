@@ -8,8 +8,32 @@ using MathNet.Numerics.LinearAlgebra.Factorization;
 using ScottPlot.Plottables;
 using System.Text;
 using System;
+using System.Diagnostics;
+Fun(0);
+
+Console.ReadLine();
+
+void Fun(int i)
+{
+    Fun1(i);
+}
+void Fun1(int i)
+{
+    Fun2(i);
+}
+void Fun2(int i)
+{
+    Fun3(i);
+
+}
+void Fun3(int i)
+{
+    var trace = new StackTrace();
+
+}
+
 #if DEBUG
-new BenchmarkProgram().GetDataLineSpan();
+
 #else
 BenchmarkRunner.Run<BenchmarkProgram>();
 #endif

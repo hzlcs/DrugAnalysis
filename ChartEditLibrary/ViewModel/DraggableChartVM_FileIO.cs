@@ -12,7 +12,7 @@ namespace ChartEditLibrary.ViewModel
 {
     public partial class DraggableChartVm
     {
-        private static readonly char[] spe = { ',', '\t' };
+        private static readonly char[] spe = [',', '\t'];
 
         private static async Task<(Coordinates[], string[][]?)> ReadCsv(string path, float start, float end)
         {
@@ -78,7 +78,8 @@ namespace ChartEditLibrary.ViewModel
             }
         }
 
-        public static async Task<DraggableChartVm> CreateAsync(string filePath, ExportType? exportType, string description)
+        public static async Task<DraggableChartVm> CreateAsync(string filePath, ExportType? exportType, string description
+            ,bool @new = false)
         {
             float start = 0, end = float.MaxValue;
             if (exportType is not null)
@@ -94,7 +95,7 @@ namespace ChartEditLibrary.ViewModel
             var (dataSource, saveLine) = await ReadCsv(filePath, start, end).ConfigureAwait(false);
 
             var res = new DraggableChartVm(filePath, dataSource, exportType, description);
-            if (saveLine != null)
+            if (!@new && saveLine != null)
                 res.ApplyResult(saveLine);
             return res;
         }
@@ -139,9 +140,6 @@ namespace ChartEditLibrary.ViewModel
                     if (point.HasValue)
                     {
                         var line = AddSplitLine(point.Value);
-                        int length = Description.Length;
-                        if (data[6].Length > 1 && data[6][0] == 'a' && data[6][1] != 's')
-                            length = 1;
                         line.Description = data[6][Description.Length..].TrimEnd('\r');
                     }
                 }
@@ -285,7 +283,7 @@ namespace ChartEditLibrary.ViewModel
                         return line;
                     }
                     int length = next - index;
-                    if (length == 1 || (length == 2 && line[index + 1] == '\t'))
+                    if (length == 1 || (length == 2 && (line[index + 1] == '\t')))
                         return line[..index];
                     index = next;
                 }

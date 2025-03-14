@@ -21,9 +21,10 @@ namespace ChartEditWPF.Windows
     {
         private readonly Action<object> callback;
 
-        public SelectOneWindow(string title, Array options, Action<object> callback)
+        public SelectOneWindow(string title, Array options, bool canEdit, Action<object> callback)
         {
             InitializeComponent();
+            combox.IsEditable = canEdit;
             Title = title;
             foreach (var option in options)
             {
@@ -35,7 +36,7 @@ namespace ChartEditWPF.Windows
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            callback?.Invoke(combox.SelectedItem);
+            callback?.Invoke(combox.SelectedValue);
             DialogResult = true;
         }
     }

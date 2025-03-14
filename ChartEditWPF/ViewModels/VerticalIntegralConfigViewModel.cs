@@ -36,12 +36,6 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        private void SelectConfig(ExportType type)
-        {
-            Config = Config.GetConfig(type);
-        }
-
-        [RelayCommand]
         private void SaveConfig()
         {
             Config.SaveConfig();

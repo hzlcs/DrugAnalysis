@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ChartEditLibrary.ViewModel;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -78,35 +79,24 @@ namespace ChartEditLibrary.Model
 
         }
 
-        public static string[] MergeDescription(IEnumerable<string[]> descriptions)
+        public static string[] MergeDescription(IEnumerable<string[]> descriptions, string description = "DP")
         {
             var temp = descriptions.SelectMany(v => v).Distinct().ToList();
-            var single = temp.Where(v => v is not null && !v.Contains('-')).ToArray();
-            foreach (var s in single)
+            if(description == "DP")
             {
-                if (temp.Contains(s + "-1"))
+                var single = temp.Where(v => v is not null && !v.Contains('-')).ToArray();
+                foreach (var s in single)
                 {
-                    temp.Remove(s);
+                    if (temp.Contains(s + "-1"))
+                    {
+                        temp.Remove(s);
+                    }
                 }
             }
+            
             string[] res = [.. temp];
-            Array.Sort(res, DescriptionCompare);
+            Array.Sort(res, description == "DP" ? SampleDescription.DPComparer : SampleDescription.GluComparer);
             return res;
-        }
-
-        private static int DescriptionCompare(string l, string r)
-        {
-            var ls = l.Split('-').Select(int.Parse).ToArray();
-            var rs = r.Split('-').Select(int.Parse).ToArray();
-            if (ls[0] != rs[0])
-                return rs[0] - ls[0];
-            if (ls.Length == rs.Length && ls.Length == 2)
-            {
-                return rs[1] - ls[1];
-            }
-            if (ls.Length == 1)
-                return 1;
-            return -1;
         }
 
         public static double TCheck(float[] left, float[] right)

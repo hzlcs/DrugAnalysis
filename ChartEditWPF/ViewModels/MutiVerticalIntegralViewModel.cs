@@ -20,13 +20,14 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 using static ChartEditLibrary.ViewModel.DraggableChartVm;
 
 namespace ChartEditWPF.ViewModels
 {
     internal partial class MutiVerticalIntegralViewModel : ObservableObject
     {
-        private readonly ISelectDialog _selectDialog;
+        private readonly IInputForm _selectDialog;
         private readonly IFileDialog _fileDialog;
         private readonly IMessageBox _messageBox;
         private readonly ILogger logger;
@@ -48,7 +49,7 @@ namespace ChartEditWPF.ViewModels
         [ObservableProperty]
         private string showDescText = "显示归属";
 
-        public MutiVerticalIntegralViewModel(ISelectDialog selectDialog, IFileDialog fileDialog, IMessageBox messageBox, ILogger<VerticalIntegralViewModel> logger)
+        public MutiVerticalIntegralViewModel(IInputForm selectDialog, IFileDialog fileDialog, IMessageBox messageBox, ILogger<VerticalIntegralViewModel> logger)
         {
             _selectDialog = selectDialog;
             _fileDialog = fileDialog;
@@ -186,7 +187,7 @@ namespace ChartEditWPF.ViewModels
                 try
                 {
                     var vm = await DraggableChartVm.CreateAsync(file, default, "assignment");
-                    
+
                     var chartControl = App.ServiceProvider.GetRequiredService<MutiBaselineChartControl>();
                     chartControl.ChartData = vm;
                     var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
@@ -207,7 +208,7 @@ namespace ChartEditWPF.ViewModels
         [RelayCommand]
         private async Task TemplateImport()
         {
-            if(DataSources.Count == 0)
+            if (DataSources.Count == 0)
                 return;
             var std = GetStd();
             if (DataSources.Count == 1 && std is not null)
@@ -215,13 +216,14 @@ namespace ChartEditWPF.ViewModels
                 return;
             }
             var samples = DataSources.Select(v => v.DraggableChartVM.FileName);
-            if(std is not null)
+            if (std is not null)
                 samples = samples.Skip(1);
             string model = _selectDialog.ShowCombboxDialog("请选择模板", samples.ToArray()).ToString()!;
             var template = DataVm.First(v => v.FileName == model);
             if (!_fileDialog.ShowDialog(null, out var fileNames) || fileNames is null || fileNames.Length == 0)
                 return;
             using var _ = _messageBox.ShowLoading("正在导入数据...");
+            template.UpdateEndpointLine();
             foreach (var file in fileNames)
             {
                 try
@@ -270,7 +272,7 @@ namespace ChartEditWPF.ViewModels
                 var contents = new Dictionary<string, List<SaveRow[]>>();
                 foreach (var vm in data)
                 {
-                    vm.DraggableChartVM.SaveToFile().ContinueWith(v => v.Result.IfFail(e => _messageBox.Show(e.Message)));
+                    vm.DraggableChartVM.SaveToFile().ContinueWith(v => v.Result.IfFail(e => Dispatcher.CurrentDispatcher.InvokeAsync(()=> _messageBox.Popup(e.Message, NotificationType.Error))));
                     var bytes = vm.ChartControl.GetImage();
 
                     var fileName = vm.DraggableChartVM.FileName;
@@ -290,7 +292,7 @@ namespace ChartEditWPF.ViewModels
                     var sb = new StringBuilder();
                     sb.AppendLine("," + string.Join(",,", content.Value.Select(v => v[0].line)));
                     sb.AppendLine(description + "," + string.Join(",,", content.Value.Select(v => v[1].line)));
-                    string[] descriptions = SampleManager.MergeDescription(content.Value.Select(v => v.Skip(2).Select(x => x.description).ToArray()));
+                    string[] descriptions = content.Value.SelectMany(v => v.Skip(2).Select(x => x.description)).Distinct().ToArray();
                     var count = content.Value[0][0].line.AsSpan().Count(",");
                     var emptyLine = new string(Enumerable.Repeat(',', count).ToArray());
                     foreach (var descriptionValue in descriptions)
@@ -304,7 +306,7 @@ namespace ChartEditWPF.ViewModels
                         sb.AppendLine();
                     }
 
-                    File.WriteAllText(path, sb.ToString(0, sb.Length - Environment.NewLine.Length));
+                    File.WriteAllText(path, sb.ToString(0, sb.Length - Environment.NewLine.Length), Encoding.UTF8);
                 }
                 _messageBox.Popup("导出成功", NotificationType.Success);
             }
@@ -324,12 +326,12 @@ namespace ChartEditWPF.ViewModels
         {
             if (DataSources.Count == 0)
                 return;
-            object[]? objs = _selectDialog.ShowListDialog("选择移除数据", "样品", DataSources.Select(v => v.DraggableChartVM.FileName).ToArray());
+            string[]? objs = _selectDialog.ShowListDialog("选择移除数据", "样品", DataSources.Select(v => v.DraggableChartVM.FileName).ToArray());
             if (objs is null)
                 return;
             foreach (var obj in objs)
             {
-                var data = DataSources.FirstOrDefault(v => v.DraggableChartVM.FileName == (string)obj);
+                var data = DataSources.FirstOrDefault(v => v.DraggableChartVM.FileName == obj);
                 if (data is null)
                     continue;
                 DataSources.Remove(data);
@@ -366,21 +368,49 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
+        private void ApplyStandard()
+        {
+            var stds = DataSources.Where(v => v.DraggableChartVM.exportType == ExportType.Standard).ToArray();
+            DraggableChartVm? std = null;
+            if (stds.Length > 0)
+            {
+                string fileName = _selectDialog.ShowCombboxDialog("选择标准品", 
+                    stds.Select(v => v.DraggableChartVM.FileName).Prepend("").ToArray());
+                std = stds.FirstOrDefault(v => v.DraggableChartVM.FileName == fileName)?.DraggableChartVM;
+            }
+
+
+            foreach (var vm in DataVm)
+            {
+                if (vm.exportType == ExportType.Standard)
+                    continue;
+                try
+                {
+                    vm.ApplyStandard(std);
+                }
+                catch (InvalidOperationException)
+                {
+                    _messageBox.Popup("请确保样品包含S1-8", NotificationType.Error);
+                }
+                catch (Exception ex)
+                {
+                    _messageBox.Popup(ex.Message, NotificationType.Error);
+                }
+            }
+        }
+
+        [RelayCommand]
         private async Task SaveResult()
         {
             DraggableChartVm? std = null;
-            if(DataSources.Count > 0 && DataSources[0].DraggableChartVM.exportType == ExportType.Standard)
+            if (DataSources.Count > 0 && DataSources[0].DraggableChartVM.exportType == ExportType.Standard)
                 std = DataSources[0].DraggableChartVM;
-            foreach (var i in DataSources.Select(v=>v.DraggableChartVM))
+            foreach (var i in DataSources.Select(v => v.DraggableChartVM))
             {
                 if (i.exportType == ExportType.Standard)
                     continue;
                 try
                 {
-                    foreach (var x in i.SplitLines)
-                        x.Description = "";
-                    if(std is not null && i.SplitLines.All(v => string.IsNullOrWhiteSpace(v.Description)))
-                        i.ApplyStandard(std);
                     var res = await i.SaveToFile();
                     res.IfFail(v => _messageBox.Show(v.Message));
                 }
@@ -435,7 +465,7 @@ namespace ChartEditWPF.ViewModels
         private static void ShowMark(ShowControlViewModel control)
         {
             foreach (var line in control.DraggableChartVM.SplitLines)
-                line.ShowMark(new ScottPlot.Coordinates(line.RT, control.DraggableChartVM.DataSource[line.RTIndex].Y + control.DraggableChartVM.Sensitivity.Y * 2), true);
+                line.ShowMark(new ScottPlot.Coordinates(line.RT, control.DraggableChartVM.DataSource[line.RTIndex].Y + control.DraggableChartVM.Sensitivity.Y), true);
             control.ChartControl.PlotControl?.Refresh();
         }
 
@@ -449,7 +479,7 @@ namespace ChartEditWPF.ViewModels
 
         private DraggableChartVm? GetStd()
         {
-            if(DataSources.Count == 0)
+            if (DataSources.Count == 0)
                 return null;
             if (DataSources[0].DraggableChartVM.exportType != ExportType.Standard)
                 return null;

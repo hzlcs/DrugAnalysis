@@ -163,12 +163,12 @@ namespace ChartEditWPF.ViewModels
             if (database is null)
             {
                 string[] column = [.. Columns, .. SourceArray, "质量范围"];
-                string[][] rows = DataRows.Select(v => v.Data[0].Datas.Select(d => d.Value).Append(v.Data[0].Range).ToArray()).ToArray();
+                string[][] rows = [.. DataRows.Select(v => v.Data[0].Datas.Select(d => d.Value).Append(v.Data[0].Range).ToArray())];
                 return new SaveData(column, rows);
             }
             else
             {
-                string[] column = Columns.SelectMany(v => new string[] { v, "质量范围" }).ToArray();
+                string[] column = [.. Columns.SelectMany(v => new string[] { v, "质量范围" })];
                 string[][] rows = DataRows.Select(v => v.Data.SelectMany(x => new string[] { x.Datas[0].Value, x.Range }).ToArray()).ToArray();
                 return new SaveData(column, rows);
             }
@@ -222,12 +222,14 @@ namespace ChartEditWPF.ViewModels
 
         public RangeData(AreaDatabase.AreaRow row)
         {
-            Datas = row.Areas.Select(v => new Data(v.GetValueOrDefault().ToString("F2"))).Concat(
+            Datas =
             [
+                .. row.Areas.Select(v => new Data(v.GetValueOrDefault().ToString("F2"))),
                 new Data(row.Average.GetValueOrDefault().ToString("F2"), 50),
                 new Data(row.StdDev.ToString("F2"), 50),
-                new Data(row.RSD.ToString("P1"), 50)
-            ]).ToArray();
+                new Data(row.RSD.ToString("P2"), 50)
+,
+            ];
             Average = row.Average.GetValueOrDefault();
             StdDev = row.StdDev;
         }
@@ -240,7 +242,7 @@ namespace ChartEditWPF.ViewModels
 
         public RangeData(Data[] datas)
         {
-            Datas = datas.Select(v => new Data("", v.Width)).ToArray();
+            Datas = [.. datas.Select(v => new Data("", v.Width))];
             Average = null;
         }
 

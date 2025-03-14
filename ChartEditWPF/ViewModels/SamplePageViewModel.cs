@@ -21,7 +21,7 @@ namespace ChartEditWPF.ViewModels
     {
         protected readonly IFileDialog _fileDialog;
         protected readonly IMessageBox _messageBox;
-        protected readonly ISelectDialog _selectDialog;
+        protected readonly IInputForm _selectDialog;
         protected readonly ILogger<SamplePageViewModel> logger;
         protected AreaDatabase? database;
 
@@ -31,7 +31,7 @@ namespace ChartEditWPF.ViewModels
         public ObservableCollection<TCheckControlViewModel> Samples { get; } = [];
         public ObservableCollection<PValue> PValues { get; } = [];
 
-        protected SamplePageViewModel(IFileDialog _fileDialog, IMessageBox _messageBox, ISelectDialog _selectDialog, ILogger<SamplePageViewModel> logger)
+        protected SamplePageViewModel(IFileDialog _fileDialog, IMessageBox _messageBox, IInputForm _selectDialog, ILogger<SamplePageViewModel> logger)
         {
             this._fileDialog = _fileDialog;
             this._messageBox = _messageBox;

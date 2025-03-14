@@ -16,13 +16,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 using static ChartEditLibrary.ViewModel.DraggableChartVm;
 
 namespace ChartEditWPF.ViewModels
 {
     public partial class VerticalIntegralViewModel : ObservableObject
     {
-        private readonly ISelectDialog _selectDialog;
+        private readonly IInputForm _selectDialog;
         private readonly IFileDialog _fileDialog;
         private readonly IMessageBox _messageBox;
         private readonly ILogger logger;
@@ -43,7 +44,7 @@ namespace ChartEditWPF.ViewModels
         [ObservableProperty]
         private string linkButtonText = "链接坐标";
 
-        public VerticalIntegralViewModel(ISelectDialog selectDialog, IFileDialog fileDialog, IMessageBox messageBox, ILogger<VerticalIntegralViewModel> logger)
+        public VerticalIntegralViewModel(IInputForm selectDialog, IFileDialog fileDialog, IMessageBox messageBox, ILogger<VerticalIntegralViewModel> logger)
         {
             _selectDialog = selectDialog;
             _fileDialog = fileDialog;
@@ -149,8 +150,7 @@ namespace ChartEditWPF.ViewModels
             }
         }
 
-        [RelayCommand]
-        private async Task Import()
+        private async Task ImportSample(bool @new)
         {
             var type = (ExportType)_selectDialog.ShowCombboxDialog("选择导入类型", exportTypes);
             if (!_fileDialog.ShowDialog(null, out var fileNames))
@@ -160,7 +160,7 @@ namespace ChartEditWPF.ViewModels
             {
                 try
                 {
-                    var vm = await DraggableChartVm.CreateAsync(file, type, "DP");
+                    var vm = await DraggableChartVm.CreateAsync(file, type, "DP", @new);
                     vm.InitSplitLine(null);
                     var chartControl = App.ServiceProvider.GetRequiredService<SingleBaselineChartControl>();
                     chartControl.ChartData = vm;
@@ -176,8 +176,20 @@ namespace ChartEditWPF.ViewModels
             }
             UpdateHeight();
             _messageBox.Popup("导入完成", NotificationType.Success);
-
         }
+
+        [RelayCommand]
+        private Task Import()
+        {
+            return ImportSample(false);
+        }
+
+        [RelayCommand]
+        private Task ImportNew()
+        {
+            return ImportSample(true);
+        }
+
         [RelayCommand]
         private void Export()
         {
@@ -203,7 +215,7 @@ namespace ChartEditWPF.ViewModels
                 var contents = new Dictionary<string, List<SaveRow[]>>();
                 foreach (var vm in data)
                 {
-                    vm.DraggableChartVM.SaveToFile().ContinueWith(v => v.Result.IfFail(e => _messageBox.Show(e.Message)));
+                    vm.DraggableChartVM.SaveToFile().ContinueWith(v => v.Result.IfFail(e => Dispatcher.CurrentDispatcher.InvokeAsync(() => _messageBox.Popup(e.Message, NotificationType.Error))));
                     var bytes = vm.ChartControl.GetImage();
                     var fileName = vm.DraggableChartVM.FileName;
                     File.WriteAllBytes(System.IO.Path.Combine(folderName, fileName + ".png"), bytes);

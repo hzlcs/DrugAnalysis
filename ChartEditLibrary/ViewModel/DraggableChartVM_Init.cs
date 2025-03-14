@@ -74,7 +74,7 @@ namespace ChartEditLibrary.ViewModel
             }
             for (int i = 0; i < lines.Count; ++i)
             {
-                AddSplitLine(CurrentBaseLine, DataSource[lines[i]]).Description = (i + 1).ToString();
+                AddSplitLine(CurrentBaseLine, DataSource[lines[i]]).Description = SampleDescription.GluStdDescriptions[i];
             }
         }
 
@@ -292,13 +292,45 @@ namespace ChartEditLibrary.ViewModel
             }
             else if (DataSource[maxDots[endMin]].X - DataSource[maxDots[endMin + 1]].X > -0.7)
                 ++endMin;
-
-            var dp4Start = minDots[endMin];
-            peakCount = endMin - startMin;
-            if (peakCount != 2)
+            if (DataSource[minDots[endMin + 1]].X - DataSource[minDots[endMin]].X < 0.5)
+                ++endMin;
+            int dp4Start;
+            if (DataSource[minDots[endMin + 1]].X - DataSource[minDots[endMin]].X < 1)
             {
-                var startT = minDots[startMin];
+                dp4Start = minDots[endMin];
+                peakCount = endMin - startMin;
+                if (peakCount != 2)
+                {
+                    var startT = minDots[startMin];
+                    var endT = minDots[endMin];
+                    var t = GetT(DataSource, startT, endT);
+                    GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
+                    for (var i = 0; i < _minDots.Length; ++i)
+                    {
+                        if (t[_maxDots[i]].Y < 0 || t[_minDots[i]].Y > 0)
+                        {
+                            var add = startT + _maxDots[i];
+                            if (minDots.Contains(add))
+                                continue;
+                            minDots.Add(add);
+                            maxDots.Add(add);
+                            ++endMin;
+                            if (add > dp4Start)
+                            {
+                                dp4Start = add;
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (DataSource[maxDots[endMin]].Y - DataSource[minDots[endMin]].Y * 5 < 0)
+                    ++endMin;
+                dp4Start = minDots[endMin];
+                var startT = maxDots[endMin];
                 var endT = minDots[endMin];
+                    
                 var t = GetT(DataSource, startT, endT);
                 GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
                 for (var i = 0; i < _minDots.Length; ++i)
@@ -306,21 +338,25 @@ namespace ChartEditLibrary.ViewModel
                     if (t[_maxDots[i]].Y < 0 || t[_minDots[i]].Y > 0)
                     {
                         var add = startT + _maxDots[i];
-                        if (minDots.Contains(add))
+                        if (minDots.Contains(add) || maxDots.Contains(add))
                             continue;
                         minDots.Add(add);
                         maxDots.Add(add);
                         ++endMin;
-                        if (add > dp4Start)
+                        if (endMin - startMin == 4)
                         {
+                            --endMin;
                             dp4Start = add;
+                            break;
                         }
                     }
                 }
             }
-
             minDots.Sort();
             maxDots.Sort();
+
+
+
             //dp3
             startMin = endMin;
             endMin = startMin + 1;
@@ -337,7 +373,7 @@ namespace ChartEditLibrary.ViewModel
                 var endT = minDots[endMin];
                 var t = GetT(DataSource, startT, endT);
                 GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
-                for (var i = 0; i < _minDots.Length; ++i)
+                for (var i = 0; i < _maxDots.Length; ++i)
                 {
                     if (t[_maxDots[i]].Y < 0 || t[_minDots[i]].Y > 0)
                     {
@@ -420,6 +456,22 @@ namespace ChartEditLibrary.ViewModel
                     i.First().Description = i.Key;
                 }
             }
+        }
+
+        internal bool CheckCrossBaseLine(BaseLine baseLine, out Coordinates point)
+        {
+            if(IsVstreetEndPoint(baseLine.Start, 0) && IsVstreetEndPoint(baseLine.End, 0))
+            {
+                CoordinateLine line = baseLine.Line;
+                CheckCrossedBaseline(ref line);
+                if(line.Start != baseLine.Start)
+                {
+                    point = line.Start;
+                    return true;
+                }
+            }
+            point = default;
+            return false;
         }
     }
 }

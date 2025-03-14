@@ -30,8 +30,7 @@
         ItemsSource="{Binding DraggableChartVM.SplitLines}"
         RowHeight="25"
         SelectedItem="{Binding DraggedLine}"
-        VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Hidden">
-
+        VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible">
         <DataGrid.Columns>
             <DataGridTextColumn
                 Width="52"
@@ -45,7 +44,7 @@
                 Width="95"
                 Binding="{Binding Path=[5]}"
                 Header="Area Sum %" />
-            <DataGridTextColumn Width="120" Binding="{Binding Path=[6], Mode=OneWay}">
+            <DataGridTextColumn Width="auto" Binding="{Binding Path=[6], Mode=OneWay}">
                 <DataGridTextColumn.HeaderTemplate>
                     <DataTemplate>
                         <StackPanel
@@ -70,6 +69,4 @@
 
         </DataGrid.Columns>
     </DataGrid>
-
-
 </UserControl>

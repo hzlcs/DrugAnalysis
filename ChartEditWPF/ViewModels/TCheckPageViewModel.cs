@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace ChartEditWPF.ViewModels
 {
-    internal partial class TCheckPageViewModel(IFileDialog _fileDialog, IMessageBox _messageBox, ISelectDialog _selectDialog, ILogger<TCheckPageViewModel> _logger) : SamplePageViewModel(_fileDialog, _messageBox, _selectDialog, _logger)
+    internal partial class TCheckPageViewModel(IFileDialog _fileDialog, IMessageBox _messageBox, IInputForm _selectDialog, ILogger<TCheckPageViewModel> _logger) : SamplePageViewModel(_fileDialog, _messageBox, _selectDialog, _logger)
     {
 
         protected override void DoWork()

@@ -67,7 +67,6 @@ namespace ChartEditWPF
                 services.AddSingleton<IMessageBox, WPFMessageBox>();
                 services.AddSingleton<IInputForm, WPFInputForm>();
                 services.AddSingleton<IFileDialog, WPFFileDialog>();
-                services.AddSingleton<ISelectDialog, WPFSelectDialog>();
 
                 services.AddSingleton<VerticalIntegralViewModel>();
                 services.AddKeyedSingleton<IPage, VerticalIntegralPage>(Models.Pages.VerticalIntegral, (s, v) => new VerticalIntegralPage() { DataContext = s.GetRequiredService<VerticalIntegralViewModel>() });

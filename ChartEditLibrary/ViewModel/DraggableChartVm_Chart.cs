@@ -1,5 +1,6 @@
 ﻿using ChartEditLibrary.Entitys;
 using ChartEditLibrary.Model;
+using OpenTK.Mathematics;
 using ScottPlot;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,16 @@ namespace ChartEditLibrary.ViewModel
             int index = GetDateSourceIndex(point.X);
             if (index == -1)
                 return false;
-            return new CoordinateLine(point, DataSource[index]).Length < 1E-6;
+            var t = DataSource[index];
+            return Math.Abs(t.X - point.X) < Utility.Tolerance && Math.Abs(t.Y - point.Y) < Utility.Tolerance;
+        }
+
+        public void UpdateEndpointLine()
+        {
+            foreach (var line in BaseLines)
+            {
+                line.EndPointLine = GetEndPointLine(line);
+            }
         }
 
 
@@ -26,19 +36,26 @@ namespace ChartEditLibrary.ViewModel
             Debug.Assert(BaseLines.Contains(baseLine));
             var line = baseLine.Line;
             Coordinates start = line.Start;
-            if (!IsEndPoint(line.Start))
+            if (!IsEndPoint(start))
             {
-                int index = GetDateSourceIndex(line.Start.X);
+                int index = GetDateSourceIndex(start.X);
                 int lineIndex = BaseLines.IndexOf(baseLine);
                 int endIndex = lineIndex == 0 ? 0 : GetDateSourceIndex(BaseLines[lineIndex - 1].End.X);
-                for (int i = index - 1; i > endIndex; --i)
+                for (int i = index - 1; i >= endIndex; --i)
                 {
                     double y = line.Y(DataSource[i].X);
                     if (Math.Abs(y - DataSource[i].Y) < 1E-6)
                     {
+                        index = i;
                         start = DataSource[i];
                         break;
                     }
+                }
+                if (!IsVstreetPoint(start))
+                {
+                    var min = GetNearestMinDot(index);
+                    if (Math.Abs(min - index) < 10)
+                        start = DataSource[min];
                 }
             }
             Coordinates end = line.End;
@@ -52,40 +69,119 @@ namespace ChartEditLibrary.ViewModel
                     double y = line.Y(DataSource[i].X);
                     if (Math.Abs(y - DataSource[i].Y) < 1E-6)
                     {
+                        index = i;
                         end = DataSource[i];
                         break;
                     }
+                }
+                if (!IsVstreetPoint(end))
+                {
+                    var min = GetNearestMinDot(index);
+                    if (Math.Abs(min - index) < 10)
+                        end = DataSource[min];
                 }
             }
             return new CoordinateLine(start, end);
         }
 
-        private bool IsVstreetPoint(Coordinates point)
+        private bool IsVstreetPoint(Coordinates point, int interval = 2)
         {
             var index = GetDateSourceIndex(point.X);
             if (index == -1)
                 return false;
-            return IsVstreetPoint(index);
+            return IsVstreetPoint(index, interval);
         }
 
-        private bool IsVstreetPoint(int index)
+        private bool IsVstreetEndPoint(Coordinates point, int interval = 2)
         {
-            return DataSource[index].Y < DataSource[index - 1].Y && DataSource[index].Y < DataSource[index + 1].Y;
+            return IsEndPoint(point) && IsVstreetPoint(point, interval);
+        }
+
+        private bool IsVstreetPoint(int index, int interval = 2)
+        {
+            return Math.Abs(GetNearestMinDot(index) - index) <= interval;
+        }
+
+        public Coordinates GetVstreetPoint(double x)
+        {
+            return GetVstreetPoint(GetDateSourceIndex(x));
         }
 
         private Coordinates GetVstreetPoint(Coordinates point)
         {
-            return GetVstreetPoint(GetDateSourceIndex(point.X));
+            return GetVstreetPoint(point.X);
         }
 
-        private int GetNearestMinDot(int index)
+        public int GetNearestMinDot(double x)
         {
-            return minDots.MinBy(v => Math.Abs(v - index));
+            return GetNearestMinDot(GetDateSourceIndex(x));
+        }
+
+        public int GetNearestMinDot(int index)
+        {
+            return minDots[GetNearestMinDotIndex(index)];
+        }
+
+        public int GetNearestMaxDot(double x)
+        {
+            return GetNearestMaxDot(GetDateSourceIndex(x));
+        }
+
+        public int GetNearestMinDotIndex(double x)
+        {
+            return GetNearestMinDotIndex(GetDateSourceIndex(x));
+        }
+
+        public int GetNearestMinDotIndex(int index)
+        {
+            int left = 0, right = minDots.Length - 1;
+            while (left <= right)
+            {
+                int mid = (left + right) / 2;
+                if (minDots[mid] == index)
+                    return mid;
+                if (minDots[mid] < index)
+                    left = mid + 1;
+                else
+                    right = mid - 1;
+            }
+            if (left == 0)
+                return 0;
+            if (left == minDots.Length)
+                return minDots.Length - 1;
+            return (index - minDots[left - 1] <= minDots[left] - index) ? left - 1 : left;
+
+        }
+
+        public int GetNearestMaxDot(int index)
+        {
+            return maxDots[GetNearestMaxDotIndex(index)];
+        }
+
+        public int GetNearestMaxDotIndex(int index)
+        {
+            int left = 0, right = maxDots.Length - 1;
+            while (left <= right)
+            {
+                int mid = (left + right) / 2;
+                if (maxDots[mid] == index)
+                    return mid;
+                if (maxDots[mid] < index)
+                    left = mid + 1;
+                else
+                    right = mid - 1;
+            }
+            if (left == 0)
+                return 0;
+            if (left == maxDots.Length)
+                return maxDots.Length - 1;
+            return (index - maxDots[left - 1] <= maxDots[left] - index) ? left - 1 : left;
+
         }
 
         private Coordinates GetVstreetPoint(int index)
         {
-            if(MutiConfig.Instance.NearestVstreet)
+            if (MutiConfig.Instance.NearestVstreet)
             {
                 return DataSource[GetNearestMinDot(index)];
             }
@@ -106,7 +202,7 @@ namespace ChartEditLibrary.ViewModel
         {
             int index = GetDateSourceIndex(point.X);
             Coordinates p1 = DataSource[index];
-            if (p1.X == point.X)
+            if (Utility.ToleranceEqual(p1.X, point.X))
                 return p1.Y - point.Y;
             Coordinates p2;
             if (p1.X < point.X)
@@ -115,6 +211,7 @@ namespace ChartEditLibrary.ViewModel
                 p2 = DataSource[index - 1];
             return p1.Y + (point.X - p1.X) * (p2.Y - p1.Y) / (p2.X - p1.X) - point.Y;
         }
+
         /// <summary>
         /// 获取分割线<paramref name="line"/>与线<paramref name="nextLine"/>之间的面积
         /// </summary>
@@ -157,10 +254,12 @@ namespace ChartEditLibrary.ViewModel
             return t;
         }
 
-        private static void GetPoints(Coordinates[] coordinates, int start, int end, out int[] minDots,
+        private void GetPoints(Coordinates[] coordinates, int start, int end, out int[] minDots,
             out int[] maxDots)
         {
-            var inter = 5;
+            int inter = 5 * (int)Math.Ceiling(0.006666667 / Unit);
+            if (Unit < 0.006666667 / 2)
+                inter = (int)Math.Ceiling(0.1 / Unit);
             var maxDotList = new List<int>();
             var minDotList = new List<int>();
             for (var i = start; i < end; i++)
@@ -192,6 +291,7 @@ namespace ChartEditLibrary.ViewModel
             minDots = [.. minDotList];
             maxDots = [.. maxDotList];
         }
+
         /// <summary>
         /// 获取坐标点一定范围内的分割线或基线
         /// </summary>
@@ -207,16 +307,21 @@ namespace ChartEditLibrary.ViewModel
             }
             foreach (var l in SplitLines)
                 l.IsSelected = false;
+            static bool CheckDistance(Coordinates left, Coordinates right, Vector2d sensitivity)
+            {
+                return Math.Abs(left.X - right.X) < sensitivity.X
+                       && Math.Abs(left.Y - right.Y) < sensitivity.Y;
+            }
             foreach (var baseLine in BaseLines)
             {
-                if (baseLine.Start.Distance(dataPoint) < Sensitivity.Length)
+                if (CheckDistance(baseLine.Start, dataPoint, Sensitivity))
                 {
                     DraggedLine = GetFocusLineInfo(baseLine, true);
                     CurrentBaseLine = baseLine;
                     baseLine.IsSelected = true;
                     return DraggedLine;
                 }
-                else if (baseLine.End.Distance(dataPoint) < Sensitivity.Length)
+                else if (CheckDistance(baseLine.End, dataPoint, Sensitivity))
                 {
                     DraggedLine = GetFocusLineInfo(baseLine, false);
                     CurrentBaseLine = baseLine;
@@ -242,6 +347,11 @@ namespace ChartEditLibrary.ViewModel
             else
             {
                 line = SplitLines.FirstOrDefault(v => v.Start.X > dataPoint.X);
+                if (line != null)
+                {
+                    if (line.BaseLine.Start.X > dataPoint.X || line.BaseLine.End.X < dataPoint.X)
+                        line = null;
+                }
             }
             if (line is null)
             {
@@ -264,14 +374,9 @@ namespace ChartEditLibrary.ViewModel
         /// <returns>对应的坐标点</returns>
         public Coordinates? GetChartPoint(double x, double? y = null)
         {
-            if (DataSource.Length == 0)
+            var index = GetDateSourceIndex(x);
+            if (index == -1)
                 return null;
-            if (x < DataSource[0].X || x > DataSource[^1].X)
-                return null;
-
-            var index = (int)((x - DataSource[0].X) / Unit);
-            if (Math.Abs(DataSource[index].X - x) > Math.Abs(DataSource[index + 1].X - x))
-                index += 1;
             if (y.HasValue)
             {
                 if (Math.Abs(y.Value - DataSource[index].Y) > Sensitivity.Y)
@@ -454,14 +559,35 @@ namespace ChartEditLibrary.ViewModel
 
         private void OnNextLineChanged(SplitLine sender, EditLineBase? oldValue, EditLineBase newValue)
         {
-            if (oldValue is not null)
-                return; //第一次设置时
             //初始化面积和RT
             sender.Area = GetArea(sender, newValue);
             var startIndex = GetDateSourceIndex(newValue.Start.X);
             var endIndex = GetDateSourceIndex(sender.Start.X);
             Debug.Assert(startIndex < endIndex && startIndex > 0 && endIndex < DataSource.Length);
-            sender.RTIndex = GetDateSourceIndex(DataSource[startIndex..endIndex].MaxBy(v => v.Y).X);
+            
+            var maxIndex = GetNearestMaxDotIndex(startIndex);
+            if (maxDots[maxIndex] < startIndex)
+                ++maxIndex;
+            var maxY = DataSource[maxDots[maxIndex]].Y;
+            int temp = maxIndex;
+            while (maxDots[temp] <= endIndex)
+            {
+                if (DataSource[maxDots[temp]].Y > maxY)
+                {
+                    maxIndex = temp;
+                    maxY = maxDots[temp];
+                }
+                ++temp;
+            }
+            maxIndex = maxDots[maxIndex];
+            if (maxIndex < endIndex && maxIndex > startIndex)
+            {
+                sender.RTIndex = maxIndex;
+            }
+            else
+            {
+                sender.RTIndex = DataSource[startIndex].Y > DataSource[endIndex].Y ? startIndex : endIndex;
+            }
             sender.RT = DataSource[sender.RTIndex].X;
         }
     }
