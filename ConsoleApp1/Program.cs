@@ -9,28 +9,13 @@ using ScottPlot.Plottables;
 using System.Text;
 using System;
 using System.Diagnostics;
-Fun(0);
+
+double[] x = "2.84\t2.84\t2.83\t2.67\t2.53".Split('\t').Select(double.Parse).ToArray();
+double[] y = "2.96\t2.98\t2.89\t2.81\t2.84\t3.09\t2.94\t3.39\t3.09\t3.21\t2.98\t2.83\t3.5\t3.46\t3.42\t3.16\t3.06\t3.03\t3.16\t3.04\t2.93\t2.96\t2.96\t2.93\t3.04".Split('\t').Select(double.Parse).ToArray();
+Console.WriteLine(SampleManager.TCheck(x, y));
 
 Console.ReadLine();
 
-void Fun(int i)
-{
-    Fun1(i);
-}
-void Fun1(int i)
-{
-    Fun2(i);
-}
-void Fun2(int i)
-{
-    Fun3(i);
-
-}
-void Fun3(int i)
-{
-    var trace = new StackTrace();
-
-}
 
 #if DEBUG
 

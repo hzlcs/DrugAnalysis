@@ -13,7 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static ChartEditWPF.ViewModels.SamplePageViewModel;
+using System.Windows;
 
 namespace ChartEditWPF.ViewModels
 {
@@ -40,12 +40,12 @@ namespace ChartEditWPF.ViewModels
                 newDescriptions.Add(sample.Descriptions);
                 QualityRanges.Add(sample);
             }
-            descriptions = SampleManager.MergeDescription(newDescriptions);
+            descriptions = SampleManager.MergeDescription(newDescriptions, data[0].Description);
             foreach (var sample in QualityRanges)
             {
                 sample.ApplyDescription(descriptions);
             }
-            Descriptions = descriptions;
+            Descriptions = DescriptionManager.GetShortGluDescription(descriptions);
             Description = QualityRanges[0].Description;
             //if (database is not null)
             //{
@@ -69,7 +69,7 @@ namespace ChartEditWPF.ViewModels
                     {
                         if (!File.Exists(fileName))
                             continue;
-                        var sample = await SampleManager.GetSampleAreasAsync(fileName);
+                        var sample = SampleManager.ChangeToGroup(await SampleManager.GetSampleAreasAsync(fileName));
                         if (QualityRanges.Count > 0 && sample.Description != QualityRanges[0].Description)
                         {
                             _messageBox.Popup(fileName + "\n样品类型不一致", NotificationType.Warning);
@@ -107,7 +107,12 @@ namespace ChartEditWPF.ViewModels
                 {
                     if (!File.Exists(fileName))
                         continue;
-                    var database = await SampleManager.GetDatabaseAsync(fileName);
+                    var database = SampleManager.ChangeToGroup(await SampleManager.GetDatabaseAsync(fileName));
+                    if(QualityRanges.Count > 0 && database.Description != QualityRanges[0].Description)
+                    {
+                        _messageBox.Popup(fileName + "\n样品类型不一致", NotificationType.Warning);
+                        continue;
+                    }
                     datas.AddRange(GetSample(database));
                 }
                 AddData(datas);
@@ -145,7 +150,7 @@ namespace ChartEditWPF.ViewModels
             foreach (var pair in sameSamples)
             {
                 var list = pair.Value;
-                var samples = list.Select(v => new SampleArea(pair.Key, [.. database.Descriptions], database.Rows.Select(x => x.Areas[v]).ToArray())).ToArray();
+                var samples = list.Select(v => new SampleArea(pair.Key + "-" + (v + 1).ToString(), [.. database.Descriptions], database.Rows.Select(x => x.Areas[v]).ToArray())).ToArray();
                 datas.Add(new QualityRangeControlViewModel(database.Description, samples));
             }
             if (@default.Count > 0)
@@ -172,7 +177,12 @@ namespace ChartEditWPF.ViewModels
             try
             {
                 using var _ = _messageBox.ShowLoading("正在导入数据...");
-                var database = await SampleManager.GetDatabaseAsync(fileName[0]);
+                var database = SampleManager.ChangeToGroup(await SampleManager.GetDatabaseAsync(fileName[0]));
+                if(database.Description != QualityRanges[0].Description)
+                {
+                    _messageBox.Popup("样品类型不一致", NotificationType.Warning);
+                    return;
+                }
                 foreach (var qualityRange in QualityRanges)
                 {
                     qualityRange.Import(database);
@@ -204,6 +214,15 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
+        private void Clear()
+        {
+            QualityRanges.Clear();
+            Description = "-";
+            Descriptions = [];
+            _messageBox.Popup("清空成功", NotificationType.Success);
+        }
+
+        [RelayCommand]
         private void ExportResult()
         {
             if (QualityRanges.Count == 0)
@@ -217,7 +236,10 @@ namespace ChartEditWPF.ViewModels
                 string[] descriptions = QualityRanges[0].Descriptions;
                 string description = QualityRanges[0].Description;
                 var saveDatas = QualityRanges.Select(v => v.GetSaveData()).ToArray();
-                sb.AppendLine($"{description}," + string.Join(",,", saveDatas.Select(v => string.Join(",", v.Column))));
+                sb.AppendLine($"{description}," + string.Join(",,",
+                    saveDatas.Select(v => string.Join(",", v.Column))));
+                if (description == DescriptionManager.Glu)
+                    description = "";
                 for (var i = 0; i < descriptions.Length; ++i)
                 {
                     sb.Append($"{description}{descriptions[i]},");
@@ -239,6 +261,37 @@ namespace ChartEditWPF.ViewModels
                 logger.LogError(ex, "ExportResult");
                 _messageBox.Popup("导出失败", NotificationType.Error);
             }
+        }
+
+        [RelayCommand]
+        private void CopyData()
+        {
+            if (QualityRanges.Count == 0 || Descriptions is null || Descriptions.Length == 0)
+            {
+                return;
+            }
+            var longDesc = Description == DescriptionManager.Glu ? DescriptionManager.GetLongGluDescription(Descriptions) : Descriptions;
+            int rowCount = Descriptions.Length + 1;
+            var datas = QualityRanges.Select(v => v.GetCopyData().GetEnumerator()).ToArray();
+            string description = Description == DescriptionManager.DP ? Description : "";
+            StringBuilder sb = new();
+            for (int i = 0; i < rowCount; ++i)
+            {
+                if (i == 0)
+                    sb.Append(Description);
+                else
+                    sb.Append(description + longDesc[i - 1]);
+                foreach (var data in datas)
+                {
+                    if (!data.MoveNext())
+                        continue;
+                    sb.Append('\t');
+                    sb.AppendJoin('\t', data.Current);
+                }
+                sb.AppendLine();
+            }
+            Clipboard.Clear();
+            Clipboard.SetText(sb.ToString());
         }
     }
 

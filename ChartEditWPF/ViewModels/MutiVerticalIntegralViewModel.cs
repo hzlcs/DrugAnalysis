@@ -198,7 +198,7 @@ namespace ChartEditWPF.ViewModels
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "{file}导入失败", file);
-                    _messageBox.Popup(Path.GetFileNameWithoutExtension(file) + "导入失败", NotificationType.Error);
+                    _messageBox.Popup(Path.GetFileNameWithoutExtension(file) + "导入失败:" + ex.Message, NotificationType.Error);
                 }
             }
             UpdateHeight();

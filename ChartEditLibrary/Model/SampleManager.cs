@@ -1,7 +1,8 @@
-﻿using ChartEditLibrary.ViewModel;
+﻿using LanguageExt;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -29,7 +30,7 @@ namespace ChartEditLibrary.Model
                 sampleAreas[i] = new SampleArea(title[1 + i * 7], descriptions, text.Skip(2).Select(v =>
                 {
                     var value = v[1 + i * 7 + 5];
-                    return string.IsNullOrEmpty(value) ? null : new float?(float.Parse(value));
+                    return string.IsNullOrEmpty(value) ? null : new double?(double.Parse(value));
                 }).ToArray());
             }
             return new SampleResult(description, sampleAreas);
@@ -50,20 +51,28 @@ namespace ChartEditLibrary.Model
             }
             using var fileStream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             using StreamReader reader = new(fileStream, Encoding.UTF8);
-            var text = (await reader.ReadToEndAsync()).Replace("��n=3��", "(n=3)");
+            var text = (await reader.ReadToEndAsync());
             try
             {
                 string[][] lines = text.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
-                string[] sampleNames = lines[0].Skip(1).ToArray();
+                string[] sampleNames = lines[0].Skip(1).Select(v => v.Trim('\"').Replace("��n=3��", "(n=3)")).ToArray();
                 string description = lines[0][0];
-                string[] descriptions = lines.Skip(1).Select(v => v[0].Replace(description, "")).ToArray();
+                if (string.IsNullOrWhiteSpace(description))
+                {
+                    if (lines[0][1].Contains(DescriptionManager.DP))
+                        description = DescriptionManager.DP;
+                    else
+                        description = DescriptionManager.Glu;
+                }
+                string[] descriptions = lines.Skip(1).Select(v => v[0].Replace(description, "").Replace("A��", "A，").Replace("S��", "S，").Replace("1��6", "1，6").Replace("��", "Δ")).ToArray();
+                descriptions = DescriptionManager.GetLongGluDescription(descriptions);
                 AreaRow[] rows = new AreaRow[descriptions.Length];
                 for (var i = 0; i < descriptions.Length; i++)
                 {
-                    var areas = new float?[sampleNames.Length];
+                    var areas = new double?[sampleNames.Length];
                     for (var j = 0; j < sampleNames.Length; j++)
                     {
-                        if (float.TryParse(lines[i + 1][j + 1], out var value))
+                        if (double.TryParse(lines[i + 1][j + 1], out var value))
                         {
                             areas[j] = value;
                         }
@@ -79,10 +88,43 @@ namespace ChartEditLibrary.Model
 
         }
 
+        public static SampleResult ChangeToGroup(SampleResult sampleResult)
+        {
+            if (sampleResult.Description != DescriptionManager.DP)
+                return sampleResult;
+            var sampleAreas = sampleResult.SampleAreas;
+            SampleResult res = new SampleResult(sampleResult.Description, new SampleArea[sampleAreas.Length]);
+            for (int i = 0; i < sampleAreas.Length; ++i)
+            {
+                var sampleArea = sampleAreas[i];
+                var descriptions = sampleArea.Descriptions.Select(v => new DescriptionString(v)).ToArray();
+                var areas = sampleArea.Area;
+
+                (var newDesc, var newAreas) = DescriptionManager.ChangeToGroup(descriptions, areas);
+                res.SampleAreas[i] = new SampleArea(sampleArea.SampleName, newDesc, newAreas);
+            }
+            return res;
+        }
+
+        public static AreaDatabase ChangeToGroup(AreaDatabase database)
+        {
+            if (database.Description != DescriptionManager.DP)
+                return database;
+            var descriptions = database.Descriptions.Select(v => new DescriptionString(v)).ToArray();
+            var areas = database.Rows.Select(v => v.Areas).ToArray();
+            (var newDesc, var newAreas) = DescriptionManager.ChangeToGroup(descriptions, areas);
+            var rows = new AreaRow[newAreas.Length];
+            for (int i = 0; i < rows.Length; ++i)
+            {
+                rows[i] = new AreaRow(newDesc[i], newAreas[i]);
+            }
+            return new AreaDatabase(database.ClassName, database.SampleNames, database.Description, newDesc, rows);
+        }
+
         public static string[] MergeDescription(IEnumerable<string[]> descriptions, string description = "DP")
         {
             var temp = descriptions.SelectMany(v => v).Distinct().ToList();
-            if(description == "DP")
+            if (description == "DP")
             {
                 var single = temp.Where(v => v is not null && !v.Contains('-')).ToArray();
                 foreach (var s in single)
@@ -93,20 +135,20 @@ namespace ChartEditLibrary.Model
                     }
                 }
             }
-            
             string[] res = [.. temp];
-            Array.Sort(res, description == "DP" ? SampleDescription.DPComparer : SampleDescription.GluComparer);
+
+            Array.Sort(res, description == "DP" ? DescriptionManager.DPComparer : DescriptionManager.GluComparer);
             return res;
         }
 
-        public static double TCheck(float[] left, float[] right)
+        public static double? TCheck(double[] left, double[] right)
         {
             if (left.Length == 0 || right.Length == 0 || left.Length + right.Length <= 2)
-                return double.NaN;
+                return null;
             return TTest(right, left);
         }
 
-        private static double TTest(float[] x, float[] y)
+        private static double TTest(double[] x, double[] y)
         {
             double sumX = x.Sum();
             double sumY = y.Sum();
@@ -114,43 +156,18 @@ namespace ChartEditLibrary.Model
             var n2 = y.Length;
             var meanX = sumX / n1;
             var meanY = sumY / n2;
-            //double sumXminusMeanSquared = 0.0; // Calculate variances
-            //double sumYminusMeanSquared = 0.0;
-            //for (int i = 0; i < n1; ++i)
-            //    sumXminusMeanSquared += (x[i] - meanX) * (x[i] - meanX);
-            //for (int i = 0; i < n2; ++i)
-            //    sumYminusMeanSquared += (y[i] - meanY) * (y[i] - meanY);
 
             var s1 = x.Sum(v => Math.Pow(v, 2)) - Math.Pow(sumX, 2) / n1;
             var s2 = y.Sum(v => Math.Pow(v, 2)) - Math.Pow(sumY, 2) / n2;
-            //if (n1 == n2)
-            //    se = Math.Sqrt(((n1 - 1) * sumXminusMeanSquared + (n2 - 1) * sumYminusMeanSquared) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2)) / 2;
-            //else
-
-            //double n = sumXminusMeanSquared / n1 < sumYminusMeanSquared / n2 ? n1 : n2;
-            //se = Math.Sqrt(((n - 1) * sumXminusMeanSquared + (n - 1) * sumYminusMeanSquared) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2)) / 2;
+            
             var se = Math.Sqrt((s1 + s2) / (n1 + n2 - 2) * (1.0 / n1 + 1.0 / n2));
 
 
-            //double varX = sumXminusMeanSquared / (n1 - 1);
-            //double varY = sumYminusMeanSquared / (n2 - 1);
             var top = (meanX - meanY);
-            //double bot = Math.Sqrt((varX / n1) + (varY / n2));
             var t = top / se;
-            //double num = ((varX / n1) + (varY / n2)) * ((varX / n1) + (varY / n2));
-            //double denomLeft = ((varX / n1) * (varX / n1)) / (n1 - 1);
-            //double denomRight = ((varY / n2) * (varY / n2)) / (n2 - 1);
-            //double denom = denomLeft + denomRight;
-            //double df = num / denom;
             double df = x.Length + y.Length - 2;
             var p = Student(t, df); // Cumulative two-tail density 
             return p;
-            //Console.WriteLine("mean of x = " + meanX.ToString("F3"));
-            //Console.WriteLine("mean of y = " + meanY.ToString("F3"));
-            //Console.WriteLine("t = " + t.ToString("F5"));
-            //Console.WriteLine("df = " + df.ToString("F4"));
-            //Console.WriteLine("p-value = " + p.ToString("F6"));
-            //Explain();
         }
 
         public static double Student(double t, double df)
@@ -226,8 +243,9 @@ namespace ChartEditLibrary.Model
         public string[] SampleNames { get; }
         public string Description { get; }
         private readonly List<string> descriptions;
+        private readonly string[]? shortGluDescriptions;
         public IReadOnlyList<string> Descriptions => descriptions;
-        private IReadOnlyList<DescriptionString> DescriptionString { get; }
+        private IReadOnlyList<DescriptionString>? DescriptionString { get; }
         public AreaRow[] Rows { get; }
 
         public AreaRow this[string description]
@@ -249,8 +267,17 @@ namespace ChartEditLibrary.Model
             this.ClassName = className;
             this.SampleNames = sampleNames;
             this.Description = description;
-            this.descriptions = new List<string>(descriptions);
-            this.DescriptionString = this.Descriptions.Select(v => new DescriptionString(v)).ToList();
+            if (description == DescriptionManager.Glu)
+            {
+                shortGluDescriptions = DescriptionManager.GetShortGluDescription(descriptions);
+                this.descriptions = DescriptionManager.GetLongGluDescription(descriptions).ToList();
+            }
+            else
+            {
+                this.descriptions = new List<string>(descriptions);
+                this.DescriptionString = this.Descriptions.Select(v => new DescriptionString(v)).ToList();
+            }
+
             this.Rows = rows;
         }
 
@@ -259,6 +286,7 @@ namespace ChartEditLibrary.Model
             ClassName = database.ClassName;
             SampleNames = database.SampleNames;
             descriptions = database.descriptions;
+            shortGluDescriptions = database.shortGluDescriptions;
             Description = database.Description;
             DescriptionString = database.DescriptionString;
             Rows = database.Rows;
@@ -266,17 +294,34 @@ namespace ChartEditLibrary.Model
 
         public bool TryGetRow(string description, [MaybeNullWhen(false)] out AreaRow row)
         {
-            DescriptionString descriptionString = new(description);
-            for (int i = 0; i < DescriptionString.Count; i++)
+            if (Description == DescriptionManager.Glu)
             {
-                if (DescriptionString[i] == descriptionString)
+                Debug.Assert(shortGluDescriptions is not null);
+                string temp = DescriptionManager.GetShortGluDescription(description);
+                int index = Array.IndexOf(shortGluDescriptions, temp);
+                if (index == -1)
                 {
-                    row = Rows[i];
-                    return true;
+                    row = null;
+                    return false;
                 }
+                row = Rows[index];
+                return true;
             }
-            row = null;
-            return false;
+            else
+            {
+                Debug.Assert(DescriptionString is not null);
+                DescriptionString descriptionString = new(description);
+                for (int i = 0; i < DescriptionString.Count; i++)
+                {
+                    if (DescriptionString[i] == descriptionString)
+                    {
+                        row = Rows[i];
+                        return true;
+                    }
+                }
+                row = null;
+                return false;
+            }
         }
 
 
@@ -284,43 +329,43 @@ namespace ChartEditLibrary.Model
         public class AreaRow
         {
             public string Description { get; set; }
-            public float?[] Areas { get; }
-            public float? Average { get; }
+            public double?[] Areas { get; }
+            public double? Average { get; }
             public double StdDev { get; }
             public double RSD { get; }
 
-            public AreaRow(string description, float?[] areas)
+            public AreaRow(string description, double?[] areas)
             {
                 this.Description = description;
                 this.Areas = areas;
                 var values = areas.Where(v => v.HasValue).Select(v => v!.Value).ToArray();
                 if (values.Length <= 0)
                     return;
-                Average = (float)Math.Round(values.Average(), 2);
+                Average = Math.Round(values.Average(), 2, MidpointRounding.AwayFromZero);
                 StdDev = CalculateStdDev(values);
                 RSD = StdDev / Average.Value;
             }
 
-            public string GetRange(float average)
+            public string GetRange(double average)
             {
-                var _range = Math.Round((average - Average.GetValueOrDefault()) / StdDev, 2);
+                var _range = Math.Round((average - Average.GetValueOrDefault()) / StdDev, 2, MidpointRounding.AwayFromZero);
                 var range = _range switch
                 {
-                    > 0 => (int)Math.Ceiling(_range),
-                    < 0 => (int)Math.Floor(_range),
+                    > 0 => Math.Round(_range, 2, MidpointRounding.AwayFromZero),
+                    < 0 => Math.Round(_range, 2, MidpointRounding.AwayFromZero),
                     _ => 0
                 };
-                return "AVG" + (range >= 0 ? "+" : "") + range + "SD";
+                return "AVG" + (range >= 0 ? "+" : "") + range.ToString("F2") + "SD";
             }
         }
 
-        public static double CalculateStdDev(float?[] values)
+        public static double CalculateStdDev(double?[] values)
         {
             var temp = values.Where(v => v.HasValue).Select(v => v!.Value).ToArray();
             return CalculateStdDev(temp);
         }
 
-        public static double CalculateStdDev(float[] values)
+        public static double CalculateStdDev(double[] values)
         {
             if (values.Length <= 0)
                 return 0;
@@ -330,12 +375,12 @@ namespace ChartEditLibrary.Model
             //  计算各数值与平均数的差值的平方，然后求和 
             var sum = values.Sum(d => Math.Pow(d - avg, 2));
             //  除以数量，然后开方
-            ret = Math.Round(Math.Sqrt(sum / (values.Length - 1)), 2);
+            ret = Math.Round(Math.Sqrt(sum / (values.Length - 1)), 2, MidpointRounding.AwayFromZero);
             return ret;
         }
     }
 
     public record SampleResult(string Description, SampleArea[] SampleAreas);
 
-    public record SampleArea(string SampleName, string[] Descriptions, float?[] Area);
+    public record SampleArea(string SampleName, string[] Descriptions, double?[] Area);
 }

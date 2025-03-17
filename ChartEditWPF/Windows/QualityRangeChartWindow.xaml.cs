@@ -46,7 +46,7 @@ namespace ChartEditWPF.Windows
         {
             var myPlot = chart.Plot;
             myPlot.Title("寡糖分析");
-            myPlot.Font.Automatic();
+            
             myPlot.Axes.Top.IsVisible = false;
             myPlot.Axes.Right.IsVisible = false;
             var legend = myPlot.ShowLegend(Edge.Bottom).Legend;
@@ -88,9 +88,16 @@ namespace ChartEditWPF.Windows
                 }
             }
             var ticks = new Tick[rowCount];
+            string description = samples[0].Description;
+            string[] desc = samples[0].Descriptions;
+            if (description == DescriptionManager.Glu)
+            {
+                description = "";
+                desc = DescriptionManager.GetShortGluDescription(desc);
+            }
             for (var i = 0; i < rowCount; ++i)
             {
-                ticks[i] = new Tick(i * (colCount + 1) + colCount / 2 - 1, samples[0].Description + samples[0].Descriptions[i]);
+                ticks[i] = new Tick(i * (colCount + 1) + colCount / 2, description + desc[i]);
             }
             myPlot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.NumericManual(ticks);
 
@@ -100,6 +107,7 @@ namespace ChartEditWPF.Windows
 
             // tell the plot to autoscale with no padding beneath the bars
             myPlot.Axes.Margins(bottom: 0);
+            myPlot.Font.Set("微软雅黑");
             chart.Refresh();
         }
 

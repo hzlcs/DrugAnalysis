@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ScottPlot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,6 +37,12 @@ namespace ChartEditWPF.Windows
             r2x2.Text = eigenVectors[1].ToString("F3");
             chart.SingularValues = singularValues;
             chart.Samples = data;
+        }
+
+        internal byte[] GetResult()
+        {
+            PixelSize size = new(1920, 1080);
+            return chart.Plot.GetImageBytes((int)size.Width, (int)size.Height, ImageFormat.Png);
         }
     }
 }

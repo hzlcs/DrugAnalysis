@@ -61,6 +61,11 @@
                 Command="{Binding RemoveCommand}"
                 Content="移除样品" />
             <Button
+    Width="130"
+    Margin="5"
+    Command="{Binding ClearCommand}"
+    Content="清空样品" />
+            <Button
                 Width="130"
                 Margin="5"
                 Command="{Binding ImportCommand}"
@@ -70,6 +75,11 @@
                 Margin="5"
                 Command="{Binding ViewChartCommand}"
                 Content="预览图表" />
+            <Button
+                Width="130"
+                Margin="5"
+                Command="{Binding CopyDataCommand}"
+                Content="复制结果" />
             <Button
                 Width="130"
                 Margin="5"

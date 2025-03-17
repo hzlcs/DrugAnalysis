@@ -103,7 +103,13 @@ namespace ChartEditLibrary.Interfaces
                 chartPlot.AddSplitLine(i);
             }
             ChartData.SplitLines.CollectionChanged += VerticalLines_CollectionChanged;
-
+            if(ChartData.CuttingLines is not null)
+            {
+                foreach(var l in ChartData.CuttingLines)
+                {
+                    chartPlot.Plot.Add.Line(l);
+                }
+            }
             var plot = chartPlot.Plot;
             plot.FigureBackground.Color = System.Drawing.Color.White.ToScottColor();
             plot.Grid.IsVisible = false;

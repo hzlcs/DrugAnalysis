@@ -20,7 +20,6 @@ using LanguageExt.Common;
 using LanguageExt;
 using Range = System.Range;
 using MathNet.Numerics.LinearAlgebra.Factorization;
-using LanguageExt.Pipes;
 
 namespace ChartEditLibrary.ViewModel
 {
@@ -52,6 +51,8 @@ namespace ChartEditLibrary.ViewModel
         public BaseLine? CurrentBaseLine { get; private set; }
 
         public ObservableCollection<SplitLine> SplitLines { get; } = [];
+
+        public CoordinateLine[]? CuttingLines { get; private set; }
 
         public Coordinates[] DataSource { get; }
 
@@ -314,55 +315,55 @@ namespace ChartEditLibrary.ViewModel
                 }
             }
             //s1
-            var s1Index = SplitLines.FirstIndex(v => v.Description == SampleDescription.S1);
+            var s1Index = SplitLines.FirstIndex(v => v.Description == DescriptionManager.S1);
             var s1_1 = SplitLines.ElementAtOrDefault(s1Index - 1);
             if (s1_1 is not null)
-                s1_1.Description = SampleDescription.S1_1;
+                s1_1.Description = DescriptionManager.S1_1;
 
             //s2
-            var s2Index = SplitLines.FirstIndex(v => v.Description == SampleDescription.S2);
+            var s2Index = SplitLines.FirstIndex(v => v.Description == DescriptionManager.S2);
             int peakCount = s2Index - s1Index - 1;
             if (peakCount == 2)
             {
-                SplitLines[s2Index - 2].Description = SampleDescription.S2_1;
-                SplitLines[s2Index - 1].Description = SampleDescription.S2_2;
+                SplitLines[s2Index - 2].Description = DescriptionManager.S2_1;
+                SplitLines[s2Index - 1].Description = DescriptionManager.S2_2;
             }
             else if (peakCount == 1)
             {
                 double rate = (SplitLines[s2Index].RT - SplitLines[s2Index - 1].RT) / (SplitLines[s2Index].RT - SplitLines[s1Index].RT);
                 if (rate > 0.3)
-                    SplitLines[s2Index - 1].Description = SampleDescription.S2_1;
+                    SplitLines[s2Index - 1].Description = DescriptionManager.S2_1;
                 else
-                    SplitLines[s2Index - 1].Description = SampleDescription.S2_2;
+                    SplitLines[s2Index - 1].Description = DescriptionManager.S2_2;
             }
 
             //s5
-            var s5Index = SplitLines.FirstIndex(v => v.Description == SampleDescription.S5);
+            var s5Index = SplitLines.FirstIndex(v => v.Description == DescriptionManager.S5);
             var s5 = SplitLines[s5Index - 1];
             if (SplitLines[s5Index].RT - s5.RT < 1)
-                s5.Description = SampleDescription.S5_1;
+                s5.Description = DescriptionManager.S5_1;
 
             //s7
-            var s7Index = SplitLines.FirstIndex(v => v.Description == SampleDescription.S7);
+            var s7Index = SplitLines.FirstIndex(v => v.Description == DescriptionManager.S7);
             var s7 = SplitLines[s7Index - 1];
             if (SplitLines[s7Index].RT - s7.RT < 0.5)
-                s7.Description = SampleDescription.S7_1;
+                s7.Description = DescriptionManager.S7_1;
             else
             {
                 s7 = SplitLines[s7Index + 1];
                 if (SplitLines[s7Index].RT - s7.RT < 0.5)
-                    s7.Description = SampleDescription.S7_1;
+                    s7.Description = DescriptionManager.S7_1;
             }
 
             //s8
-            var s8Index = SplitLines.FirstIndex(v => v.Description == SampleDescription.S8);
+            var s8Index = SplitLines.FirstIndex(v => v.Description == DescriptionManager.S8);
             peakCount = s8Index - s7Index - 1;
             if (peakCount == 2)
             {
-                SplitLines[s8Index - 2].Description = SampleDescription.S8_1;
-                SplitLines[s8Index - 1].Description = SampleDescription.S8_2;
+                SplitLines[s8Index - 2].Description = DescriptionManager.S8_1;
+                SplitLines[s8Index - 1].Description = DescriptionManager.S8_2;
             }
-            string[] s8Descriptions = [SampleDescription.f, SampleDescription.g, SampleDescription.h, SampleDescription.i, SampleDescription.j, SampleDescription.k];
+            string[] s8Descriptions = [DescriptionManager.f, DescriptionManager.g, DescriptionManager.h, DescriptionManager.i, DescriptionManager.j, DescriptionManager.k];
             int gluIndex = 0;
             double s8RT = SplitLines[s8Index].RT;
             for (int i = s8Index + 1; i < SplitLines.Count; ++i)
@@ -372,37 +373,37 @@ namespace ChartEditLibrary.ViewModel
                 double interval = line.RT - s8RT;
                 if (gluIndex < 1 && interval <= 3 && height <= 5)
                 {
-                    line.Description = SampleDescription.f;
+                    line.Description = DescriptionManager.f;
                     gluIndex = 1;
                     continue;
                 }
                 if (gluIndex < 2 && interval <= 4 && Math.Abs(10 - height) <= 2)
                 {
-                    line.Description = SampleDescription.g;
+                    line.Description = DescriptionManager.g;
                     gluIndex = 2;
                     continue;
                 }
                 if (gluIndex < 3 && interval <= 6 && interval >= 3 && Math.Abs(5.5 - height) <= 1.5)
                 {
-                    line.Description = SampleDescription.h;
+                    line.Description = DescriptionManager.h;
                     gluIndex = 3;
                     continue;
                 }
                 if (gluIndex < 4 && interval >= 6 && Math.Abs(8 - height) <= 2)
                 {
-                    line.Description = SampleDescription.i;
+                    line.Description = DescriptionManager.i;
                     gluIndex = 4;
                     continue;
                 }
                 if (gluIndex < 5 && interval <= 8 && interval >= 7 && height <= 5)
                 {
-                    line.Description = SampleDescription.j;
+                    line.Description = DescriptionManager.j;
                     gluIndex = 5;
                     continue;
                 }
                 if (gluIndex < 6 && interval >= 8 && height <= 5)
                 {
-                    line.Description = SampleDescription.k;
+                    line.Description = DescriptionManager.k;
                     gluIndex = 6;
                     break;
                 }
@@ -534,7 +535,7 @@ namespace ChartEditLibrary.ViewModel
                 }
                 line.Description = sl.Description;
 
-                if (SampleDescription.GluStdDescriptions.Contains(line.Description))
+                if (DescriptionManager.GluStdDescriptions.Contains(line.Description))
                     stdOffset.Add(line.RT - sl.RT);
             }
             if (_xOffset is null && stdOffset.Count > 0)
@@ -644,86 +645,5 @@ namespace ChartEditLibrary.ViewModel
         }
 
 
-    }
-
-    public static class SampleDescription
-    {
-        public static IComparer<string> GluComparer { get; } = new GluComparer_();
-        public static IComparer<string> DPComparer { get; } = new DPComparer_();
-
-        public static readonly string[] GluStdDescriptions = [S1, S2, S3, S4, S5, S6, S7, S8];
-        public static readonly string[] GluDescriptions = [
-            "",
-            S1_1,
-            S1,
-            S2_1,
-            S2_2,
-            S2,
-            S3,
-            S4,
-            S5_1,
-            S5,
-            S6,
-            S7_1,
-            S7,
-            S8_1,
-            S8_2,
-            S8,
-            f,
-            g,
-            h,
-            i,
-            j,
-            k,
-            ];
-        public const string S1_1 = "ΔGlyser(ΔUA-Gal-Gal-Xyl-O-Ser)";
-        public const string S1 = "S1(ΔIVA)";
-        public const string S2_1 = "ΔGlyser ox2(ΔUA-Gal-Gal-O-Ser ox)";
-        public const string S2_2 = "ΔGlyser ox1(ΔUA-Gal-Gal-Xyl-O-Ser ox)";
-        public const string S2 = "S2(ΔIVS)";
-        public const string S3 = "S3(ΔIIA)";
-        public const string S4 = "S4(ΔIIIA)";
-        public const string S5 = "S5(ΔIIS)";
-        public const string S5_1 = "ΔIIS-gal(ΔGalA-GlcNS，6S)";
-        public const string S6 = "S6(ΔIIIS)";
-        public const string S7_1 = "[1;0;0;1;0;2]";
-        public const string S7 = "S7(ΔIA)";
-        public const string S8_1 = "[1;1;1;0;0;2];[1;1;1;1;1;3]";
-        public const string S8_2 = "[1;1;1;0;0;2]";
-        public const string S8 = "S8(ΔIS)";
-        public const string f = "[1;1;2;0;0;4]";
-        public const string g = "ΔIIA-IIS-glu(ΔUA-GlcNAc6S-GlcA-GlcNS，3S，6S)";
-        public const string h = "ΔIS-IdoA2S (ΔUA2S-GlcNS6S-IdoA2S);[1;1;1;1;0;4]";
-        public const string i = "1，6-AnhydroΔIS-IS(ΔUA，2S-GlcNS6S-UA2S-1，6-AnhydroGlcNS)";
-        public const string j = "[1;1;2;0;1;4]";
-        public const string k = "[1;1;2;0;0;6]";
-
-        private class GluComparer_ : IComparer<string>
-        {
-            public int Compare(string? x, string? y)
-            {
-                return Array.IndexOf(GluDescriptions, x).CompareTo(Array.IndexOf(GluDescriptions, y));
-            }
-        }
-
-        private class DPComparer_ : IComparer<string>
-        {
-            int IComparer<string>.Compare(string? l, string? r)
-            {
-                if(string.IsNullOrEmpty(l) || string.IsNullOrEmpty(r))
-                    return string.Compare(l, r);
-                var ls = l.Split('-').Select(int.Parse).ToArray();
-                var rs = r.Split('-').Select(int.Parse).ToArray();
-                if (ls[0] != rs[0])
-                    return rs[0] - ls[0];
-                if (ls.Length == rs.Length && ls.Length == 2)
-                {
-                    return rs[1] - ls[1];
-                }
-                if (ls.Length == 1)
-                    return 1;
-                return -1;
-            }
-        }
     }
 }

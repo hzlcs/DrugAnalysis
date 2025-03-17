@@ -15,8 +15,16 @@
         <local:BindingProxy x:Key="Bind" Data="{Binding}" />
     </UserControl.Resources>
     <Border CornerRadius="5" Background="#FFEEEEEE" BorderBrush="#FFE0E0E0" Padding="6" BorderThickness="1">
-        <StackPanel Orientation="Vertical">
-            <ItemsControl ItemsSource="{Binding DataColumns}" Padding="10,0,10,0" d:ItemsSource="{x:Static vm:QualityRangeControlViewModel.DesignDataColumns}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+            <ItemsControl Grid.ColumnSpan="2" ItemsSource="{Binding DataColumns}" Padding="10,0,10,0" d:ItemsSource="{x:Static vm:QualityRangeControlViewModel.DesignDataColumns}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Horizontal" Margin="0,15,0,11"/>
@@ -42,15 +50,16 @@
                             <Button Width="15" Height="15" BorderThickness="0" 
                                     Command="{Binding Source={StaticResource Bind}, Path=Data.ImportCommand}" CommandParameter="{Binding}">
                                 <Button.Background>
-                                    <ImageBrush ImageSource="/Resources/copy.png" />
+                                    <ImageBrush ImageSource="/Resources/import.png" />
                                 </Button.Background>
                             </Button>
+                            
                             <TextBlock Text="" Width="30"/>
                         </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <ItemsControl ItemsSource="{Binding DataRows}" Padding="10,0,10,0" d:ItemsSource="{x:Static vm:QualityRangeControlViewModel.DesignDataRows}">
+            <ItemsControl Grid.ColumnSpan="2" Grid.Row="1" ItemsSource="{Binding DataRows}" Padding="10,0,10,0" d:ItemsSource="{x:Static vm:QualityRangeControlViewModel.DesignDataRows}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border Background="White" CornerRadius="5" Margin="0,0,0,4" Height="30">
@@ -86,6 +95,12 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-        </StackPanel>
+            <Button Grid.Column="1" Width="15" Height="15" BorderThickness="0" 
+                Command="{Binding Source={StaticResource Bind}, Path=Data.CopyDataCommand}">
+                <Button.Background>
+                    <ImageBrush ImageSource="/Resources/copy.png" />
+                </Button.Background>
+            </Button>
+        </Grid>
     </Border>
 </UserControl>

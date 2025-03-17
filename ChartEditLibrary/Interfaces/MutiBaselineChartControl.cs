@@ -54,7 +54,7 @@ namespace ChartEditLibrary.Interfaces
             else
             {
                 var line = (SplitLine)lineInfo.Value.DraggedLine;
-                string dp = _inputForm.ShowCombboxDialog("Set Assignment", SampleDescription.GluDescriptions);
+                string dp = _inputForm.ShowCombboxDialog("Set Assignment", DescriptionManager.GluDescriptions);
                 if (!TrySetDPIndex(line, dp))
                 {
                     _messageBox.Show("无效的DP值");

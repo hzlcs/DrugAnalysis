@@ -24,6 +24,7 @@ namespace ChartEditWPF.ViewModels
         protected readonly IInputForm _selectDialog;
         protected readonly ILogger<SamplePageViewModel> logger;
         protected AreaDatabase? database;
+        protected virtual bool GroupDegree { get; } = false;
 
         [ObservableProperty]
         private string description = "-";
@@ -53,11 +54,12 @@ namespace ChartEditWPF.ViewModels
                 newDp.Add(sample.Descriptions);
                 Samples.Add(sample);
             }
-            descriptions = SampleManager.MergeDescription(newDp);
+            descriptions = SampleManager.MergeDescription(newDp, data[0].Description);
             foreach (var sample in Samples)
             {
                 sample.ApplyDescription(descriptions);
             }
+            descriptions = DescriptionManager.GetShortGluDescription(descriptions);
             if (PValues.Count == 0)
             {
                 foreach (var t in descriptions)
@@ -93,7 +95,9 @@ namespace ChartEditWPF.ViewModels
                     if (!File.Exists(fileName))
                         continue;
                     var sample = await SampleManager.GetSampleAreasAsync(fileName);
-                    if(Samples.Count > 0 && sample.Description != Samples[0].Description)
+                    if(GroupDegree)
+                        sample = SampleManager.ChangeToGroup(sample);
+                    if (Samples.Count > 0 && sample.Description != Samples[0].Description)
                     {
                         _messageBox.Popup(fileName + "\n样品类型不一致", NotificationType.Warning);
                         continue;
@@ -126,7 +130,9 @@ namespace ChartEditWPF.ViewModels
                     if (!File.Exists(fileName))
                         continue;
                     var database = await SampleManager.GetDatabaseAsync(fileName);
-                    if(Samples.Count > 0 && database.Description != Samples[0].Description)
+                    if(GroupDegree)
+                        database = SampleManager.ChangeToGroup(database);
+                    if (Samples.Count > 0 && database.Description != Samples[0].Description)
                     {
                         _messageBox.Popup(fileName + "\n样品类型不一致", NotificationType.Warning);
                         continue;
@@ -179,11 +185,13 @@ namespace ChartEditWPF.ViewModels
             {
                 using var _ = _messageBox.ShowLoading("正在导入数据库...");
                 database = await SampleManager.GetDatabaseAsync(fileName[0]);
+                if (GroupDegree)
+                    database = SampleManager.ChangeToGroup(database);
                 if (Samples.Count == 0)
                     return;
                 if (database.Description != Samples[0].Description)
                 {
-                    _messageBox.Popup(fileName + "\n样品类型不一致", NotificationType.Warning);
+                    _messageBox.Popup(fileName[0] + "\n样品类型不一致", NotificationType.Warning);
                     return;
                 }
                 DoWork();
@@ -226,7 +234,7 @@ namespace ChartEditWPF.ViewModels
             foreach (var pair in sameSamples)
             {
                 var list = pair.Value;
-                var samples = list.Select(v => new SampleArea(pair.Key, [.. database.Descriptions], database.Rows.Select(x => x.Areas[v]).ToArray())).ToArray();
+                var samples = list.Select(v => new SampleArea(pair.Key + "-" + (v + 1).ToString(), [.. database.Descriptions], database.Rows.Select(x => x.Areas[v]).ToArray())).ToArray();
                 datas.Add(new TCheckControlViewModel(database.Description, samples));
             }
             if (@default.Count > 0)
@@ -249,15 +257,16 @@ namespace ChartEditWPF.ViewModels
 
             public string Description { get; } = description;
 
-            private double? value;
-            public double? Value
+            private string value = "N/A";
+            public string? Value
             {
                 get => value;
                 set
                 {
-                    if (Math.Abs(this.value.GetValueOrDefault() - value.GetValueOrDefault()) < Utility.Tolerance)
+                    string t = value ?? "N/A";
+                    if (this.value == t)
                         return;
-                    this.value = value;
+                    this.value = t;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
                 }
             }

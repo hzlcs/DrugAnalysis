@@ -8,9 +8,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Xml.Serialization;
 
 namespace ChartEditWPF.ViewModels
@@ -25,7 +27,7 @@ namespace ChartEditWPF.ViewModels
             ];
 
         public static ObservableCollection<RangeRow> DesignDataRows { get; } = [
-            new RangeRow("DP1") { Data = [ new RangeData(new AreaDatabase.AreaRow("DP1", [1, 2, 3])) , new RangeData(1), new RangeData(2)]},
+            new RangeRow("DP1") { Data = [ new RangeData(new AreaDatabase.AreaRow("DP1", [1, 2, 3]), [50,50,50]) , new RangeData(1, 50), new RangeData(2, 50)]},
             ];
 
         private readonly IFileDialog _fileDialog = App.ServiceProvider.GetRequiredService<IFileDialog>();
@@ -46,6 +48,8 @@ namespace ChartEditWPF.ViewModels
 
         public ObservableCollection<RangeRow> DataRows { get; } = [];
 
+        private readonly int[] dataWidth;
+
         public QualityRangeControlViewModel(SampleResult sample) : this(sample.Description, sample.SampleAreas)
         {
 
@@ -54,7 +58,8 @@ namespace ChartEditWPF.ViewModels
         public QualityRangeControlViewModel(string description, SampleArea[] sampleAreas)
         {
             Columns = sampleAreas.Select(s => s.SampleName).ToArray();
-            DataColumns = [[.. Columns.Select(v => new Data(v, 125)), .. SourceArray.Select(v => new Data(v, 50))]];
+            dataWidth = Columns.Select(v => 50 + (v.Length - 4) * 6).ToArray();
+            DataColumns = [[.. Enumerable.Range(0, Columns.Length).Select(v => new Data(Columns[v], dataWidth[v])), .. SourceArray.Select(v => new Data(v, 50))]];
             SampleName = Columns[0][..Columns[0].LastIndexOf('-')];
             Descriptions = sampleAreas[0].Descriptions;
             Description = description;
@@ -62,7 +67,7 @@ namespace ChartEditWPF.ViewModels
             {
                 var values = sampleAreas.Select(s => s.Area[i]).ToArray();
                 RangeRow row = new RangeRow(Descriptions[i]);
-                row.Data.Add(new RangeData(new AreaDatabase.AreaRow(Descriptions[i], values)));
+                row.Data.Add(new RangeData(new AreaDatabase.AreaRow(Descriptions[i], values), dataWidth));
                 DataRows.Add(row);
             }
         }
@@ -71,7 +76,8 @@ namespace ChartEditWPF.ViewModels
         {
             this.database = database;
             Columns = database.SampleNames;
-            DataColumns = Columns.Select(v => new Data[] { new(v, 125) }).ToArray();
+            dataWidth = Columns.Select(v => 50 + (v.Length - 4) * 6).ToArray();
+            DataColumns = Enumerable.Range(0, Columns.Length).Select(v => new Data[] { new Data(Columns[v], dataWidth[v]) }).ToArray();
             SampleName = database.ClassName;
             Descriptions = [.. database.Descriptions];
             Description = database.Description;
@@ -80,8 +86,9 @@ namespace ChartEditWPF.ViewModels
                 if (database.TryGetRow(Descriptions[i], out var row))
                 {
                     var rangeRow = new RangeRow(Descriptions[i]);
+                    int index = 0;
                     foreach (var area in row.Areas)
-                        rangeRow.Data.Add(new RangeData(area.GetValueOrDefault()));
+                        rangeRow.Data.Add(new RangeData(area.GetValueOrDefault(), dataWidth[index++]));
                     DataRows.Add(rangeRow);
                 }
             }
@@ -91,8 +98,8 @@ namespace ChartEditWPF.ViewModels
 
         public void ApplyDescription(string[] descriptions)
         {
-            Descriptions = descriptions;
-            for (var i = 0; i < Descriptions.Length; i++)
+            int i;
+            for (i = 0; i < descriptions.Length && i < DataRows.Count; i++)
             {
                 string rowDescription = DataRows[i].Description;
                 if (rowDescription == descriptions[i])
@@ -100,8 +107,29 @@ namespace ChartEditWPF.ViewModels
                 else if (!rowDescription.Contains('-') && rowDescription + "-1" == descriptions[i])
                     DataRows[i].Description = descriptions[i];
                 else
-                    DataRows.Insert(i, DataRows[0].NewRow(descriptions[i]));
+                {
+                    int index = Array.IndexOf(Descriptions, descriptions[i]);
+                    RangeRow temp;
+                    if (index != -1)
+                    {
+                        temp = DataRows[index];
+                        DataRows.RemoveAt(index);
+                    }
+                    else
+                    {
+                        temp = DataRows[0].NewRow(descriptions[i]);
+                    }
+                    DataRows.Insert(i, temp);
+                }
             }
+            if(i < descriptions.Length)
+            {
+                for (; i < descriptions.Length; i++)
+                {
+                    DataRows.Add(DataRows[0].NewRow(descriptions[i]));
+                }
+            }
+            Descriptions = descriptions;
         }
 
         [RelayCommand]
@@ -123,6 +151,35 @@ namespace ChartEditWPF.ViewModels
             }
         }
 
+        [RelayCommand]
+        private void CopyData()
+        {
+            var data = GetCopyData();
+            int index = 0;
+            string GetFirst()
+            {
+                ++index;
+                if (index == 1)
+                    return Description;
+                return Descriptions[index - 2];
+            }
+            string text = string.Join(Environment.NewLine, data.Select(v => GetFirst() + "\t" + string.Join("\t", v)));
+            Clipboard.Clear();
+            Clipboard.SetText(text);
+        }
+
+        public IEnumerable<IEnumerable<string>> GetCopyData()
+        {
+            if (database is null)
+                yield return DataColumns.SelectMany(v => v.Select(x => x.Value)).Append("质量范围");
+            else
+                yield return DataColumns.SelectMany(v => v.Select(x => x.Value).Append("质量范围"));
+            for (int i = 0; i < DataRows.Count; ++i)
+            {
+                yield return DataRows[i].Data.SelectMany(v => v.Datas.Select(x => x.Value).Append(v.Range));
+            }
+        }
+
         public void Import(AreaDatabase database, Data[]? sample = null)
         {
             foreach (var row in DataRows)
@@ -133,11 +190,11 @@ namespace ChartEditWPF.ViewModels
                     if (sample is null)
                     {
                         foreach (var data in row.Data)
-                            data.Range = "-";
+                            data.Range = "N/A";
                     }
                     else
                     {
-                        row.Data.First(v => v.Datas == sample).Range = "-";
+                        row.Data.First(v => v.Datas == sample).Range = "N/A";
                     }
                     continue;
                 }
@@ -162,13 +219,13 @@ namespace ChartEditWPF.ViewModels
 
             if (database is null)
             {
-                string[] column = [.. Columns, .. SourceArray, "质量范围"];
+                string[] column = [.. Columns.Select(v => $"\"\"\"{v}\"\"\""), .. SourceArray, "质量范围"];
                 string[][] rows = [.. DataRows.Select(v => v.Data[0].Datas.Select(d => d.Value).Append(v.Data[0].Range).ToArray())];
                 return new SaveData(column, rows);
             }
             else
             {
-                string[] column = [.. Columns.SelectMany(v => new string[] { v, "质量范围" })];
+                string[] column = [.. Columns.SelectMany(v => new string[] { $"\"\"\"{v}\"\"\"", "质量范围" })];
                 string[][] rows = DataRows.Select(v => v.Data.SelectMany(x => new string[] { x.Datas[0].Value, x.Range }).ToArray()).ToArray();
                 return new SaveData(column, rows);
             }
@@ -199,32 +256,30 @@ namespace ChartEditWPF.ViewModels
     public class RangeData : INotifyPropertyChanged
     {
         public Data[] Datas { get; }
-        public float? Average { get; }
+        public double? Average { get; }
 #if DEBUG
         private string range = "AVG+1SD";
 #else
-        private string range = "-";
+        private string range = "N/A";
 #endif
         public string Range
         {
             get => range;
             set
             {
-                if (range == value)
-                {
-                    return;
-                }
+                if (range == value)                
+                    return;                
                 range = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Range)));
             }
         }
         public double StdDev { get; }
 
-        public RangeData(AreaDatabase.AreaRow row)
+        public RangeData(AreaDatabase.AreaRow row, int[] width)
         {
             Datas =
             [
-                .. row.Areas.Select(v => new Data(v.GetValueOrDefault().ToString("F2"))),
+                ..Enumerable.Range(0,row.Areas.Length).Select(v => new Data(row.Areas[v].GetValueOrDefault().ToString("F2"), width[v])),
                 new Data(row.Average.GetValueOrDefault().ToString("F2"), 50),
                 new Data(row.StdDev.ToString("F2"), 50),
                 new Data(row.RSD.ToString("P2"), 50)
@@ -234,15 +289,15 @@ namespace ChartEditWPF.ViewModels
             StdDev = row.StdDev;
         }
 
-        public RangeData(float? average)
+        public RangeData(double? average, int width)
         {
-            Datas = [new Data(average.GetValueOrDefault().ToString("F2"), 125)];
+            Datas = [new Data(average.GetValueOrDefault().ToString("F2"), width)];
             Average = average;
         }
 
         public RangeData(Data[] datas)
         {
-            Datas = [.. datas.Select(v => new Data("", v.Width))];
+            Datas = [.. datas.Select(v => new Data("0", v.Width))];
             Average = null;
         }
 

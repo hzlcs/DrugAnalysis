@@ -7,16 +7,37 @@ using System.Threading.Tasks;
 
 namespace ChartEditLibrary.Model
 {
-    internal readonly struct DescriptionString
+    public readonly struct DescriptionString : IComparable<DescriptionString>
     {
+
+
+        public string Degree { get; }
+        public int Sort { get; }
         public string Description { get; }
 
         public DescriptionString(string description)
         {
-            if(description.Contains('-'))
-                Description = description;
-            else
+            string[] spl = description.Split('-');
+            if (spl.Length == 1)
+            {
+                Degree = spl[0];
+                Sort = 1;
                 Description = description + "-1";
+            }
+            else
+            {
+                Degree = spl[0];
+                _ = int.TryParse(spl[1], out int sort);
+                Sort = sort;
+                Description = description;
+            }
+        }
+
+        public DescriptionString(string degree, int sort, string description)
+        {
+            Degree = degree;
+            Sort = sort;
+            Description = description;
         }
 
         public static bool operator ==(DescriptionString left, DescriptionString right)
@@ -29,7 +50,7 @@ namespace ChartEditLibrary.Model
         }
         public override bool Equals([NotNullWhen(true)] object? obj)
         {
-            if(obj is DescriptionString other)
+            if (obj is DescriptionString other)
             {
                 return Description == other.Description;
             }
@@ -39,6 +60,14 @@ namespace ChartEditLibrary.Model
         public override int GetHashCode()
         {
             return Description.GetHashCode();
+        }
+
+        public int CompareTo(DescriptionString other)
+        {
+            int compare = string.Compare(Degree, other.Degree);
+            if (compare != 0)
+                return compare;
+            return Sort.CompareTo(other.Sort);
         }
     }
 }

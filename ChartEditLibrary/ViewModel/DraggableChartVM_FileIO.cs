@@ -55,10 +55,10 @@ namespace ChartEditLibrary.ViewModel
                 for (int i = 0; i < data.Length; ++i)
                 {
                     var row = data[i];
-                    if (!float.TryParse(row[0], out float t))
+                    if (!double.TryParse(row[0], out double t))
                         continue;
                     dataRow = i;
-                    if (row.Length > 2 && float.TryParse(row[2], out t))
+                    if (row.Length > 2 && double.TryParse(row[2], out t))
                         dataCol = 1;
                     else
                         dataCol = 0;

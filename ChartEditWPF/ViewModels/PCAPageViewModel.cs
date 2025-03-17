@@ -22,6 +22,7 @@ namespace ChartEditWPF.ViewModels
     {
         private PCAManager.Result? result;
         private AreaDatabase? cache;
+        private PCAWindow? window;
 
         protected override void DoWork()
         {
@@ -40,7 +41,7 @@ namespace ChartEditWPF.ViewModels
                 databases.Add(database);
                 databases.Add(this.database);
                 result = PCAManager.GetPCA([.. databases]);
-                
+                window = null;
                 _messageBox.Popup("PCA计算完成", NotificationType.Success);
                 if (cache is null || !ReferenceEquals(cache, this.database))
                 {
@@ -51,7 +52,7 @@ namespace ChartEditWPF.ViewModels
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "DoWork");
+                logger.LogError(ex, "PCADoWork");
                 _messageBox.Popup("PCA计算失败", NotificationType.Error);
             }
         }
@@ -61,10 +62,50 @@ namespace ChartEditWPF.ViewModels
         {
             if (result is null)
             {
-                _messageBox.Popup("请先计算PCA", NotificationType.Error);
+                DoWork();
+            }
+            if (result is null)
+                return;
+            try
+            {
+                window = new PCAWindow(result);
+                window.Show();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "ShowPCA");
+                _messageBox.Popup("PCA显示失败", NotificationType.Error);
+            }
+        }
+
+        [RelayCommand]
+        private void Export()
+        {
+            if(result is null)
+            {
+                DoWork();
+            }
+            if(result is null)
+            {
                 return;
             }
-            new PCAWindow(result).Show();
+            try
+            {
+                window ??= new PCAWindow(result);
+                if (!_fileDialog.ShowDialog(null, out var fileNames))
+                {
+                    return;
+                }
+                byte[] data = window.GetResult();
+                string fileName = Path.GetFileNameWithoutExtension(fileNames[0]) + ".png";
+                File.WriteAllBytes(fileName, data);
+                _messageBox.Popup("导出成功", NotificationType.Success);
+            }
+            catch(Exception ex)
+            {
+                logger.LogError(ex, "ExportPCA");
+                _messageBox.Popup("导出失败", NotificationType.Error);
+            }
         }
 
     }

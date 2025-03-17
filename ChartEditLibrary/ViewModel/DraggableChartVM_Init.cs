@@ -74,7 +74,7 @@ namespace ChartEditLibrary.ViewModel
             }
             for (int i = 0; i < lines.Count; ++i)
             {
-                AddSplitLine(CurrentBaseLine, DataSource[lines[i]]).Description = SampleDescription.GluStdDescriptions[i];
+                AddSplitLine(CurrentBaseLine, DataSource[lines[i]]).Description = DescriptionManager.GluStdDescriptions[i];
             }
         }
 
