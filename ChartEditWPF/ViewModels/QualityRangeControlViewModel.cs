@@ -42,7 +42,7 @@ namespace ChartEditWPF.ViewModels
 
         public string[] Columns { get; }
 
-        public Data[][] DataColumns { get; }
+        public LabelData[][] DataColumns { get; }
 
         public AreaDatabase? database;
 
@@ -59,7 +59,7 @@ namespace ChartEditWPF.ViewModels
         {
             Columns = sampleAreas.Select(s => s.SampleName).ToArray();
             dataWidth = Columns.Select(v => 50 + (v.Length - 4) * 6).ToArray();
-            DataColumns = [[.. Enumerable.Range(0, Columns.Length).Select(v => new Data(Columns[v], dataWidth[v])), .. SourceArray.Select(v => new Data(v, 50))]];
+            DataColumns = [[.. Enumerable.Range(0, Columns.Length).Select(v => new LabelData(Columns[v], dataWidth[v])), .. SourceArray.Select(v => new LabelData(v, 50))]];
             SampleName = Columns[0][..Columns[0].LastIndexOf('-')];
             Descriptions = sampleAreas[0].Descriptions;
             Description = description;
@@ -77,7 +77,7 @@ namespace ChartEditWPF.ViewModels
             this.database = database;
             Columns = database.SampleNames;
             dataWidth = Columns.Select(v => 50 + (v.Length - 4) * 6).ToArray();
-            DataColumns = Enumerable.Range(0, Columns.Length).Select(v => new Data[] { new Data(Columns[v], dataWidth[v]) }).ToArray();
+            DataColumns = Enumerable.Range(0, Columns.Length).Select(v => new LabelData[] { new LabelData(Columns[v], dataWidth[v]) }).ToArray();
             SampleName = database.ClassName;
             Descriptions = [.. database.Descriptions];
             Description = database.Description;
@@ -133,7 +133,7 @@ namespace ChartEditWPF.ViewModels
         }
 
         [RelayCommand]
-        private async Task Import(Data[]? data)
+        private async Task Import(LabelData[]? data)
         {
             if (!_fileDialog.ShowDialog(null, out var fileName))
             {
@@ -166,6 +166,7 @@ namespace ChartEditWPF.ViewModels
             string text = string.Join(Environment.NewLine, data.Select(v => GetFirst() + "\t" + string.Join("\t", v)));
             Clipboard.Clear();
             Clipboard.SetText(text);
+            Clipboard.Flush();
         }
 
         public IEnumerable<IEnumerable<string>> GetCopyData()
@@ -180,7 +181,7 @@ namespace ChartEditWPF.ViewModels
             }
         }
 
-        public void Import(AreaDatabase database, Data[]? sample = null)
+        public void Import(AreaDatabase database, LabelData[]? sample = null)
         {
             foreach (var row in DataRows)
             {
@@ -255,7 +256,7 @@ namespace ChartEditWPF.ViewModels
 
     public class RangeData : INotifyPropertyChanged
     {
-        public Data[] Datas { get; }
+        public LabelData[] Datas { get; }
         public double? Average { get; }
 #if DEBUG
         private string range = "AVG+1SD";
@@ -279,10 +280,10 @@ namespace ChartEditWPF.ViewModels
         {
             Datas =
             [
-                ..Enumerable.Range(0,row.Areas.Length).Select(v => new Data(row.Areas[v].GetValueOrDefault().ToString("F2"), width[v])),
-                new Data(row.Average.GetValueOrDefault().ToString("F2"), 50),
-                new Data(row.StdDev.ToString("F2"), 50),
-                new Data(row.RSD.ToString("P2"), 50)
+                ..Enumerable.Range(0,row.Areas.Length).Select(v => new LabelData(row.Areas[v].GetValueOrDefault().ToString("F2"), width[v])),
+                new LabelData(row.Average.GetValueOrDefault().ToString("F2"), 50),
+                new LabelData(row.StdDev.ToString("F2"), 50),
+                new LabelData(row.RSD.ToString("P2"), 50)
 ,
             ];
             Average = row.Average.GetValueOrDefault();
@@ -291,13 +292,13 @@ namespace ChartEditWPF.ViewModels
 
         public RangeData(double? average, int width)
         {
-            Datas = [new Data(average.GetValueOrDefault().ToString("F2"), width)];
+            Datas = [new LabelData(average.GetValueOrDefault().ToString("F2"), width)];
             Average = average;
         }
 
-        public RangeData(Data[] datas)
+        public RangeData(LabelData[] datas)
         {
-            Datas = [.. datas.Select(v => new Data("0", v.Width))];
+            Datas = [.. datas.Select(v => new LabelData("0", v.Width))];
             Average = null;
         }
 

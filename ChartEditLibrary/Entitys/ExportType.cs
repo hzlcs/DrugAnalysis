@@ -10,7 +10,9 @@ namespace ChartEditLibrary.Entitys
     {
         None,
         Enoxaparin,
+        Standard,
         Other,
-        Standard
+        TwoDimension,
+        TwoDimensionDP
     }
 }

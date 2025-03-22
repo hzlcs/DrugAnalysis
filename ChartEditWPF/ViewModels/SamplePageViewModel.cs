@@ -59,7 +59,7 @@ namespace ChartEditWPF.ViewModels
             {
                 sample.ApplyDescription(descriptions);
             }
-            descriptions = DescriptionManager.GetShortGluDescription(descriptions);
+            descriptions = DescriptionManager.GluDescription.GetShortGluDescription(descriptions);
             if (PValues.Count == 0)
             {
                 foreach (var t in descriptions)
@@ -184,7 +184,7 @@ namespace ChartEditWPF.ViewModels
             try
             {
                 using var _ = _messageBox.ShowLoading("正在导入数据库...");
-                database = await SampleManager.GetDatabaseAsync(fileName[0]);
+                var database = await SampleManager.GetDatabaseAsync(fileName[0]);
                 if (GroupDegree)
                     database = SampleManager.ChangeToGroup(database);
                 if (Samples.Count == 0)
@@ -194,6 +194,7 @@ namespace ChartEditWPF.ViewModels
                     _messageBox.Popup(fileName[0] + "\n样品类型不一致", NotificationType.Warning);
                     return;
                 }
+                this.database = database;
                 DoWork();
                 _messageBox.Popup("导入数据库成功", NotificationType.Success);
             }

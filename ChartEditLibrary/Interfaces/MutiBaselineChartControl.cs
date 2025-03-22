@@ -2,6 +2,8 @@
 using ChartEditLibrary.ViewModel;
 using MathNet.Numerics.Distributions;
 using ScottPlot;
+using ScottPlot.Interactivity;
+using ScottPlot.Interactivity.UserActionResponses;
 using ScottPlot.Plottables;
 using System;
 using System.Collections.Generic;
@@ -21,26 +23,28 @@ namespace ChartEditLibrary.Interfaces
             base.BindControl(chartPlot);
             vstreetMarker = chartPlot.Plot.Add.Marker(0, 0, size: 2, color: System.Drawing.Color.Red.ToScottColor());
             vstreetMarker.IsVisible = false;
-
-            chartPlot.Menu.Add("Add Line", AddLineMenu);
-            chartPlot.Menu.Add("Remove Line", RemoveLineMenu);
-            chartPlot.Menu.Add("Delete Peak", DeletePeakMenu);
-            chartPlot.Menu.Add("Clear these lines", ClearTheseLineMenu);
-            chartPlot.Menu.Add("Set Assignment", SetAssignmentMenu);
+            if(chartPlot.Menu is not null)
+            {
+                chartPlot.Menu.Add("Add Line", AddLineMenu);
+                chartPlot.Menu.Add("Remove Line", RemoveLineMenu);
+                chartPlot.Menu.Add("Delete Peak", DeletePeakMenu);
+                chartPlot.Menu.Add("Clear these lines", ClearTheseLineMenu);
+                chartPlot.Menu.Add("Set Assignment", SetAssignmentMenu);
+            }
         }
 
-        private void ClearTheseLineMenu(IPlotControl control)
+        private void ClearTheseLineMenu(Plot control)
         {
-            var range = control.Plot.Axes.Bottom.Range;
+            var range = control.Axes.Bottom.Range;
             var lines = ChartData.SplitLines.Where(v => v.Start.X > range.Min && v.Start.X < range.Max).ToArray();
             if (!_messageBox.ConfirmOperation($"是否删除这{lines.Length}条分割线?"))
                 return;
             foreach (var line in lines)
                 ChartData.RemoveSplitLine(line);
-            control.Refresh();
+            control.PlotControl!.Refresh();
         }
 
-        private void SetAssignmentMenu(IPlotControl control)
+        private void SetAssignmentMenu(Plot control)
         {
             var lineInfo = ChartData.GetDraggedLine(mouseCoordinates, true);
             if (!lineInfo.HasValue)
@@ -54,7 +58,7 @@ namespace ChartEditLibrary.Interfaces
             else
             {
                 var line = (SplitLine)lineInfo.Value.DraggedLine;
-                string dp = _inputForm.ShowCombboxDialog("Set Assignment", DescriptionManager.GluDescriptions);
+                string dp = _inputForm.ShowCombboxDialog("Set Assignment", DescriptionManager.GluDescription.Descriptions);
                 if (!TrySetDPIndex(line, dp))
                 {
                     _messageBox.Show("无效的DP值");
@@ -81,7 +85,7 @@ namespace ChartEditLibrary.Interfaces
             return true;
         }
 
-        private void DeletePeakMenu(IPlotControl control)
+        private void DeletePeakMenu(Plot control)
         {
             var lineInfo = ChartData.GetDraggedLine(mouseCoordinates, true);
             if (!lineInfo.HasValue)
@@ -133,10 +137,10 @@ namespace ChartEditLibrary.Interfaces
                 }
             }
 
-            control.Refresh();
+            control.PlotControl!.Refresh();
         }
 
-        private void RemoveLineMenu(IPlotControl control)
+        private void RemoveLineMenu(Plot control)
         {
             var lineInfo = ChartData.GetDraggedLine(mouseCoordinates);
             if (!lineInfo.HasValue)
@@ -144,11 +148,16 @@ namespace ChartEditLibrary.Interfaces
                 _messageBox.Show("No line here");
                 return;
             }
+            if(lineInfo.Value.IsBaseLine)
+            {
+                if (!_messageBox.ConfirmOperation("是否删除基线？"))
+                    return;
+            }
             ChartData.RemoveLine(lineInfo.Value.DraggedLine);
-            control.Refresh();
+            control.PlotControl!.Refresh();
         }
 
-        private void AddLineMenu(IPlotControl control)
+        private void AddLineMenu(Plot control)
         {
             var chartPoint = ChartData.GetChartPoint(mouseCoordinates.X);
             if (chartPoint is null)
@@ -165,7 +174,7 @@ namespace ChartEditLibrary.Interfaces
             }
             var line = ChartData.AddSplitLine(chartPoint.Value);
             ChartData.DraggedLine = DraggableChartVm.GetFocusLineInfo(line);
-            control.Refresh();
+            control.PlotControl!.Refresh();
         }
 
         private SplitLine? baseLine_endLine;
@@ -186,7 +195,7 @@ namespace ChartEditLibrary.Interfaces
                 draggedLine = new DraggedLineInfo(baseLine, false);
                 ChartData.AddBaseLine(baseLine);
                 baseLine_endLine = ChartData.AddSplitLine(baseLine, baseLine.End);
-                PlotControl.Interaction.Disable();
+                PlotControl.UserInputProcessor.Disable();
             }
 
         }
@@ -267,11 +276,29 @@ namespace ChartEditLibrary.Interfaces
             if (draggedLine is null)
                 return;
             var line = draggedLine.Value;
+            if(autoVstreet)
+            {
+                var checkPoint = line.Point;
+                if (!ChartData.IsVstreetEndPoint(checkPoint, 0))
+                {
+                    var vstreet = ChartData.GetVstreetPoint(checkPoint.X);
+                    MoveLine(vstreet, vstreet);
+                }
+            }
             if (line.DraggedLine is BaseLine baseLine)
             {
                 if (baseLine_endLine is not null)
                 {
-                    baseLine_endLine.Line = baseLine.CreateSplitLine(baseLine_endLine.End);
+                    if(autoVstreet)
+                    {
+                        var checkPoint = baseLine.Start;
+                        if (!ChartData.IsVstreetEndPoint(checkPoint, 0))
+                        {
+                            var vstreet = ChartData.GetVstreetPoint(checkPoint.X);
+                            baseLine.Start = vstreet;
+                        }
+                    }
+                    baseLine_endLine.Line = baseLine.CreateSplitLine(baseLine.End);
                     if (Math.Abs(baseLine.Start.X - baseLine.End.X) < ChartData.Unit * 2)
                     {
                         ChartData.RemoveBaseLine(baseLine);
@@ -305,6 +332,12 @@ namespace ChartEditLibrary.Interfaces
         {
             base.ChangeActived(actived);
             this.actived = actived;
+        }
+
+        private bool autoVstreet;
+        public override void ChangeAutoVstreet(bool autoVstreet)
+        {
+            this.autoVstreet = autoVstreet;
         }
     }
 

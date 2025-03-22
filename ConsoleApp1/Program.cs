@@ -9,10 +9,11 @@ using ScottPlot.Plottables;
 using System.Text;
 using System;
 using System.Diagnostics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.IO;
 
-double[] x = "2.84\t2.84\t2.83\t2.67\t2.53".Split('\t').Select(double.Parse).ToArray();
-double[] y = "2.96\t2.98\t2.89\t2.81\t2.84\t3.09\t2.94\t3.39\t3.09\t3.21\t2.98\t2.83\t3.5\t3.46\t3.42\t3.16\t3.06\t3.03\t3.16\t3.04\t2.93\t2.96\t2.96\t2.93\t3.04".Split('\t').Select(double.Parse).ToArray();
-Console.WriteLine(SampleManager.TCheck(x, y));
+
+BenchmarkRunner.Run<BenchmarkProgram.FileIO>();
 
 Console.ReadLine();
 
@@ -25,42 +26,84 @@ BenchmarkRunner.Run<BenchmarkProgram>();
 
 public class BenchmarkProgram
 {
-    [Benchmark]
-    public string GetDataLine()
+    public class DataLine
     {
-        string line = "1\t,2\t,3\t,4\t,5\t,6\t,7\t,\t,8\t,9\t,10\t";
-        int index = line.IndexOf(',');
-        if (index == -1)
-            return line;
-        while (true)
+        [Benchmark]
+        public string GetDataLine()
         {
-            int next = line.IndexOf(',', index + 1);
-            if (next == -1)
-            {
+            string line = "1\t,2\t,3\t,4\t,5\t,6\t,7\t,\t,8\t,9\t,10\t";
+            int index = line.IndexOf(',');
+            if (index == -1)
                 return line;
+            while (true)
+            {
+                int next = line.IndexOf(',', index + 1);
+                if (next == -1)
+                {
+                    return line;
+                }
+                int length = next - index;
+                if (length == 1 || (length == 2 && line[index + 1] == '\t'))
+                    return line[..index];
+                index = next;
             }
-            int length = next - index;
-            if (length == 1 || (length == 2 && line[index + 1] == '\t'))
-                return line[..index];
-            index = next;
+        }
+
+        //[Benchmark]
+        //public string GetDataLineSpan()
+        //{
+        //    string line = "1\t,2\t,3\t,4\t,5\t,6\t,7\t,\t,8\t,9\t,10\t";
+        //    var span = line.AsSpan();
+        //    foreach (var range in span.Split(','))
+        //    {
+        //        int length = range.End.Value - range.Start.Value;
+        //        if (length == 1 && span[range.Start] == '\t')
+        //            return line[..(range.Start.Value - 1)];
+        //    }
+        //    return line;
+        //}
+    }
+
+    public class FileIO
+    {
+        [Benchmark]
+        public void ReadSplit()
+        {
+            string path = @"E:\WeChat Files\wxid_3cmszo7zcnp922\FileStorage\File\2025-03\CS953A-dp4.csv";
+            using (StreamReader sr = new(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
+            {
+                var data = sr.ReadToEnd().Split(Environment.NewLine,
+                    StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(',')).ToArray();
+            }
+        }
+        [Benchmark]
+        public void ReadLine()
+        {
+            string path = @"E:\WeChat Files\wxid_3cmszo7zcnp922\FileStorage\File\2025-03\CS953A-dp4.csv";
+            List<string[]> datas = new();
+            using (StreamReader streamReader = new(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
+            {
+                string? line;
+                while (true)
+                {
+                    line = streamReader.ReadLine();
+                    if (string.IsNullOrWhiteSpace(line))
+                        break;
+                    datas.Add(line.Split(','));
+                }
+            }
         }
     }
 
-    [Benchmark]
-    public string GetDataLineSpan()
+    public class NumericComparer 
     {
-        string line = "1\t,2\t,3\t,4\t,5\t,6\t,7\t,\t,8\t,9\t,10\t";
-        var span = line.AsSpan();
-        foreach(var range in span.Split(','))
-        {
-            int length = range.End.Value - range.Start.Value;
-            if(length == 1 && span[range.Start] == '\t')
-                return line[..(range.Start.Value - 1)];
-        }
-        return line;
+
+
     }
 
 }
+
+
 
 
 internal class PrincipalComponentProgram

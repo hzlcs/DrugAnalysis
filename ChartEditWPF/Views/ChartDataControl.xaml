@@ -15,7 +15,6 @@
     mc:Ignorable="d">
     <UserControl.Resources>
         <ini:BindingProxy x:Key="bind" Data="{Binding}" />
-
     </UserControl.Resources>
     <DataGrid
         b:DataGridTextColumnBehavior.Style="True"
@@ -36,14 +35,14 @@
                 Width="52"
                 Binding="{Binding Path=[0], Mode=OneWay}"
                 Header="Peak" />
-            <DataGridTextColumn Width="75" Binding="{Binding Path=[3], Mode=OneWay}" Header="Start X" />
-            <DataGridTextColumn Width="75" Binding="{Binding Path=[1]}" Header="Center X" />
-            <DataGridTextColumn Width="70" Binding="{Binding Path=[4], Mode=OneWay}" Header="End X" />
-            <DataGridTextColumn Width="60" Binding="{Binding Path=[2], Mode=OneWay}" Header="Area" />
+            <DataGridTextColumn Width="{Binding Source={StaticResource bind}, Path=Data.DraggableChartVM.ChartDataTitles[1].Width}" Binding="{Binding Path=[1], Mode=OneWay}" Header="{Binding Source={StaticResource bind}, Path=Data.DraggableChartVM.ChartDataTitles[1].Value}" />
+            <DataGridTextColumn Width="{Binding Source={StaticResource bind}, Path=Data.DraggableChartVM.ChartDataTitles[2].Width}" Binding="{Binding Path=[2], Mode=OneWay}" Header="{Binding Source={StaticResource bind}, Path=Data.DraggableChartVM.ChartDataTitles[2].Value}" />
+            <DataGridTextColumn Width="{Binding Source={StaticResource bind}, Path=Data.DraggableChartVM.ChartDataTitles[3].Width}" Binding="{Binding Path=[3], Mode=OneWay}" Header="{Binding Source={StaticResource bind}, Path=Data.DraggableChartVM.ChartDataTitles[3].Value}" />
+            <DataGridTextColumn Width="{Binding Source={StaticResource bind}, Path=Data.DraggableChartVM.ChartDataTitles[4].Width}" Binding="{Binding Path=[4], Mode=OneWay}" Header="{Binding Source={StaticResource bind}, Path=Data.DraggableChartVM.ChartDataTitles[4].Value}" />
             <DataGridTextColumn
-                Width="95"
+                Width="{Binding Source={StaticResource bind}, Path=Data.DraggableChartVM.ChartDataTitles[5].Width}"
                 Binding="{Binding Path=[5]}"
-                Header="Area Sum %" />
+                Header="{Binding Source={StaticResource bind}, Path=Data.DraggableChartVM.ChartDataTitles[5].Value}" />
             <DataGridTextColumn Width="auto" Binding="{Binding Path=[6], Mode=OneWay}">
                 <DataGridTextColumn.HeaderTemplate>
                     <DataTemplate>

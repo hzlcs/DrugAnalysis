@@ -311,7 +311,7 @@ namespace ChartEditWPF.ViewModels
                 try
                 {
                     var res = await i.DraggableChartVM.SaveToFile();
-                    res.IfFail(v => _messageBox.Show(v.Message));
+                    res.IfFail(v => _messageBox.Popup(v.Message, NotificationType.Error));
                 }
                 catch (Exception ex)
                 {

@@ -30,46 +30,20 @@
             <ColumnDefinition Width="150" />
         </Grid.ColumnDefinitions>
         <StackPanel Grid.Column="1">
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding ImportCommand}"
-                Content="导入样品" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding ImportNewCommand}"
-                Content="重新导入样品" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding SaveResultCommand}"
-                Content="保存结果" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding ExportCommand}"
-                Content="导出结果" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding RemoveCommand}"
-                Content="移除样品" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding ResizeCommand}"
-                Content="图表自适应" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding LinkAxeCommand}"
-                Content="{Binding LinkButtonText}" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding HideDataCommand}"
-                Content="{Binding HideButtonText}" />
+            <StackPanel.Resources>
+                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                    <Setter Property="Margin" Value="5"/>
+                    <Setter Property="Width" Value="135"/>
+                </Style>
+            </StackPanel.Resources>
+            <Button Command="{Binding ImportCommand}" Content="导入样品" />
+            <Button Command="{Binding ImportNewCommand}" Content="重新导入样品" />
+            <Button Command="{Binding SaveResultCommand}" Content="保存结果" />
+            <Button Command="{Binding ExportCommand}" Content="导出结果" />
+            <Button Command="{Binding RemoveCommand}" Content="移除样品" />
+            <Button Command="{Binding ResizeCommand}" Content="图表自适应" />
+            <Button Command="{Binding LinkAxeCommand}" Content="{Binding LinkButtonText}" />
+            <Button Command="{Binding HideDataCommand}" Content="{Binding HideButtonText}" />
         </StackPanel>
         <ScrollViewer>
             <StackPanel x:Name="panel">

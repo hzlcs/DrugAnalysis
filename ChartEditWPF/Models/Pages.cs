@@ -11,10 +11,12 @@ namespace ChartEditWPF.Models
         None,
         VerticalIntegral,
         MutiVerticalIntegral,
+        TwoDVerticalIntegral,
         TCheck,
         PCA,
         QualityRange,
         VerticalIntegralConfig,
-        MutiConfig
+        MutiConfig,
+        TwoDConfig
     }
 }

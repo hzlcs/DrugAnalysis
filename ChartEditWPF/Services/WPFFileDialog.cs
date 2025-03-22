@@ -14,6 +14,13 @@ namespace ChartEditWPF.Services
 
         public bool ShowDialog(string? fileName, [MaybeNullWhen(false)] out string[] fileNames)
         {
+            string ext = ".csv";
+            string filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*";
+            if (fileName is not null && fileName.StartsWith(".png"))
+            {
+                ext = ".png";
+                filter = "PNG Files (*.png)|*.png|All Files (*.*)|*.*";
+            }
             OpenFileDialog fileDialog = new()
             {
                 Multiselect = true,
@@ -21,8 +28,8 @@ namespace ChartEditWPF.Services
                 CheckFileExists = false,
                 CheckPathExists = true,
                 AddExtension = true,
-                DefaultExt = ".csv",
-                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                DefaultExt = ext,
+                Filter = filter,
             };
             if (fileDialog.ShowDialog() == true)
             {

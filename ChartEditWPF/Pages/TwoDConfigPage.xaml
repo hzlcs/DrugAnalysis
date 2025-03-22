@@ -1,4 +1,4 @@
-﻿<Page x:Class="ChartEditWPF.Pages.MutiConfigPage"
+﻿<Page x:Class="ChartEditWPF.Pages.TwoDConfigPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -8,21 +8,25 @@
       xmlns:hc="https://handyorg.github.io/handycontrol"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
-      Title="MutiConfigPage" d:DataContext="{d:DesignInstance vm:MutiConfigViewModel}">
+      d:DataContext="{d:DesignInstance Type=vm:TwoDConfigViewModel}"
+      Title="TwoDConfigPage">
 
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="50" />
             <RowDefinition />
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" HorizontalAlignment="Left" x:Name="stackPanel" Orientation="Horizontal">
+        <StackPanel Grid.Row="0" HorizontalAlignment="Left" Orientation="Horizontal" x:Name="stack">
             <Button
-                Width="150"
-                Height="30"
-                Margin="5"
-                Command="{Binding SaveConfigCommand}"
-                Content="保存" />
+            Width="150"
+            Height="30"
+            Margin="5"
+            Command="{Binding SaveConfigCommand}"
+            Content="保存" />
+            
         </StackPanel>
-        <hc:PropertyGrid Grid.Row="1" SelectedObject="{Binding MutiConfig}"/>
+        <hc:PropertyGrid x:Name="grid" Grid.Row="1" SelectedObject="{Binding TwoDConfig}" ShowSortButton="False">
+           
+        </hc:PropertyGrid>
     </Grid>
 </Page>

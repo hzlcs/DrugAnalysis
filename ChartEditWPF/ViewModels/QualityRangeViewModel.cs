@@ -45,7 +45,7 @@ namespace ChartEditWPF.ViewModels
             {
                 sample.ApplyDescription(descriptions);
             }
-            Descriptions = DescriptionManager.GetShortGluDescription(descriptions);
+            Descriptions = DescriptionManager.GluDescription.GetShortGluDescription(descriptions);
             Description = QualityRanges[0].Description;
             //if (database is not null)
             //{
@@ -270,7 +270,7 @@ namespace ChartEditWPF.ViewModels
             {
                 return;
             }
-            var longDesc = Description == DescriptionManager.Glu ? DescriptionManager.GetLongGluDescription(Descriptions) : Descriptions;
+            var longDesc = Description == DescriptionManager.Glu ? DescriptionManager.GluDescription.GetLongGluDescription(Descriptions) : Descriptions;
             int rowCount = Descriptions.Length + 1;
             var datas = QualityRanges.Select(v => v.GetCopyData().GetEnumerator()).ToArray();
             string description = Description == DescriptionManager.DP ? Description : "";
@@ -292,6 +292,7 @@ namespace ChartEditWPF.ViewModels
             }
             Clipboard.Clear();
             Clipboard.SetText(sb.ToString());
+            Clipboard.Flush();
         }
     }
 

@@ -30,6 +30,8 @@ namespace ChartEditLibrary.Entitys
         [Category("3.最小峰高")]
         public float MinHeight { get; set; } = 5f;
 
+        
+
         static MutiConfig()
         {
             LoadConfig();

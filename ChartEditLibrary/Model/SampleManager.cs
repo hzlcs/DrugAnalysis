@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static ChartEditLibrary.Model.AreaDatabase;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using GluDescription = ChartEditLibrary.Model.DescriptionManager.GluDescription;
 
 namespace ChartEditLibrary.Model
 {
@@ -65,7 +66,7 @@ namespace ChartEditLibrary.Model
                         description = DescriptionManager.Glu;
                 }
                 string[] descriptions = lines.Skip(1).Select(v => v[0].Replace(description, "").Replace("A��", "A，").Replace("S��", "S，").Replace("1��6", "1，6").Replace("��", "Δ")).ToArray();
-                descriptions = DescriptionManager.GetLongGluDescription(descriptions);
+                descriptions = GluDescription.GetLongGluDescription(descriptions);
                 AreaRow[] rows = new AreaRow[descriptions.Length];
                 for (var i = 0; i < descriptions.Length; i++)
                 {
@@ -269,8 +270,8 @@ namespace ChartEditLibrary.Model
             this.Description = description;
             if (description == DescriptionManager.Glu)
             {
-                shortGluDescriptions = DescriptionManager.GetShortGluDescription(descriptions);
-                this.descriptions = DescriptionManager.GetLongGluDescription(descriptions).ToList();
+                shortGluDescriptions = GluDescription.GetShortGluDescription(descriptions);
+                this.descriptions = GluDescription.GetLongGluDescription(descriptions).ToList();
             }
             else
             {
@@ -297,7 +298,7 @@ namespace ChartEditLibrary.Model
             if (Description == DescriptionManager.Glu)
             {
                 Debug.Assert(shortGluDescriptions is not null);
-                string temp = DescriptionManager.GetShortGluDescription(description);
+                string temp = GluDescription.GetShortGluDescription(description);
                 int index = Array.IndexOf(shortGluDescriptions, temp);
                 if (index == -1)
                 {

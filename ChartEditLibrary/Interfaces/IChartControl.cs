@@ -33,6 +33,8 @@ namespace ChartEditLibrary.Interfaces
 
         void ChangeActived(bool actived);
 
+        void ChangeAutoVstreet(bool autoVstreet);
+
         void UpdateChartArea(IChartControl chartControl);
 
         void OnFocusChanged(bool focused);
@@ -43,13 +45,13 @@ namespace ChartEditLibrary.Interfaces
         private bool focused;
         public IPlotControl PlotControl { get; set; } = null!;
         public DraggableChartVm ChartData { get; set; } = null!;
-        private System.Drawing.Color? serialColor;
+        private System.Drawing.Color? serialColor = null;
         public System.Drawing.Color? SerialColor
         {
             get => serialColor;
             set
             {
-
+                serialColor = value;
             }
         }
 
@@ -105,9 +107,17 @@ namespace ChartEditLibrary.Interfaces
             ChartData.SplitLines.CollectionChanged += VerticalLines_CollectionChanged;
             if(ChartData.CuttingLines is not null)
             {
+                static void SetLineStyle(LinePlot line)
+                {
+                    line.LineColor = Color.FromColor(System.Drawing.Color.Red);
+                    line.LinePattern = LinePattern.Dotted;
+                    line.LineWidth = 1.5f;
+                }
                 foreach(var l in ChartData.CuttingLines)
                 {
-                    chartPlot.Plot.Add.Line(l);
+                    SetLineStyle(chartPlot.Plot.Add.Line(l));
+                    SetLineStyle(chartPlot.Plot.Add.Line(l.Start.X, 0, l.Start.X, l.Start.Y));
+                    SetLineStyle(chartPlot.Plot.Add.Line(l.End.X, 0, l.End.X, l.End.Y));
                 }
             }
             var plot = chartPlot.Plot;
@@ -115,7 +125,7 @@ namespace ChartEditLibrary.Interfaces
             plot.Grid.IsVisible = false;
             chartPlot.Plot.Axes.AutoScale();
             chartPlot.Refresh();
-            chartPlot.Menu.Clear();
+            chartPlot.Menu!.AddSeparator();
 
         }
 
@@ -228,7 +238,7 @@ namespace ChartEditLibrary.Interfaces
                     PlotControl.Refresh();
                 }
 
-                PlotControl.Interaction.Disable();
+                PlotControl.UserInputProcessor.Disable();
             }
 
         }
@@ -297,7 +307,7 @@ namespace ChartEditLibrary.Interfaces
                 MyHighlightText.IsVisible = false;
             if (vstreetMarker is not null)
                 vstreetMarker.IsVisible = false;
-            PlotControl.Interaction.Enable();
+            PlotControl.UserInputProcessor.Enable();
         }
 
         public virtual void ChangeActived(bool actived)
@@ -341,6 +351,8 @@ namespace ChartEditLibrary.Interfaces
             yield return PlotControl.Plot.Axes.Bottom.Min;
             yield return PlotControl.Plot.Axes.Bottom.Max;
         }
+
+        public virtual void ChangeAutoVstreet(bool autoVstreet) { }
     }
 
 }

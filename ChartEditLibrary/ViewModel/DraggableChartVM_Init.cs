@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static ChartEditLibrary.Model.DescriptionManager;
 
 namespace ChartEditLibrary.ViewModel
 {
@@ -24,6 +25,9 @@ namespace ChartEditLibrary.ViewModel
                     break;
                 case ExportType.Enoxaparin:
                     InitSplitLine_YN(tag);
+                    break;
+                case ExportType.TwoDimension:
+                    InitSplitLine_TwoD(tag);
                     break;
                 case ExportType.Other:
                     InitSplitLine_Other();
@@ -74,7 +78,7 @@ namespace ChartEditLibrary.ViewModel
             }
             for (int i = 0; i < lines.Count; ++i)
             {
-                AddSplitLine(CurrentBaseLine, DataSource[lines[i]]).Description = DescriptionManager.GluStdDescriptions[i];
+                AddSplitLine(CurrentBaseLine, DataSource[lines[i]]).Description = GluDescription.StdDescriptions[i];
             }
         }
 
@@ -130,43 +134,33 @@ namespace ChartEditLibrary.ViewModel
             int start = GetDateSourceIndex(baseLine.Start.X) + 1;
             int end = GetDateSourceIndex(baseLine.End.X) - 1;
 
-            Coordinates[] range = new Coordinates[end - start + 1];
-            for (int i = 0; i < range.Length; i++)
-            {
-                Coordinates point = DataSource[start + i];
-                range[i] = new Coordinates(point.X, point.Y - baseLine.GetY(point.X));
-            }
-            int startRange = 1;
-            for (; startRange < range.Length; ++startRange)
-            {
-                if (range[startRange].Y > range[startRange - 1].Y)
-                    break;
-            }
-            GetPoints(range, startRange, range.Length, out var minDots, out var maxDots);
+            //Coordinates[] range = new Coordinates[end - start + 1];
+            //for (int i = 0; i < range.Length; i++)
+            //{
+            //    Coordinates point = DataSource[start + i];
+            //    range[i] = new Coordinates(point.X, point.Y - baseLine.GetY(point.X));
+            //}
+            //int startRange = 1;
+            //for (; startRange < range.Length; ++startRange)
+            //{
+            //    if (range[startRange].Y > range[startRange - 1].Y)
+            //        break;
+            //}
+            //GetPoints(range, startRange, range.Length, out var minDots, out var maxDots);
+
+
 
             List<int> tPoints = [];
-            //var t = GetT(range, 0, range.Length - 2);
-            //GetPoints(t, 0, t.Length, out var _minDots, out var _maxDots);
-            //for (int i = 0; i < _minDots.Length; ++i)
-            //{
-            //    if (t[_maxDots[i]].Y < 0 || t[_minDots[i]].Y > 0)
-            //    {
-            //        var add = _maxDots[i];
-            //        if (minDots.Contains(add))
-            //            continue;
-            //        tPoints.Add(add);
-            //    }
-            //}
+
             for (int index = 0; index < minDots.Length; ++index)
             {
                 int i = minDots[index];
-                var point = range[i];
-                //for (int k = i - 1; k <= i + 1; ++k)
-                //    if (DataSource[start + k].Y < point.Y)
-                //        point = DataSource[start + k];
+                if(i <= start || i >= end)
+                    continue;
+                var point = DataSource[i];
                 if (point.Y < MutiConfig.Instance.MinHeight || baseLine.SplitLines.Any(v => Math.Abs(v.Start.X - point.X) < Unit * 5))
                     continue;
-                AddSplitLine(baseLine, DataSource[start + minDots[index]]);
+                AddSplitLine(baseLine, point);
             }
         }
 
@@ -449,11 +443,277 @@ namespace ChartEditLibrary.ViewModel
                 ++sort;
             }
 
-            foreach (var i in SplitLines.GroupBy(v => v.Description![..^2]).ToArray())
+            foreach (var group in SplitLines.GroupBy(v => v.Description![..^2]).ToArray())
             {
-                if (i.Count() == 1)
+                var lines = group.ToArray();
+                if (lines.Length == 1)
                 {
-                    i.First().Description = i.Key;
+                    lines[0].Description = group.Key;
+                }
+            }
+        }
+
+        private void InitSplitLine_TwoD(object? tag = null)
+        {
+            CurrentBaseLine = GetDefaultBaseLine();
+            BaseLines.Add(CurrentBaseLine);
+            var perVaule = yMax.Y / 100;
+            //double m = dataSource.Take(dataSource.Length / 2).Min(v => v.Y);
+            //for (int i = 0; i < dataSource.Length; i++)
+            //    dataSource[i].Y -= m;
+            var end = DataSource.Length / 3 * 2;
+            while (end < DataSource.Length - 1 && DataSource[end].Y > 0)
+                end++;
+            var maxDots = new List<int>();
+            var minDots = new List<int>();
+            GetPoints(DataSource, 0, end, out var _minDots, out var _maxDots);
+
+            var config = TwoDConfig.Instance;
+            for (var i = 0; i < _minDots.Length; i++)
+            {
+                var max = _maxDots[i];
+                var min = _minDots[i];
+
+                if (DataSource[max].X <= config.PeakRange.Start)
+                    continue;
+                if (DataSource[max].X >= config.PeakRange.End)
+                    break;
+                if (DataSource[max].Y < config.YMin * perVaule)
+                    continue;
+                if (DataSource[max].Y - DataSource[min].Y < config.MinHeight * perVaule)
+                    continue;
+                
+
+                maxDots.Add(max);
+                minDots.Add(min);
+
+                //if (maxDots.Count > 1 && DataSource[max].X - DataSource[maxDots[^2]].X < 0.3) //若两个顶点峰太近,移除后一个
+                //    maxDots.Remove(max);
+            }
+
+            var dp6Index = maxDots.IndexOf(highestIndex);
+            Debug.Assert(dp6Index != -1);
+            if (4.Equals(tag))
+            {
+                if (DataSource[maxDots[dp6Index]].Y - DataSource[minDots[dp6Index - 1]].Y > 10)
+                {
+                    dp6Index -= 2;
+                }
+                else
+                {
+                    dp6Index -= 1;
+                }
+            }
+            int peakCount;
+
+            //dp6
+            var startMin = dp6Index - 1;
+            var endMin = dp6Index;
+
+            var dp6Start = minDots[endMin];
+            var dp6End = minDots[startMin];
+
+            minDots.Sort();
+            maxDots.Sort();
+            //dp4
+            startMin = endMin;
+            endMin = startMin + 1;
+            if (DataSource[maxDots[endMin]].Y < DataSource[minDots[endMin]].Y * 3.5)
+            {
+                ++endMin;
+            }
+            if (DataSource[minDots[endMin + 1]].X - DataSource[minDots[endMin]].X < 0.5)
+                ++endMin;
+            int dp4Start = 0;
+            if (DataSource[minDots[endMin]].X - DataSource[minDots[startMin]].X > 0.9)
+            {
+                var startT = minDots[startMin];
+                var endT = minDots[endMin];
+                var t = GetT(DataSource, startT, endT);
+                GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
+                for (var i = 0; i < _minDots.Length; ++i)
+                {
+                    if ((t[_maxDots[i]].Y < 0 && t[_minDots[i - 1]].Y < t[_maxDots[i]].Y * 4) || t[_minDots[i]].Y > 0)
+                    {
+                        var add = startT + _maxDots[i];
+                        if (minDots.Contains(add))
+                            continue;
+                        minDots.Add(add);
+                        maxDots.Add(add);
+                        if(dp4Start == 0)
+                            dp4Start = add;
+                    }
+                }
+            } //dp4单顶点峰，且dp3无顶点峰
+            else if (DataSource[minDots[endMin + 1]].X - DataSource[minDots[endMin]].X < 1)
+            {
+                dp4Start = minDots[endMin];
+                peakCount = endMin - startMin;
+                if (peakCount != 2)
+                {
+                    var startT = minDots[startMin];
+                    var endT = minDots[endMin];
+                    var t = GetT(DataSource, startT, endT);
+                    GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
+                    for (var i = 0; i < _minDots.Length; ++i)
+                    {
+                        if ((t[_maxDots[i]].Y < 0 && t[_minDots[i - 1]].Y < t[_maxDots[i]].Y * 4)|| t[_minDots[i]].Y > 0)
+                        {
+                            var add = startT + _maxDots[i];
+                            if (minDots.Contains(add))
+                                continue;
+                            minDots.Add(add);
+                            maxDots.Add(add);
+                            ++endMin;
+                            if (add > dp4Start)
+                            {
+                                dp4Start = add;
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (DataSource[maxDots[endMin]].Y - DataSource[minDots[endMin]].Y * 5 < 0)
+                    ++endMin;
+                dp4Start = minDots[endMin];
+                var startT = maxDots[endMin];
+                var endT = minDots[endMin];
+
+                var t = GetT(DataSource, startT, endT);
+                GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
+                for (var i = 0; i < _minDots.Length; ++i)
+                {
+                    if ((t[_maxDots[i]].Y < 0 && t[_minDots[i - 1]].Y < t[_maxDots[i]].Y * 4) || t[_minDots[i]].Y > 0)
+                    {
+                        var add = startT + _maxDots[i];
+                        if (minDots.Contains(add) || maxDots.Contains(add))
+                            continue;
+                        minDots.Add(add);
+                        maxDots.Add(add);
+                        ++endMin;
+                        if (endMin - startMin == 4)
+                        {
+                            --endMin;
+                            dp4Start = add;
+                            break;
+                        }
+                    }
+                }
+            }
+            minDots.Sort();
+            maxDots.Sort();
+
+
+
+            //dp3
+            startMin = endMin;
+            endMin = startMin + 1;
+            if (DataSource[minDots[endMin]].X - DataSource[minDots[startMin]].X < 0.5)
+            {
+                ++endMin;
+            }
+
+            var dp3Start = minDots[endMin];
+            peakCount = endMin - startMin;
+            if (peakCount != 2)
+            {
+                var startT = minDots[startMin];
+                var endT = minDots[endMin];
+                var t = GetT(DataSource, startT, endT);
+                GetPoints(t, 0, t.Length, out _minDots, out _maxDots);
+                for (var i = 0; i < _maxDots.Length; ++i)
+                {
+                    if (t[_maxDots[i]].Y < 0 || t[_minDots[i]].Y > 0)
+                    {
+                        var add = startT + _maxDots[i];
+                        if (minDots.Contains(add))
+                            continue;
+                        minDots.Add(add);
+                        maxDots.Add(add);
+                        ++endMin;
+                        if (add > dp3Start)
+                        {
+                            dp3Start = add;
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            minDots.Sort();
+            maxDots.Sort();
+
+            //dp2
+            startMin = endMin;
+            endMin = minDots.Count - 1;
+            var dp2Start = minDots[endMin];
+            peakCount = endMin - startMin;
+            if (peakCount > 2)
+            {
+                minDots.RemoveAt(minDots.Count - 1);
+                maxDots.RemoveAt(maxDots.Count - 1);
+                --endMin;
+                dp2Start = minDots[endMin];
+            }
+
+            minDots.Sort();
+            maxDots.Sort();
+            var dp = 2;
+            var sort = 1;
+            foreach (var i in minDots.Distinct().Reverse())
+            {
+                if (i <= dp6End)
+                {
+                    dp += 2;
+                    sort = 1;
+                }
+                else if (i <= dp6Start)
+                {
+                    if (dp != 6)
+                    {
+                        dp = 6;
+                        sort = 1;
+                    }
+                }
+                else if (i <= dp4Start)
+                {
+                    if (dp != 4)
+                    {
+                        dp = 4;
+                        sort = 1;
+                    }
+                }
+                else if (i <= dp3Start)
+                {
+                    if (dp != 3)
+                    {
+                        dp = 3;
+                        sort = 1;
+                    }
+                }
+
+                AddSplitLine(CurrentBaseLine, DataSource[i]).Description = dp + "-" + sort;
+                ++sort;
+            }
+
+            foreach (var group in SplitLines.GroupBy(v => v.Description![..^2]).ToArray())
+            {
+                var lines = group.ToArray();
+                if (lines.Length == 1)
+                {
+                    lines[0].Description = group.Key;
+                }
+                else
+                {
+                    if (exportType == ExportType.TwoDimension)
+                    {
+                        for (int i = 0; i < lines.Length - 1; ++i)
+                            RemoveSplitLine(lines[i]);
+                        lines[lines.Length - 1].Description = group.Key;
+                    }
                 }
             }
         }

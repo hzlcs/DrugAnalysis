@@ -95,7 +95,7 @@ namespace ChartEditWPF.ViewModels
                 return;
             }
             string[] desc = PValues.Select(v => v.Description).ToArray();
-            var longDesc = Description == DescriptionManager.Glu ? DescriptionManager.GetLongGluDescription(desc) : desc;
+            var longDesc = Description == DescriptionManager.Glu ? DescriptionManager.GluDescription.GetLongGluDescription(desc) : desc;
             int rowCount = longDesc.Length + 1;
             var datas = Samples.Select(v => v.GetCopyData().GetEnumerator()).ToArray();
             string description = Description == DescriptionManager.DP ? Description : "";
@@ -117,7 +117,7 @@ namespace ChartEditWPF.ViewModels
             }
             Clipboard.Clear();
             Clipboard.SetText(sb.ToString());
-
+            Clipboard.Flush();
         }
     }
 }

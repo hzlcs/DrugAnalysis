@@ -82,7 +82,7 @@ namespace ChartEditWPF.Windows
                         FillColor = palette.GetColor(col),
                         Value = value,
                         Error = error,
-                        BorderLineWidth = 1f,
+                        LineWidth = 1f,
                     };
                     bars.Add(bar);
                 }
@@ -93,7 +93,7 @@ namespace ChartEditWPF.Windows
             if (description == DescriptionManager.Glu)
             {
                 description = "";
-                desc = DescriptionManager.GetShortGluDescription(desc);
+                desc = DescriptionManager.GluDescription.GetShortGluDescription(desc);
             }
             for (var i = 0; i < rowCount; ++i)
             {

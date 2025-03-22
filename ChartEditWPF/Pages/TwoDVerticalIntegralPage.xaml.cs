@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ChartEditWPF.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,14 +14,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace ChartEditWPF.Views
+namespace ChartEditWPF.Pages
 {
     /// <summary>
-    /// TwoDDataControl.xaml 的交互逻辑
+    /// TwoDVerticalIntegralPage.xaml 的交互逻辑
     /// </summary>
-    public partial class TwoDDataControl : UserControl
+    public partial class TwoDVerticalIntegralPage : Page, IPage
     {
-        public TwoDDataControl()
+        public TwoDVerticalIntegralPage()
         {
             InitializeComponent();
         }

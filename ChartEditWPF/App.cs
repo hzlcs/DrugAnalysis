@@ -74,6 +74,9 @@ namespace ChartEditWPF
                 services.AddSingleton<MutiVerticalIntegralViewModel>();
                 services.AddKeyedSingleton<IPage, MutiVerticalIntegralPage>(Models.Pages.MutiVerticalIntegral, (s, v) => new MutiVerticalIntegralPage() { DataContext = s.GetRequiredService<MutiVerticalIntegralViewModel>() });
 
+                services.AddSingleton<TwoDVerticalIntegralPageViewModel>();
+                services.AddKeyedSingleton<IPage, TwoDVerticalIntegralPage>(Models.Pages.TwoDVerticalIntegral, (s, v) => new TwoDVerticalIntegralPage() { DataContext = s.GetRequiredService<TwoDVerticalIntegralPageViewModel>() });
+
                 services.AddSingleton<TCheckPageViewModel>();
                 services.AddKeyedSingleton<IPage, TCheckPage>(Models.Pages.TCheck, (s, v) => new TCheckPage()
                 { DataContext = s.GetRequiredService<TCheckPageViewModel>() });
@@ -93,6 +96,10 @@ namespace ChartEditWPF
                 services.AddSingleton<MutiConfigViewModel>();
                 services.AddKeyedSingleton<IPage, MutiConfigPage>(Models.Pages.MutiConfig, (s, v) => new MutiConfigPage()
                 { DataContext = s.GetRequiredService<MutiConfigViewModel>() });
+
+                services.AddSingleton<TwoDConfigViewModel>();
+                services.AddKeyedSingleton<IPage, TwoDConfigPage>(Models.Pages.TwoDConfig, (s, v) => new TwoDConfigPage()
+                { DataContext = s.GetRequiredService<TwoDConfigViewModel>() });
 
                 services.AddTransient<QualityRangeChartWindow>();
                 ConfigureLog();

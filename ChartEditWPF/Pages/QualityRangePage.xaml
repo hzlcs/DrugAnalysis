@@ -45,46 +45,20 @@
         </ScrollViewer>
 
         <StackPanel Grid.Column="1">
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding AddQualityRangeCommand}"
-                Content="添加样品" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding AddDatabaseCommand}"
-                Content="添加数据" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding RemoveCommand}"
-                Content="移除样品" />
-            <Button
-    Width="130"
-    Margin="5"
-    Command="{Binding ClearCommand}"
-    Content="清空样品" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding ImportCommand}"
-                Content="选择数据" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding ViewChartCommand}"
-                Content="预览图表" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding CopyDataCommand}"
-                Content="复制结果" />
-            <Button
-                Width="130"
-                Margin="5"
-                Command="{Binding ExportResultCommand}"
-                Content="导出结果" />
+            <StackPanel.Resources>
+                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                    <Setter Property="Margin" Value="5"/>
+                    <Setter Property="Width" Value="135"/>
+                </Style>
+            </StackPanel.Resources>
+            <Button Command="{Binding AddQualityRangeCommand}" Content="添加样品" />
+            <Button Command="{Binding AddDatabaseCommand}" Content="添加数据" />
+            <Button Command="{Binding RemoveCommand}" Content="移除样品" />
+            <Button Command="{Binding ClearCommand}" Content="清空样品" />
+            <Button Command="{Binding ImportCommand}" Content="选择数据" />
+            <Button Command="{Binding ViewChartCommand}" Content="预览图表" />
+            <Button Command="{Binding CopyDataCommand}" Content="复制结果" />
+            <Button Command="{Binding ExportResultCommand}" Content="导出结果" />
         </StackPanel>
     </Grid>
 </Page>

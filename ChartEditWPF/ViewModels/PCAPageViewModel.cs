@@ -92,12 +92,12 @@ namespace ChartEditWPF.ViewModels
             try
             {
                 window ??= new PCAWindow(result);
-                if (!_fileDialog.ShowDialog(null, out var fileNames))
+                if (!_fileDialog.ShowDialog(".png", out var fileNames))
                 {
                     return;
                 }
                 byte[] data = window.GetResult();
-                string fileName = Path.GetFileNameWithoutExtension(fileNames[0]) + ".png";
+                string fileName = Path.Combine(Path.GetDirectoryName(fileNames[0]) ?? "" , Path.GetFileNameWithoutExtension(fileNames[0]) + ".png");
                 File.WriteAllBytes(fileName, data);
                 _messageBox.Popup("导出成功", NotificationType.Success);
             }

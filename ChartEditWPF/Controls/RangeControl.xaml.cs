@@ -1,5 +1,4 @@
-﻿using ChartEditWPF.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,18 +13,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace ChartEditWPF.Pages
+namespace ChartEditWPF.Controls
 {
     /// <summary>
-    /// MutiConfigPage.xaml 的交互逻辑
+    /// RangeControl.xaml 的交互逻辑
     /// </summary>
-    public partial class MutiConfigPage : Page, IPage
+    public partial class RangeControl : UserControl
     {
-        public MutiConfigPage()
+        public RangeControl()
         {
             InitializeComponent();
-
-            
         }
     }
 }

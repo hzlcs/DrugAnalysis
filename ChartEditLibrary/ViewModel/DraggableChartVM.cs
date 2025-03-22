@@ -20,6 +20,7 @@ using LanguageExt.Common;
 using LanguageExt;
 using Range = System.Range;
 using MathNet.Numerics.LinearAlgebra.Factorization;
+using static ChartEditLibrary.Model.DescriptionManager;
 
 namespace ChartEditLibrary.ViewModel
 {
@@ -76,6 +77,13 @@ namespace ChartEditLibrary.ViewModel
         /// </summary>
         private bool initialized = false;
 
+        private static readonly LabelData[] commonTitles =
+            [new("Peak", 52), new("Start X", 75), new("Center X", 75), new("End X", 70), new("Area", 60), new("Area Sum %", 95)];
+        private static readonly LabelData[] twoDTiltes =
+            [new("Peak", 52), new("Center X", 75), new("Area Sum %", 95), new("ASP", 70), new("TSP", 60), new("offset%", 75)];
+
+        public LabelData[] ChartDataTitles { get; } = null!;
+
         private DraggableChartVm(string filePath, Coordinates[] dataSource, ExportType? exportType, string description)
         {
             this.FilePath = filePath;
@@ -96,7 +104,16 @@ namespace ChartEditLibrary.ViewModel
                 }
             }
             yMax = dataSource[highestIndex];
+            if (exportType == ExportType.TwoDimension)
+            {
+                ChartDataTitles = twoDTiltes;
+            }
+            else
+            {
+                ChartDataTitles = commonTitles;
+            }
             GetPoints(dataSource, 1, dataSource.Length - 1, out minDots, out maxDots);
+            //this.DataSource = dataSource.Concat(GetT(dataSource, 0, dataSource.Length - 2)).ToArray();
         }
 
         private BaseLine GetDefaultBaseLine()
@@ -147,9 +164,11 @@ namespace ChartEditLibrary.ViewModel
             if (index < 0 || index >= DataSource.Length - 1)
                 return -1;
             double diff = Math.Abs(DataSource[index].X - x);
+            if (diff == 0)
+                return index;
             if (diff > Math.Abs(DataSource[index + 1].X - x))
                 return index + 1;
-            if (diff > Math.Abs(DataSource[index - 1].X - x))
+            if (index > 0 && diff > Math.Abs(DataSource[index - 1].X - x))
                 return index - 1;
             return index;
         }
@@ -280,6 +299,8 @@ namespace ChartEditLibrary.ViewModel
         /// <param name="line"></param>
         private void AddSplitLine(SplitLine line)
         {
+            if (SplitLines.Any(v => Utility.ToleranceEqual(v.Start.X , line.Start.X)))
+                return;
             line.SplitLineMoved += OnLineMoved;
             line.NextLineChanged += OnNextLineChanged;
             var index = SplitLines.BinaryInsert(line);
@@ -289,6 +310,7 @@ namespace ChartEditLibrary.ViewModel
                 ++SplitLines[i].Index;
             }
             line.BaseLine.AddSplitLine(line, this);
+            line.SetCuttingData(CuttingLines, this);
             UpdateArea();
         }
 
@@ -299,6 +321,13 @@ namespace ChartEditLibrary.ViewModel
             {
                 i.AreaRatio = i.Area / SumArea;
             }
+        }
+
+        public void ResetArea()
+        {
+            foreach (var line in SplitLines)
+                line.Area = GetArea(line);
+            UpdateArea();
         }
 
         public void ApplyStandard(DraggableChartVm? std)
@@ -315,55 +344,55 @@ namespace ChartEditLibrary.ViewModel
                 }
             }
             //s1
-            var s1Index = SplitLines.FirstIndex(v => v.Description == DescriptionManager.S1);
+            var s1Index = SplitLines.FirstIndex(v => v.Description == GluDescription.S1);
             var s1_1 = SplitLines.ElementAtOrDefault(s1Index - 1);
             if (s1_1 is not null)
-                s1_1.Description = DescriptionManager.S1_1;
+                s1_1.Description = GluDescription.S1_1;
 
             //s2
-            var s2Index = SplitLines.FirstIndex(v => v.Description == DescriptionManager.S2);
+            var s2Index = SplitLines.FirstIndex(v => v.Description == GluDescription.S2);
             int peakCount = s2Index - s1Index - 1;
             if (peakCount == 2)
             {
-                SplitLines[s2Index - 2].Description = DescriptionManager.S2_1;
-                SplitLines[s2Index - 1].Description = DescriptionManager.S2_2;
+                SplitLines[s2Index - 2].Description = GluDescription.S2_1;
+                SplitLines[s2Index - 1].Description = GluDescription.S2_2;
             }
             else if (peakCount == 1)
             {
                 double rate = (SplitLines[s2Index].RT - SplitLines[s2Index - 1].RT) / (SplitLines[s2Index].RT - SplitLines[s1Index].RT);
                 if (rate > 0.3)
-                    SplitLines[s2Index - 1].Description = DescriptionManager.S2_1;
+                    SplitLines[s2Index - 1].Description = GluDescription.S2_1;
                 else
-                    SplitLines[s2Index - 1].Description = DescriptionManager.S2_2;
+                    SplitLines[s2Index - 1].Description = GluDescription.S2_2;
             }
 
             //s5
-            var s5Index = SplitLines.FirstIndex(v => v.Description == DescriptionManager.S5);
+            var s5Index = SplitLines.FirstIndex(v => v.Description == GluDescription.S5);
             var s5 = SplitLines[s5Index - 1];
             if (SplitLines[s5Index].RT - s5.RT < 1)
-                s5.Description = DescriptionManager.S5_1;
+                s5.Description = GluDescription.S5_1;
 
             //s7
-            var s7Index = SplitLines.FirstIndex(v => v.Description == DescriptionManager.S7);
+            var s7Index = SplitLines.FirstIndex(v => v.Description == GluDescription.S7);
             var s7 = SplitLines[s7Index - 1];
             if (SplitLines[s7Index].RT - s7.RT < 0.5)
-                s7.Description = DescriptionManager.S7_1;
+                s7.Description = GluDescription.S7_1;
             else
             {
                 s7 = SplitLines[s7Index + 1];
                 if (SplitLines[s7Index].RT - s7.RT < 0.5)
-                    s7.Description = DescriptionManager.S7_1;
+                    s7.Description = GluDescription.S7_1;
             }
 
             //s8
-            var s8Index = SplitLines.FirstIndex(v => v.Description == DescriptionManager.S8);
+            var s8Index = SplitLines.FirstIndex(v => v.Description == GluDescription.S8);
             peakCount = s8Index - s7Index - 1;
             if (peakCount == 2)
             {
-                SplitLines[s8Index - 2].Description = DescriptionManager.S8_1;
-                SplitLines[s8Index - 1].Description = DescriptionManager.S8_2;
+                SplitLines[s8Index - 2].Description = GluDescription.S8_1;
+                SplitLines[s8Index - 1].Description = GluDescription.S8_2;
             }
-            string[] s8Descriptions = [DescriptionManager.f, DescriptionManager.g, DescriptionManager.h, DescriptionManager.i, DescriptionManager.j, DescriptionManager.k];
+            string[] s8Descriptions = [GluDescription.f, GluDescription.g, GluDescription.h, GluDescription.i, GluDescription.j, GluDescription.k];
             int gluIndex = 0;
             double s8RT = SplitLines[s8Index].RT;
             for (int i = s8Index + 1; i < SplitLines.Count; ++i)
@@ -373,37 +402,37 @@ namespace ChartEditLibrary.ViewModel
                 double interval = line.RT - s8RT;
                 if (gluIndex < 1 && interval <= 3 && height <= 5)
                 {
-                    line.Description = DescriptionManager.f;
+                    line.Description = GluDescription.f;
                     gluIndex = 1;
                     continue;
                 }
                 if (gluIndex < 2 && interval <= 4 && Math.Abs(10 - height) <= 2)
                 {
-                    line.Description = DescriptionManager.g;
+                    line.Description = GluDescription.g;
                     gluIndex = 2;
                     continue;
                 }
                 if (gluIndex < 3 && interval <= 6 && interval >= 3 && Math.Abs(5.5 - height) <= 1.5)
                 {
-                    line.Description = DescriptionManager.h;
+                    line.Description = GluDescription.h;
                     gluIndex = 3;
                     continue;
                 }
                 if (gluIndex < 4 && interval >= 6 && Math.Abs(8 - height) <= 2)
                 {
-                    line.Description = DescriptionManager.i;
+                    line.Description = GluDescription.i;
                     gluIndex = 4;
                     continue;
                 }
                 if (gluIndex < 5 && interval <= 8 && interval >= 7 && height <= 5)
                 {
-                    line.Description = DescriptionManager.j;
+                    line.Description = GluDescription.j;
                     gluIndex = 5;
                     continue;
                 }
                 if (gluIndex < 6 && interval >= 8 && height <= 5)
                 {
-                    line.Description = DescriptionManager.k;
+                    line.Description = GluDescription.k;
                     gluIndex = 6;
                     break;
                 }
@@ -535,7 +564,7 @@ namespace ChartEditLibrary.ViewModel
                 }
                 line.Description = sl.Description;
 
-                if (DescriptionManager.GluStdDescriptions.Contains(line.Description))
+                if (GluDescription.StdDescriptions.Contains(line.Description))
                     stdOffset.Add(line.RT - sl.RT);
             }
             if (_xOffset is null && stdOffset.Count > 0)
@@ -549,6 +578,151 @@ namespace ChartEditLibrary.ViewModel
                     SplitLines.Clear();
                     ApplyTemplate(template, avgStd);
                 }
+            }
+
+            foreach (var line in BaseLines.ToArray())
+                if (line.SplitLines.Count == 0)
+                    RemoveBaseLine(line);
+
+        }
+
+        public void ApplyTemplateTwoD(DraggableChartVm template, double? _xOffset = null)
+        {
+            var tHighest = template.yMax.X;
+            double xOffset = _xOffset ?? yMax.X - tHighest;
+            foreach (var baseline in template.BaseLines)
+            {
+                //尝试延申至端点
+                CoordinateLine templateEndPoingLine = baseline.EndPointLine;
+                //获取样品对应的延申至端点的基线
+                CoordinateLine endPointLine;
+                Coordinates start;
+                var startX = templateEndPoingLine.Start.X + xOffset;
+                var startIndex = GetDateSourceIndex(startX);
+                if (template.IsEndPoint(templateEndPoingLine.Start)) //默认基线所有点都是谷点
+                {
+                    start = GetVstreetPoint(startIndex);
+                    //校验找到的谷点是不是对应了模板的另一个右边的谷点
+                    var templateX = start.X - xOffset;
+                    var tVstreet = template.GetVstreetPoint(templateX);
+                    if (tVstreet.X - templateEndPoingLine.Start.X > 3 * Unit)
+                    {
+                        int index = GetNearestMinDotIndex(startIndex) - 1;
+                        start = DataSource[minDots[index]];
+                    }
+
+                }
+                else
+                {
+                    start = DataSource[startIndex];
+                    //如果模板不是端点，则采用相对高度
+                    if (!template.IsEndPoint(templateEndPoingLine.Start))
+                        start = new Coordinates(start.X, start.Y - template.GetYOffset(templateEndPoingLine.Start));
+                }
+                Coordinates end;
+                var endX = templateEndPoingLine.End.X + xOffset;
+                var endIndex = GetDateSourceIndex(endX);
+                if (template.IsEndPoint(templateEndPoingLine.End))
+                {
+                    end = GetVstreetPoint(endIndex);
+                }
+                else
+                {
+                    end = DataSource[endIndex];
+                    if (!template.IsEndPoint(templateEndPoingLine.End))
+                        end = new Coordinates(end.X, end.Y - template.GetYOffset(templateEndPoingLine.End));
+                }
+                endPointLine = new CoordinateLine(start, end);
+                //CheckCrossedBaseline(ref endPointLine);
+
+                //检验基线间是否存在其它谷点
+                CheckOtherVstreet(ref endPointLine);
+
+
+
+                startX = baseline.Start.X + xOffset;
+                if (template.IsVstreetPoint(baseline.Start) || template.IsEndPoint(baseline.Start))
+                {
+                    start = GetVstreetPoint(GetDateSourceIndex(startX));
+                }
+                else
+                {
+                    start = GetDataSource(startX);
+                }
+                start = new Coordinates(start.X, endPointLine.Y(start.X));
+
+                endX = baseline.End.X + xOffset;
+                if (template.IsVstreetPoint(baseline.End) || template.IsEndPoint(baseline.End))
+                    end = GetVstreetPoint(GetDateSourceIndex(endX));
+                else
+                    end = GetDataSource(endX);
+                end = new Coordinates(end.X, endPointLine.Y(end.X));
+
+                var line = new CoordinateLine(start, end);
+                if (IsVstreetPoint(start))
+                {
+                    CheckCrossedBaseline(ref line);
+                }
+                else
+                {
+                    if (template.IsEndPoint(baseline.Start))
+                        TrySetVstreetBaseline(ref line);
+                }
+
+                AddBaseLine(new BaseLine(line));
+
+            }
+
+            foreach (var sl in template.SplitLines)
+            {
+                int index = GetDateSourceIndex(sl.Start.X + xOffset);
+                var baseline = GetBaseLineOrNearest(DataSource[index]);
+                Coordinates point;
+                bool vstreet = template.IsVstreetPoint(sl.Start);
+                if (vstreet)
+                {
+                    point = GetVstreetPoint(index);
+                    //var orgin = template.GetVstreetPoint(point.X - xOffset);
+                    //if(orgin.X != sl.Start.X)
+                    //{
+                    //    if(orgin.X > sl.Start.X)
+                    //        point = DataSource[minDots[GetNearestMinDotIndex(point.X) - 1]];
+                    //    else 
+                    //        point = DataSource[minDots[GetNearestMinDotIndex(point.X) + 1]];
+                    //}
+                }
+                else
+                    point = DataSource[index];
+                if (point.X < baseline.Start.X)
+                {
+                    continue;
+                    //baseline.Start = new Coordinates(point.X, baseline.Line.Y(point.X));
+                }
+                else if (point.X > baseline.End.X)
+                {
+                    //continue;
+                    if (point.X > baseline.End.X + Unit * 5 && !vstreet)
+                        continue;
+                    double y = baseline.Line.Y(point.X);
+                    var p = GetDataSource(point.X);
+                    if (y >= p.Y)
+                    {
+                        baseline.End = p;
+                    }
+                    else
+                    {
+                        baseline.End = new Coordinates(point.X, baseline.Line.Y(point.X));
+                    }
+
+                }
+                var line = AddSplitLine(point);
+                if (DataSource[line.RTIndex].Y - line.BaseLine.Line.Y(line.RT) < TwoDConfig.Instance.MinHeight)
+                {
+                    RemoveLine(line);
+                    continue;
+                }
+                line.Description = sl.Description;
+
             }
 
             foreach (var line in BaseLines.ToArray())
@@ -592,7 +766,7 @@ namespace ChartEditLibrary.ViewModel
                     line = new CoordinateLine(line.Start, point);
                 }
             }
-           
+
         }
 
         private void CheckCrossedBaseline(ref CoordinateLine line)
@@ -644,6 +818,6 @@ namespace ChartEditLibrary.ViewModel
             CheckCrossedBaseline(ref line);
         }
 
-
+        
     }
 }

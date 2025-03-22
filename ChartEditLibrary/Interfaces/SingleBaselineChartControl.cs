@@ -18,11 +18,14 @@ namespace ChartEditLibrary.Interfaces
         public override void BindControl(IPlotControl chartPlot)
         {
             base.BindControl(chartPlot);
-            chartPlot.Menu.Add("Add Line", AddLineMenu);
-            chartPlot.Menu.Add("Remove Line", RemoveLineMenu);
-            chartPlot.Menu.Add("Clear These Line", ClearLineMenu);
-            chartPlot.Menu.Add("Save Data", SaveDataMenu);
-            chartPlot.Menu.Add("Set DP", SetDPMenu);
+            if(chartPlot.Menu is not null)
+            {
+                chartPlot.Menu.Add("Add Line", AddLineMenu);
+                chartPlot.Menu.Add("Remove Line", RemoveLineMenu);
+                chartPlot.Menu.Add("Clear These Line", ClearLineMenu);
+                chartPlot.Menu.Add("Save Data", SaveDataMenu);
+                chartPlot.Menu.Add("Set DP", SetDPMenu);
+            }
         }
 
         private void MoveLine(Coordinates? chartPoint, Coordinates mouseLocation)
@@ -85,18 +88,18 @@ namespace ChartEditLibrary.Interfaces
             PlotControl.Refresh();
         }
 
-        public void ClearLineMenu(IPlotControl control)
+        public void ClearLineMenu(Plot control)
         {
-            var range = control.Plot.Axes.Bottom.Range;
+            var range = control.Axes.Bottom.Range;
             var lines = ChartData.SplitLines.Where(v => v.Start.X > range.Min && v.Start.X < range.Max).ToArray();
             if (!_messageBox.ConfirmOperation($"是否删除这{lines.Length}条分割线?"))
                 return;
             foreach (var line in lines)
                 ChartData.RemoveSplitLine(line);
-            control.Refresh();
+            control.PlotControl!.Refresh();
         }
 
-        public void SaveDataMenu(IPlotControl control)
+        public void SaveDataMenu(Plot control)
         {
             if (_dialog.ShowDialog(ChartData.FileName + ".csv", out var fileNames))
             {
@@ -112,7 +115,7 @@ namespace ChartEditLibrary.Interfaces
             }
         }
 
-        public void RemoveLineMenu(IPlotControl control)
+        public void RemoveLineMenu(Plot control)
         {
             var lineInfo = ChartData.GetDraggedLine(mouseCoordinates);
             if (!lineInfo.HasValue)
@@ -159,11 +162,11 @@ namespace ChartEditLibrary.Interfaces
                         }
                     }
                 }
-                control.Refresh();
+                control.PlotControl!.Refresh();
             }
         }
 
-        public void AddLineMenu(IPlotControl control)
+        public void AddLineMenu(Plot control)
         {
             var chartPoint = ChartData.GetChartPoint(mouseCoordinates.X);
             if (chartPoint is null)
@@ -174,7 +177,7 @@ namespace ChartEditLibrary.Interfaces
             {
                 var line = ChartData.AddSplitLine(chartPoint.Value);
                 ChartData.DraggedLine = DraggableChartVm.GetFocusLineInfo(line);
-                var first = ChartData.SplitLines.FirstOrDefault(v => v.RTIndex > line.RTIndex);
+                /*var first = ChartData.SplitLines.FirstOrDefault(v => v.RTIndex > line.RTIndex);
                 if (first is not null && !string.IsNullOrWhiteSpace(first.Description))
                 {
                     string[] dps = first.Description.Split('-');
@@ -200,12 +203,12 @@ namespace ChartEditLibrary.Interfaces
                             }
                         }
                     }
-                }
-                control.Refresh();
+                }*/
+                control.PlotControl!.Refresh();
             }
         }
 
-        public void SetDPMenu(IPlotControl control)
+        public void SetDPMenu(Plot control)
         {
             var lineInfo = ChartData.GetDraggedLine(mouseCoordinates, true);
             if (!lineInfo.HasValue)

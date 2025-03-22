@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ChartEditLibrary.ViewModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using LanguageExt.UnitsOfMeasure;
 using ScottPlot;
 using ScottPlot.Plottables;
 using Version = System.Version;
@@ -91,7 +92,7 @@ namespace ChartEditLibrary.Model
     /// </summary>
     [SuppressMessage("ReSharper", "ExplicitCallerInfoArgument")]
     public partial class SplitLine(BaseLine baseLine, CoordinateLine line)
-        : EditLineBase(line), IComparable<SplitLine>, IEnumerable<string?>
+        : EditLineBase(line), IComparable<SplitLine>, IEnumerable<string>
     {
 
         public BaseLine BaseLine { get; } = baseLine;
@@ -124,6 +125,12 @@ namespace ChartEditLibrary.Model
             }
         }
 
+        private bool twoD = false;
+        private double? asp;
+        private double? tsp;
+        private double? offset;
+
+
         /// <summary>
         /// 用于显示在DataGridView中的Columns
         /// </summary>
@@ -132,18 +139,54 @@ namespace ChartEditLibrary.Model
         {
             get
             {
+                if (!twoD)
+                {
+                    return GetSaveData(index);
+                }
+                else
+                {
+                    return index switch
+                    {
+                        0 => Index.ToString(),
+                        1 => RT.ToString("0.0000"),
+                        2 => (AreaRatio * 100).ToString("0.00"),
+                        3 => asp?.ToString("0.000") ?? "",
+                        4 => tsp?.ToString("0.000") ?? "",
+                        5 => offset.HasValue ? (offset.GetValueOrDefault() * 100).ToString("0.00") : "",
+                        6 => Description ?? "",
+                        _ => "",
+                    };
+                }
+            }
+        }
+
+        private string GetSaveData(int index)
+        {
+            if(true)
+            {
                 return index switch
                 {
                     0 => Index.ToString(),
-                    1 => RT.ToString("0.000"),    //RT
-                    2 => Area.ToString("0.00"),  //面积
-                    3 => NextLine.Start.X.ToString("0.000"),  //开始
-                    4 => Start.X.ToString("0.000"),   //结束
+                    1 => Start.X.ToString("0.0000"),    //RT
+                    2 => RT.ToString("0.0000"),  //面积
+                    3 => NextLine.Start.X.ToString("0.0000"),  //开始
+                    4 => Area.ToString("0.00"),   //结束
                     5 => (AreaRatio * 100).ToString("0.00"),
                     6 => Description ?? "",
                     _ => "",
                 };
             }
+            return index switch
+            {
+                0 => Index.ToString(),
+                1 => Start.X.ToString("0.000"),    //RT
+                2 => RT.ToString("0.000"),  //面积
+                3 => NextLine.Start.X.ToString("0.000"),  //开始
+                4 => Area.ToString("0.00"),   //结束
+                5 => (AreaRatio * 100).ToString("0.00"),
+                6 => Description ?? "",
+                _ => "",
+            };
         }
 
         int IComparable<SplitLine>.CompareTo(SplitLine? other)
@@ -178,16 +221,23 @@ namespace ChartEditLibrary.Model
             return Start.X.ToString();
         }
 
-
-
-        IEnumerator<string?> IEnumerable<string?>.GetEnumerator()
+        public string[] GetShowData()
         {
-            for (var i = 0; i <= 5; ++i)
-                yield return this[i];
-            yield return Description;
+            return this.ToArray();
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<string?>)this).GetEnumerator();
+        public string[] GetSaveData()
+        {
+            return Enumerable.Range(0, 6).Select(GetSaveData).ToArray();
+        }
+
+        IEnumerator<string> IEnumerable<string>.GetEnumerator()
+        {
+            for (var i = 0; i <= 6; ++i)
+                yield return this[i];
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<string>)this).GetEnumerator();
 
         /// <summary>
         /// 触发所有列的更新
@@ -200,6 +250,29 @@ namespace ChartEditLibrary.Model
         public double GetHeight(Coordinates[] dataSource)
         {
             return dataSource[RTIndex].Y - BaseLine.GetY(RT);
+        }
+
+        private static string[] cuttingDPs = ["10", "8", "6", "4"];
+        public void SetCuttingData(CoordinateLine[]? cuttingLines, DraggableChartVm vm)
+        {
+            if (cuttingLines is null)
+                return;
+            twoD = true;
+            int index = Array.IndexOf(cuttingDPs, Description);
+            if (index == -1)
+                return;
+            double rt = this.RT;
+            var cutLine = cuttingLines[index];
+            if (Description == "4")
+            {
+                var t = vm.GetVstreetPoint((cutLine.Start.X + cutLine.End.X) / 2).X;
+                if (t > cutLine.Start.X && t < cutLine.End.X)
+                    rt = t;
+            }
+            asp = cutLine.Start.X;
+            tsp = rt - 0.133;
+            offset = (asp - tsp) / 0.266;
+
         }
     }
 
@@ -257,6 +330,8 @@ namespace ChartEditLibrary.Model
         public void RemoveSplitLine(SplitLine line, DraggableChartVm vm)
         {
             var index = SplitLines.IndexOf(line);
+            if (index < 0)
+                return;
             if (index == 0)
             {
                 if (SplitLines.Count > 1)
@@ -308,6 +383,8 @@ namespace ChartEditLibrary.Model
         public bool IsBaseLine { get; } = line is BaseLine;
 
         public bool IsStart { get; } = isStart;
+
+        public Coordinates Point => IsStart ? DraggedLine.Start : DraggedLine.End;
 
         public bool Equals(DraggedLineInfo x, DraggedLineInfo y)
         {

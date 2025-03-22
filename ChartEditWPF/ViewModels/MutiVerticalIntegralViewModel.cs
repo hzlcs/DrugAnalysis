@@ -164,21 +164,30 @@ namespace ChartEditWPF.ViewModels
                 return;
             }
             string file = fileNames[0];
-            var vm = await DraggableChartVm.CreateAsync(file, ExportType.Standard, "assignment");
-            vm.InitSplitLine(null);
-            var chartControl = App.ServiceProvider.GetRequiredService<MutiBaselineChartControl>();
-            chartControl.ChartData = vm;
-            var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
-            if (DataSources.FirstOrDefault(v => v.DraggableChartVM.exportType == ExportType.Standard) != null)
-                DataSources.RemoveAt(0);
-            DataSources.Insert(0, svm);
-            chartControl.ChangeActived(actived);
+            try
+            {
+                var vm = await DraggableChartVm.CreateAsync(file, ExportType.Standard, "assignment");
+                vm.InitSplitLine(null);
+                var chartControl = App.ServiceProvider.GetRequiredService<MutiBaselineChartControl>();
+                chartControl.ChartData = vm;
+                var svm = new ShowControlViewModel(chartControl, chartControl.ChartData);
+                if (DataSources.FirstOrDefault(v => v.DraggableChartVM.exportType == ExportType.Standard) != null)
+                    DataSources.RemoveAt(0);
+                DataSources.Insert(0, svm);
+                chartControl.ChangeActived(actived);
+                UpdateHeight();
+                _messageBox.Popup("导入成功", NotificationType.Success);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "导入失败标准品");
+                _messageBox.Popup("导入失败:" + ex.Message, NotificationType.Error);
+            }
         }
 
         [RelayCommand]
         private async Task Import()
         {
-            //var type = (ExportType)_selectDialog.ShowCombboxDialog("选择导入类型", exportTypes);
             if (!_fileDialog.ShowDialog(null, out var fileNames))
                 return;
             using var _ = _messageBox.ShowLoading("正在导入数据...");
@@ -186,7 +195,7 @@ namespace ChartEditWPF.ViewModels
             {
                 try
                 {
-                    var vm = await DraggableChartVm.CreateAsync(file, default, "assignment");
+                    var vm = await DraggableChartVm.CreateAsync(file, default, DescriptionManager.Glu);
 
                     var chartControl = App.ServiceProvider.GetRequiredService<MutiBaselineChartControl>();
                     chartControl.ChartData = vm;

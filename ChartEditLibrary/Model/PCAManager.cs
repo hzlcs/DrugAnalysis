@@ -43,7 +43,7 @@ namespace ChartEditLibrary.Model
                 for (var i = 0; i < item.SampleNames.Length; ++i)
                 {
                     classes.Add(item.SampleNames[i]);
-                    dataX.Add(item.Rows.Select(v => v.Areas[i]).Where(v => v.HasValue).Select(v => Math.Round(v.GetValueOrDefault(), 2, MidpointRounding.AwayFromZero)).ToArray());
+                    dataX.Add(item.Rows.Select(v => v.Areas[i]).Select(v => Math.Round(v.GetValueOrDefault(), 2, MidpointRounding.AwayFromZero)).ToArray());
                 }
             }
             

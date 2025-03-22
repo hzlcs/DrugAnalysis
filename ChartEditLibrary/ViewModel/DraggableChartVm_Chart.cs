@@ -84,7 +84,7 @@ namespace ChartEditLibrary.ViewModel
             return new CoordinateLine(start, end);
         }
 
-        private bool IsVstreetPoint(Coordinates point, int interval = 2)
+        public bool IsVstreetPoint(Coordinates point, int interval = 2)
         {
             var index = GetDateSourceIndex(point.X);
             if (index == -1)
@@ -92,12 +92,12 @@ namespace ChartEditLibrary.ViewModel
             return IsVstreetPoint(index, interval);
         }
 
-        private bool IsVstreetEndPoint(Coordinates point, int interval = 2)
+        public bool IsVstreetEndPoint(Coordinates point, int interval = 2)
         {
             return IsEndPoint(point) && IsVstreetPoint(point, interval);
         }
 
-        private bool IsVstreetPoint(int index, int interval = 2)
+        public bool IsVstreetPoint(int index, int interval = 2)
         {
             return Math.Abs(GetNearestMinDot(index) - index) <= interval;
         }
@@ -257,7 +257,7 @@ namespace ChartEditLibrary.ViewModel
         private void GetPoints(Coordinates[] coordinates, int start, int end, out int[] minDots,
             out int[] maxDots)
         {
-            int inter = 5 * (int)Math.Ceiling(0.006666667 / Unit);
+            int inter = 5 * (int)Math.Ceiling(Math.Round(0.006666667 / Unit, 4));
             if (Unit < 0.006666667 / 2)
                 inter = (int)Math.Ceiling(0.1 / Unit);
             var maxDotList = new List<int>();
@@ -563,13 +563,14 @@ namespace ChartEditLibrary.ViewModel
             sender.Area = GetArea(sender, newValue);
             var startIndex = GetDateSourceIndex(newValue.Start.X);
             var endIndex = GetDateSourceIndex(sender.Start.X);
-            Debug.Assert(startIndex < endIndex && startIndex > 0 && endIndex < DataSource.Length);
+            Debug.Assert(startIndex < endIndex && startIndex >= 0 && endIndex < DataSource.Length);
             
             var maxIndex = GetNearestMaxDotIndex(startIndex);
             if (maxDots[maxIndex] < startIndex)
                 ++maxIndex;
             var maxY = DataSource[maxDots[maxIndex]].Y;
             int temp = maxIndex;
+            
             while (maxDots[temp] <= endIndex)
             {
                 if (DataSource[maxDots[temp]].Y > maxY)
@@ -578,6 +579,7 @@ namespace ChartEditLibrary.ViewModel
                     maxY = maxDots[temp];
                 }
                 ++temp;
+                Debug.Assert(temp < maxDots.Length);
             }
             maxIndex = maxDots[maxIndex];
             if (maxIndex < endIndex && maxIndex > startIndex)
