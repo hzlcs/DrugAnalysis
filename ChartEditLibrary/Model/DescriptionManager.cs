@@ -179,12 +179,37 @@ namespace ChartEditLibrary.Model
                 return GetDescriptionStart(degree);
             }
 
+            public static int GetSortStart(string fileName)
+            {
+                int degree = 0;
+                int index = fileName.LastIndexOf('-');
+                if (index > 0)
+                {
+                    string temp = fileName[(index + 1)..].ToLower();
+                    degree = int.Parse(temp.Substring(2));
+                }
+                return GetSortStart(degree);
+            }
+
+            private static int GetSortStart(int degree)
+            {
+                return SortStart[degree];
+            }
+
             private static readonly Dictionary<int, string> DescriptionStart = new()
             {
                 { 4, "a" },
                 { 6, "b" },
                 { 8, "c" },
                 { 10, "d" },
+            };
+
+            private static readonly Dictionary<int, int> SortStart = new()
+            {
+                { 4, 7 },
+                { 6, 5 },
+                { 8, 6 },
+                { 10, 1 },
             };
 
             public static string GetDescriptionStart(int degree)

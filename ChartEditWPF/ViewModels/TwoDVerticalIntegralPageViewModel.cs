@@ -343,7 +343,7 @@ namespace ChartEditWPF.ViewModels
                     {
                         if (detail.SplitLines.All(v => string.IsNullOrWhiteSpace(v.Description)))
                         {
-                            int index = 0;
+                            int index = DescriptionManager.ComDescription.GetSortStart(detail.FileName) - 1;
                             string start = DescriptionManager.ComDescription.GetDescriptionStart(detail.FileName);
                             foreach (var line in detail.SplitLines)
                             {

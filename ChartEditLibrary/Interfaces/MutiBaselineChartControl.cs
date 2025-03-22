@@ -29,9 +29,14 @@ namespace ChartEditLibrary.Interfaces
                 chartPlot.Menu.Add("Remove Line", RemoveLineMenu);
                 chartPlot.Menu.Add("Delete Peak", DeletePeakMenu);
                 chartPlot.Menu.Add("Clear these lines", ClearTheseLineMenu);
-                chartPlot.Menu.Add("Set Assignment", SetAssignmentMenu);
+                if(ChartData.Description == DescriptionManager.Glu)
+                    chartPlot.Menu.Add("Set Assignment", SetAssignmentMenu);
+                else if (ChartData.Description == DescriptionManager.COM)
+                    chartPlot.Menu.Add("Set Componet", SetComponetMenu);
             }
         }
+
+        
 
         private void ClearTheseLineMenu(Plot control)
         {
@@ -43,7 +48,34 @@ namespace ChartEditLibrary.Interfaces
                 ChartData.RemoveSplitLine(line);
             control.PlotControl!.Refresh();
         }
+        private void SetComponetMenu(Plot plot)
+        {
+            var lineInfo = ChartData.GetDraggedLine(mouseCoordinates, true);
+            if (!lineInfo.HasValue)
+            {
+                _messageBox.Show("Can't set componet here");
+            }
+            else if (lineInfo.Value.IsBaseLine)
+            {
+                _messageBox.Show("Can't set baseLine");
+            }
+            else
+            {
+                var line = (SplitLine)lineInfo.Value.DraggedLine;
+                _inputForm.TryGetInput(line.Description, out var dp);
+                if (!TrySetDPIndex(line, dp ?? ""))
+                {
+                    _messageBox.Show("无效的DP值");
+                }
+                else
+                {
+                    ChartData.DraggedLine = null;
+                    ChartData.DraggedLine = DraggableChartVm.GetFocusLineInfo(line);
+                }
 
+
+            }
+        }
         private void SetAssignmentMenu(Plot control)
         {
             var lineInfo = ChartData.GetDraggedLine(mouseCoordinates, true);
