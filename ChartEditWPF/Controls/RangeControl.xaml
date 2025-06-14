@@ -8,8 +8,8 @@
              mc:Ignorable="d" 
              d:DesignHeight="30" d:DesignWidth="150">
     <StackPanel Orientation="Horizontal">
-        <TextBox Width="75" Text="{Binding Start}"/>
-        <TextBlock Text=" ~ " FontFamily="微软雅黑"/>
-        <TextBox Width="75" Text="{Binding End}"/>
+        <TextBox Width="50" Height="25" Text="{Binding Start}" VerticalContentAlignment="Center" d:Text="100" HorizontalContentAlignment="Center"/>
+        <TextBlock Text=" ~ " FontFamily="微软雅黑" VerticalAlignment="Center"/>
+        <TextBox Width="50" Height="25" Text="{Binding End}" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
     </StackPanel>
 </UserControl>

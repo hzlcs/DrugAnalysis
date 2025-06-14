@@ -8,7 +8,7 @@
       xmlns:hc="https://handyorg.github.io/handycontrol"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
-      Title="MutiConfigPage" d:DataContext="{d:DesignInstance vm:MutiConfigViewModel}">
+      Title="MutiConfigPage" d:DataContext="{d:DesignInstance vm:MutiConfigPageVM}">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -19,7 +19,7 @@
             <Button
                 Width="150"
                 Height="30"
-                Margin="5"
+                Margin="11,0,0,0"
                 Command="{Binding SaveConfigCommand}"
                 Content="保存" />
         </StackPanel>

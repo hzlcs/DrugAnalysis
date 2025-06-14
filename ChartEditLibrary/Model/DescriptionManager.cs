@@ -13,6 +13,7 @@ namespace ChartEditLibrary.Model
 
         public static IComparer<string> GluComparer => GluDescription.Comparer;
         public static IComparer<string> DPComparer => DPDescription.Comparer;
+        public static IComparer<string> ComComparer => ComDescription.Comparer;
 
 
         public static class GluDescription
@@ -167,6 +168,8 @@ namespace ChartEditLibrary.Model
 
         public static class ComDescription
         {
+            public static IComparer<string> Comparer { get; } = new ComComparer();
+
             public static string GetDescriptionStart(string fileName)
             {
                 int degree = 0;
@@ -216,6 +219,22 @@ namespace ChartEditLibrary.Model
             {
                 return DescriptionStart[degree];
             }
+
+            private class ComComparer : IComparer<string>
+            {
+                public int Compare(string? x, string? y)
+                {
+                    if (x is null || y is null)
+                    {
+                        return string.Compare(x, y);
+                    }
+                    if (x[0] == y[0])
+                    {
+                        return int.Parse(x[1..]) - int.Parse(y[1..]);
+                    }
+                    return x[0] - y[0];
+                }
+            }
         }
 
 
@@ -223,11 +242,11 @@ namespace ChartEditLibrary.Model
         public static void Sort(string[] descriptions, string description)
         {
             if (description == Glu)
-            {
                 Array.Sort(descriptions, GluComparer);
-            }
             else if (description == DP)
                 Array.Sort(descriptions, DPComparer);
+            else if (description == COM)
+                Array.Sort(descriptions, ComComparer);
             else
                 Array.Sort(descriptions);
         }

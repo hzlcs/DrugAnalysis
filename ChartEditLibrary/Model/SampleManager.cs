@@ -15,6 +15,7 @@ namespace ChartEditLibrary.Model
 {
     public static class SampleManager
     {
+        public static readonly string ResultExtension = "-Content";
 
         public static async Task<SampleResult> GetSampleAreasAsync(string fileName)
         {
@@ -80,7 +81,10 @@ namespace ChartEditLibrary.Model
                     }
                     rows[i] = new AreaRow(descriptions[i], areas);
                 }
-                return new AreaDatabase(Path.GetFileNameWithoutExtension(fileName), sampleNames, description, descriptions, rows);
+                string className = Path.GetFileNameWithoutExtension(fileName);
+                if(className.EndsWith(ResultExtension))
+                    className = className[..^ResultExtension.Length];
+                return new AreaDatabase(className, sampleNames, description, descriptions, rows);
             }
             catch (Exception ex)
             {
@@ -137,8 +141,7 @@ namespace ChartEditLibrary.Model
                 }
             }
             string[] res = [.. temp];
-
-            Array.Sort(res, description == "DP" ? DescriptionManager.DPComparer : DescriptionManager.GluComparer);
+            DescriptionManager.Sort(res, description);
             return res;
         }
 

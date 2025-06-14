@@ -35,6 +35,8 @@ namespace ChartEditLibrary.ViewModel
         /// </summary>
         public double Unit { get; }
 
+        private double HalfUnit { get; }
+
         public string FileName { get; }
 
         public string FilePath { get; }
@@ -42,10 +44,9 @@ namespace ChartEditLibrary.ViewModel
         [ObservableProperty]
         private DraggedLineInfo? draggedLine;
 
-
         private int draggedSplitLineIndex;
 
-        private readonly Coordinates yMax;
+        public Coordinates YMax { get; }
 
         public ObservableCollection<BaseLine> BaseLines { get; } = [];
 
@@ -67,6 +68,8 @@ namespace ChartEditLibrary.ViewModel
         private double SumArea { get; set; }
 
         private readonly int highestIndex;
+
+        private readonly int lowestIndex;
 
         private int[] minDots;
 
@@ -91,19 +94,11 @@ namespace ChartEditLibrary.ViewModel
             Description = description;
             this.exportType = exportType ?? ExportType.Enoxaparin;
             this.DataSource = dataSource;
-            Unit = dataSource[1].X - dataSource[0].X;
-            yMax = dataSource[0];
-            double max = dataSource[0].Y;
-            var span = dataSource.AsSpan();
-            for (var i = 0; i < dataSource.Length; ++i)
-            {
-                if (span[i].Y > max)
-                {
-                    highestIndex = i;
-                    max = span[i].Y;
-                }
-            }
-            yMax = dataSource[highestIndex];
+            for (int i = 0; i < 3; ++i)
+                Unit += dataSource[i + 1].X - dataSource[i].X;
+            Unit /= 3;
+            HalfUnit = Unit / 2;
+
             if (exportType == ExportType.TwoDimension)
             {
                 ChartDataTitles = twoDTiltes;
@@ -113,6 +108,10 @@ namespace ChartEditLibrary.ViewModel
                 ChartDataTitles = commonTitles;
             }
             GetPoints(dataSource, 1, dataSource.Length - 1, out minDots, out maxDots);
+            lowestIndex = minDots.MinBy(v => DataSource[v].Y);
+            highestIndex = maxDots.MaxBy(v => DataSource[v].Y);
+            YMax = DataSource[highestIndex];
+
             //this.DataSource = dataSource.Concat(GetT(dataSource, 0, dataSource.Length - 2)).ToArray();
         }
 
@@ -158,18 +157,21 @@ namespace ChartEditLibrary.ViewModel
         /// </summary>
         public int GetDateSourceIndex(double x)
         {
-            Debug.Assert(DataSource is not null && DataSource.Length > 0);
-
-            var index = (int)((x - DataSource[0].X) / Unit);
-            if (index < 0 || index >= DataSource.Length - 1)
+            if(x < DataSource[0].X || x > DataSource[^1].X)
                 return -1;
-            double diff = Math.Abs(DataSource[index].X - x);
-            if (diff == 0)
-                return index;
-            if (diff > Math.Abs(DataSource[index + 1].X - x))
-                return index + 1;
-            if (index > 0 && diff > Math.Abs(DataSource[index - 1].X - x))
-                return index - 1;
+            var index = (int)((x - DataSource[0].X) / Unit);
+            Debug.Assert(index > 0 && index < DataSource.Length);
+            double diff = x - DataSource[index].X;
+            if(diff < 0)
+            {
+                if(-diff > HalfUnit)
+                    return index - 1;
+            }
+            else
+            {
+                if(diff > HalfUnit)
+                    return index + 1;
+            }
             return index;
         }
 
@@ -180,7 +182,7 @@ namespace ChartEditLibrary.ViewModel
 
         public BaseLine? GetBaseLine(double x)
         {
-            return BaseLines.FirstOrDefault(v => v.Start.X <= x && v.End.X >= x);
+            return BaseLines.FirstOrDefault(v => (v.Start.X < x || Utility.ToleranceEqual(v.Start.X, x)) && (v.End.X > x || Utility.ToleranceEqual(v.End.X, x)));
         }
 
         public BaseLine? GetBaseLine(Coordinates point)
@@ -189,7 +191,7 @@ namespace ChartEditLibrary.ViewModel
         }
         public BaseLine GetBaseLineOrNearest(Coordinates point)
         {
-            var baseLine = GetBaseLine(point);
+            var baseLine = GetBaseLine(point.X);
             if (baseLine is not null)
                 return baseLine;
             Debug.Assert(BaseLines.Count > 0);
@@ -251,6 +253,10 @@ namespace ChartEditLibrary.ViewModel
 
         public BaseLine AddBaseLine(BaseLine baseLine)
         {
+            if (IsEndPoint(baseLine.Start))
+                baseLine.Start = GetDataSource(baseLine.Start.X);
+            if (IsEndPoint(baseLine.End))
+                baseLine.End = GetDataSource(baseLine.End.X);
             if (BaseLines.Count == 0)
             {
                 BaseLines.Add(baseLine);
@@ -259,7 +265,7 @@ namespace ChartEditLibrary.ViewModel
             {
                 for (int i = 0; i < BaseLines.Count; ++i)
                 {
-                    if (baseLine.Start.X == BaseLines[i].Start.X)
+                    if (Utility.ToleranceEqual(baseLine.Start.X, BaseLines[i].Start.X))
                     {
                         break;
                     }
@@ -299,7 +305,7 @@ namespace ChartEditLibrary.ViewModel
         /// <param name="line"></param>
         private void AddSplitLine(SplitLine line)
         {
-            if (SplitLines.Any(v => Utility.ToleranceEqual(v.Start.X , line.Start.X)))
+            if (SplitLines.Any(v => Utility.ToleranceEqual(v.Start.X, line.Start.X)))
                 return;
             line.SplitLineMoved += OnLineMoved;
             line.NextLineChanged += OnNextLineChanged;
@@ -443,8 +449,8 @@ namespace ChartEditLibrary.ViewModel
 
         public void ApplyTemplate(DraggableChartVm template, double? _xOffset = null)
         {
-            var tHighest = template.yMax.X;
-            double xOffset = _xOffset ?? yMax.X - tHighest;
+            var tHighest = template.YMax.X;
+            double xOffset = _xOffset ?? YMax.X - tHighest;
             foreach (var baseline in template.BaseLines)
             {
                 //尝试延申至端点
@@ -588,8 +594,8 @@ namespace ChartEditLibrary.ViewModel
 
         public void ApplyTemplateTwoD(DraggableChartVm template, double? _xOffset = null)
         {
-            var tHighest = template.yMax.X;
-            double xOffset = _xOffset ?? yMax.X - tHighest;
+            var tHighest = template.YMax.X;
+            double xOffset = _xOffset ?? YMax.X - tHighest;
             foreach (var baseline in template.BaseLines)
             {
                 //尝试延申至端点
@@ -716,7 +722,7 @@ namespace ChartEditLibrary.ViewModel
 
                 }
                 var line = AddSplitLine(point);
-                if (DataSource[line.RTIndex].Y - line.BaseLine.Line.Y(line.RT) < TwoDConfig.Instance.MinHeight)
+                if (DataSource[line.RTIndex].Y - line.BaseLine.Line.Y(line.RT) < (double)TwoDConfig.Instance.MinHeight)
                 {
                     RemoveLine(line);
                     continue;
@@ -818,6 +824,6 @@ namespace ChartEditLibrary.ViewModel
             CheckCrossedBaseline(ref line);
         }
 
-        
+
     }
 }

@@ -20,7 +20,7 @@ using System.Windows;
 
 namespace ChartEditWPF.ViewModels
 {
-    internal partial class TCheckPageViewModel(IFileDialog _fileDialog, IMessageBox _messageBox, IInputForm _selectDialog, ILogger<TCheckPageViewModel> _logger) : SamplePageViewModel(_fileDialog, _messageBox, _selectDialog, _logger)
+    internal partial class TCheckPageVM(IFileDialog _fileDialog, IMessageBox _messageBox, IInputForm _selectDialog, ILogger<TCheckPageVM> _logger) : SamplePageViewModel(_fileDialog, _messageBox, _selectDialog, _logger)
     {
         protected override bool GroupDegree => true;
 

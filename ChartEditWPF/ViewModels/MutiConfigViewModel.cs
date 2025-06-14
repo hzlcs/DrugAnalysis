@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ChartEditWPF.ViewModels
 {
-    internal partial class MutiConfigViewModel(IMessageBox messageBox) : ObservableObject
+    internal partial class MutiConfigPageVM(IMessageBox messageBox) : ObservableObject
     {
         public MutiConfig MutiConfig { get; } = MutiConfig.Instance;
 

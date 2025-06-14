@@ -38,8 +38,8 @@ namespace ChartEditWPF.ViewModels
             this._messageBox = _messageBox;
             this._selectDialog = _selectDialog;
             this.logger = logger;
+            
         }
-
 
         private void AddData(List<TCheckControlViewModel> data)
         {
@@ -84,8 +84,21 @@ namespace ChartEditWPF.ViewModels
         [RelayCommand]
         private async Task AddSample()
         {
+#if DEBUG
+            string[] fileNames = [
+                @"E:\WeChat Files\wxid_3cmszo7zcnp922\FileStorage\File\2025-03\B-2.csv"  ,
+                @"E:\WeChat Files\wxid_3cmszo7zcnp922\FileStorage\File\2025-03\B3.csv"   ,
+                @"E:\WeChat Files\wxid_3cmszo7zcnp922\FileStorage\File\2025-03\A5.csv"   ,
+                @"E:\WeChat Files\wxid_3cmszo7zcnp922\FileStorage\File\2025-03\A2.csv"   ,
+                @"E:\WeChat Files\wxid_3cmszo7zcnp922\FileStorage\File\2025-03\B-1.csv"  ,
+                @"E:\WeChat Files\wxid_3cmszo7zcnp922\FileStorage\File\2025-03\A1.csv"   ,
+                @"E:\WeChat Files\wxid_3cmszo7zcnp922\FileStorage\File\2025-03\A3.csv"   ,
+                @"E:\WeChat Files\wxid_3cmszo7zcnp922\FileStorage\File\2025-03\A4.csv"   ,
+                ];
+#else
             if (!_fileDialog.ShowDialog(null, out var fileNames))
                 return;
+#endif
             using var _ = _messageBox.ShowLoading("正在导入样品...");
             try
             {
@@ -118,9 +131,8 @@ namespace ChartEditWPF.ViewModels
         private async Task AddDatabase()
         {
             if (!_fileDialog.ShowDialog(null, out var fileNames))
-            {
                 return;
-            }
+            
             using var _ = _messageBox.ShowLoading("正在添加数据...");
             try
             {
@@ -177,10 +189,12 @@ namespace ChartEditWPF.ViewModels
         [RelayCommand]
         private async Task Import()
         {
+#if DEBUG
+            string[] fileName = [@"E:\WeChat Files\wxid_3cmszo7zcnp922\FileStorage\File\2025-03\dp2参比制剂数据库 - 副本.csv"];
+#else
             if (!_fileDialog.ShowDialog(null, out var fileName))
-            {
                 return;
-            }
+#endif
             try
             {
                 using var _ = _messageBox.ShowLoading("正在导入数据库...");

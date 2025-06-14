@@ -1,5 +1,4 @@
-﻿using ChartEditWPF.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,12 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace ChartEditWPF.Pages
+namespace ChartEditWPF.Controls
 {
-    
-    public partial class PCAPage : Page, IPage
+    /// <summary>
+    /// ColorEditControl.xaml 的交互逻辑
+    /// </summary>
+    public partial class ColorEditControl : UserControl
     {
-        public PCAPage()
+        public ColorEditControl()
         {
             InitializeComponent();
         }

@@ -87,10 +87,15 @@
                     CommandParameter="{x:Static m:Pages.MutiConfig}"
                     Header="二糖积分" />
                 <hc:SideMenuItem
-    Margin="5,0,0,0"
-    Command="{Binding ButtonClickCommand}"
-    CommandParameter="{x:Static m:Pages.TwoDConfig}"
-    Header="二维积分" />
+                    Margin="5,0,0,0"
+                    Command="{Binding ButtonClickCommand}"
+                    CommandParameter="{x:Static m:Pages.TwoDConfig}"
+                    Header="二维积分" />
+                <hc:SideMenuItem
+                    Margin="5,0,0,0"
+                    Command="{Binding ButtonClickCommand}"
+                    CommandParameter="{x:Static m:Pages.CommonConfig}"
+                    Header="其它" />
             </hc:SideMenuItem>
         </hc:SideMenu>
         <Border
@@ -104,10 +109,11 @@
             <Popup
                 d:IsOpen="True"
                 IsOpen="{Binding PopupVisible}"
+                AllowsTransparency="True"
                 Placement="Top">
                 <ItemsControl
                     d:ItemsSource="{x:Static vm:MainViewModel.DesignNotificationContents}"
-                    Background="White"
+                    Background="Transparent"
                     ItemsSource="{Binding Notifications}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>

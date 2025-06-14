@@ -355,7 +355,6 @@ namespace ChartEditLibrary.Model
             {
                 var changeLine = SplitLines[index + 1];
                 changeLine.NextLine = line.NextLine;
-                changeLine.Area += line.Area;
                 if (vm.DataSource[changeLine.RTIndex].Y < vm.DataSource[line.RTIndex].Y)
                 {
                     changeLine.RTIndex = line.RTIndex;

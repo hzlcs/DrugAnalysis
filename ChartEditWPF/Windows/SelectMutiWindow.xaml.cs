@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using ChartEditWPF.Services;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +38,18 @@ namespace ChartEditWPF.Windows
             for (var i = 0; i < data.Length; i++)
             {
                 items[i] = new SelectItem(data.GetValue(i)!);
+                
             }
+            grid.ItemsSource = items;
+            this.action = action;
+        }
+
+        public SelectMutiWindow(string title, string itemName, SelectItem[] items, Action<object[]> action) : this()
+        {
+            Title = title;
+            column.Header = itemName;
+            column.Binding = new Binding("Item");
+            checkBox.Binding = new Binding("IsSelected");
             grid.ItemsSource = items;
             this.action = action;
         }
@@ -48,18 +60,7 @@ namespace ChartEditWPF.Windows
             DialogResult = true;
         }
 
-        private partial class SelectItem : ObservableObject
-        {
-            [ObservableProperty]
-            private bool isSelected;
-
-            public SelectItem(object item)
-            {
-                Item = item;
-            }
-
-            public object Item { get; set; }
-        }
+        
 
         private bool editing = false;
 

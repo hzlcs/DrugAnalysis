@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ChartEditLibrary.Entitys
 {
-    public partial class TwoDConfig
+    public class TwoDConfig
     {
         public class Range(int start, int end)
         {
@@ -22,9 +23,15 @@ namespace ChartEditLibrary.Entitys
                 start = Start;
                 end = End;
             }
+
+            public override string ToString()
+            {
+                return "Range";
+            }
         }
 
         public static TwoDConfig Instance { get; private set; }
+
 
         [Category("归属")]
         [Description("划峰的范围")]
@@ -33,30 +40,41 @@ namespace ChartEditLibrary.Entitys
 
         [Category("归属")]
         [Description("峰最高点和最低点的最小差值")]
-        public float MinHeight { get; set; } = 0f;
+        public double MinHeight { get; set; } = 0;
 
         [Category("归属")]
         [Description("最小峰高")]
-        public float YMin { get; set; } = 0.01f;
+        public double YMin { get; set; } = 0.01;
 
-        [Category("Range"), DisplayName(" D1")]
-        [Editor("ChartEditWPF.Behaviors.RangePropertyEditor, ChartEditWPF, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null", "")]
+        [Category("分析图"), DisplayName("色阶数量")]
+        public uint ColorCount { get; set; } = 20;
+        [Category("分析图"), DisplayName("缺口大小(%)")]
+        public uint Gap { get; set; } = 5;
+        [Category("分析图"), DisplayName("样品字号")]
+        public uint SampleFontSize { get; set; } = 16;
+        [Category("分析图"), DisplayName("归属字号")]
+        public uint DescFontSize { get; set; } = 16;
+
+        const string edit = "ChartEditWPF.Behaviors.RangePropertyEditor, ChartEditWPF, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+
+        [Category("读取数据范围"), DisplayName(" D1")]
+        [Editor(edit, "")]
         public Range D1 { get; set; } = new(10, 21);
 
-        [Category("Range"), DisplayName(" DP4")]
-        [Editor("ChartEditWPF.Behaviors.RangePropertyEditor, ChartEditWPF, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null", "")]
+        [Category("读取数据范围"), DisplayName(" DP4")]
+        [Editor(edit, "")]
         public Range DP4 { get; set; } = new(35, 85);
 
-        [Category("Range"), DisplayName(" DP6")]
-        [Editor("ChartEditWPF.Behaviors.RangePropertyEditor, ChartEditWPF, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null", "")]
+        [Category("读取数据范围"), DisplayName(" DP6")]
+        [Editor(edit, "")]
         public Range DP6 { get; set; } = new(35, 85);
 
-        [Category("Range"), DisplayName(" DP8")]
-        [Editor("ChartEditWPF.Behaviors.RangePropertyEditor, ChartEditWPF, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null", "")]
+        [Category("读取数据范围"), DisplayName(" DP8")]
+        [Editor(edit, "")]
         public Range DP8 { get; set; } = new(35, 85);
 
-        [Category("Range"), DisplayName("DP10")]
-        [Editor("ChartEditWPF.Behaviors.RangePropertyEditor, ChartEditWPF, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null", "")]
+        [Category("读取数据范围"), DisplayName("DP10")]
+        [Editor(edit, "")]
         public Range DP10 { get; set; } = new(35, 85);
 
         public Range GetRange(string fileName)

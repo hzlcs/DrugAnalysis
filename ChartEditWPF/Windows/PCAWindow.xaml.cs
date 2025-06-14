@@ -1,4 +1,5 @@
-﻿using ScottPlot;
+﻿using LanguageExt.ClassInstances.Pred;
+using ScottPlot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,8 +34,7 @@ namespace ChartEditWPF.Windows
 
         public PCAWindow(SamplePCA[] data, double[] singularValues, double[] eigenVectors) : this()
         {
-            r2x1.Text = eigenVectors[0].ToString("F3");
-            r2x2.Text = eigenVectors[1].ToString("F3");
+            chart.EigenVectors = eigenVectors;
             chart.SingularValues = singularValues;
             chart.Samples = data;
         }
@@ -42,6 +42,7 @@ namespace ChartEditWPF.Windows
         internal byte[] GetResult()
         {
             PixelSize size = new(1920, 1080);
+            //size = chart.Plot.RenderManager.LastRender.FigureRect.Size;
             return chart.Plot.GetImageBytes((int)size.Width, (int)size.Height, ImageFormat.Png);
         }
     }

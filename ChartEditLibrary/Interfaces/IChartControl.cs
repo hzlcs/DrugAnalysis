@@ -1,9 +1,13 @@
-﻿using ChartEditLibrary.Model;
+﻿using ChartEditLibrary.Entitys;
+using ChartEditLibrary.Model;
 using ChartEditLibrary.ViewModel;
+using LanguageExt;
 using OpenTK.Mathematics;
 using ScottPlot;
+using ScottPlot.DataSources;
 using ScottPlot.Plottables;
 using System.Collections.Specialized;
+using System.Diagnostics;
 
 namespace ChartEditLibrary.Interfaces
 {
@@ -83,7 +87,6 @@ namespace ChartEditLibrary.Interfaces
         public virtual void BindControl(IPlotControl chartPlot)
         {
             PlotControl = chartPlot;
-
             chartPlot.Plot.Clear();
             chartPlot.Plot.XLabel(ChartData.FileName);
             MyHighlightText = chartPlot.Plot.Add.Text("", 0, 0);
@@ -92,9 +95,21 @@ namespace ChartEditLibrary.Interfaces
                 Color.FromColor(System.Drawing.Color.Red));
             vstreetMarker.IsVisible = false;
             GetSensitivity();
-            var source = chartPlot.Plot.Add.ScatterPoints(ChartData.DataSource);
-            source.Color = ScottPlot.Color.FromColor(System.Drawing.Color.DodgerBlue);
-            source.MarkerSize = 2;
+            if(CommonConfig.Instance.Signal)
+            {
+                var source = chartPlot.Plot.Add.SignalConst(ChartData.DataSource.Select(v=>v.Y).ToArray(), ChartData.Unit);
+                source.Color = ScottPlot.Color.FromColor(System.Drawing.Color.DodgerBlue);
+                source.Data.XOffset = ChartData.DataSource[0].X;
+                source.LineWidth = 2;
+                source.LinePattern = LinePattern.Solid;
+            }
+            else
+            {
+                var source = chartPlot.Plot.Add.ScatterPoints(ChartData.DataSource);
+                source.Color = ScottPlot.Color.FromColor(System.Drawing.Color.DodgerBlue);
+                source.MarkerSize = 2;
+            }
+            
             foreach (var baseLine in ChartData.BaseLines)
             {
                 chartPlot.AddBaseLine(baseLine, ChartData);
@@ -353,6 +368,8 @@ namespace ChartEditLibrary.Interfaces
         }
 
         public virtual void ChangeAutoVstreet(bool autoVstreet) { }
+
+        
     }
 
 }

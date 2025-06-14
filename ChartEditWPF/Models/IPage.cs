@@ -6,7 +6,5 @@ using System.Threading.Tasks;
 
 namespace ChartEditWPF.Models
 {
-    internal interface IPage
-    {
-    }
+    internal interface IPage;
 }

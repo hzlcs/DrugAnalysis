@@ -40,6 +40,9 @@ namespace ChartEditWPF.ViewModels
         [ObservableProperty]
         private SplitLine? draggedLine;
 
+        [ObservableProperty]
+        private Visibility visible;
+
         [RelayCommand]
         private void CopyData()
         {

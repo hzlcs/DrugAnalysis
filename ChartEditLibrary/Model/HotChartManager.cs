@@ -68,7 +68,7 @@ namespace ChartEditLibrary.Model
                 .Where(v => v.Key >= 4 && v.Key <= 10).Select(v => new DescData(v.Key.ToString(), v.Sum(x => x.Value.GetValueOrDefault()))).ToArray();
             Array.Sort(mainData, MainComparison);
             var detail = datas.Where(v => v.Degree > 0).ToArray();
-
+            
             Dictionary<int, Dictionary<string, DescData[]>> res = [];
             var degrees = detail.GroupBy(x => x.Degree).ToDictionary(v => v.Key, v => v.GroupBy(x => x.SampleName).ToDictionary(x => x.Key, x => x.First().Datas.ToDictionary(x => x.Description)));
             var samples = detail.Select(v => v.SampleName).Distinct().ToArray();

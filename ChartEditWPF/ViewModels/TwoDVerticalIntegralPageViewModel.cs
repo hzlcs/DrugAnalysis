@@ -14,16 +14,18 @@ using ScottPlot;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Documents;
 using System.Windows.Media;
 
 namespace ChartEditWPF.ViewModels
 {
-    public partial class TwoDVerticalIntegralPageViewModel : ObservableObject
+    public partial class TwoDVerticalIntegralPageVM : ObservableObject
     {
         public ObservableCollection<TwoDControlViewModel> Samples { get; } = [];
         public ActiveButtonViewModel ManualIntegral { get; }
@@ -32,9 +34,9 @@ namespace ChartEditWPF.ViewModels
         private readonly IInputForm inputForm;
         private readonly IFileDialog fileDialog;
         private readonly IMessageBox messageBox;
-        private readonly ILogger<TwoDVerticalIntegralPageViewModel> logger;
+        private readonly ILogger<TwoDVerticalIntegralPageVM> logger;
 
-        public TwoDVerticalIntegralPageViewModel(IInputForm inputForm, IFileDialog _fileDialog, IMessageBox _messageBox, ILogger<TwoDVerticalIntegralPageViewModel> logger)
+        public TwoDVerticalIntegralPageVM(IInputForm inputForm, IFileDialog _fileDialog, IMessageBox _messageBox, ILogger<TwoDVerticalIntegralPageVM> logger)
         {
             this.inputForm = inputForm;
             fileDialog = _fileDialog;
@@ -116,7 +118,9 @@ namespace ChartEditWPF.ViewModels
             if (!fileDialog.ShowDialog(null, out string[]? fileNames))
                 return;
             using var load = messageBox.ShowLoading();
+            DateTime de = DateTime.UtcNow;
             var samples = await GetFromFiles(fileNames);
+            Debug.WriteLine((DateTime.UtcNow - de).TotalMilliseconds);
             foreach (var data in samples)
             {
                 var main = data[0].vm;
@@ -125,7 +129,9 @@ namespace ChartEditWPF.ViewModels
                 {
                     d.vm.InitSplitLine();
                 }
-                Samples.Add(new TwoDControlViewModel(main, data.Skip(1).Select(v => v.vm).ToArray()));
+                var control = new TwoDControlViewModel(main, data.Skip(1).Select(v => v.vm).ToArray());
+                SetVisible(control);
+                Samples.Add(control);
             }
             ManualIntegralChanged(ManualIntegral.IsActive);
             AutoVstreetPointChanged(AutoVstreetPoint.IsActive);
@@ -134,6 +140,7 @@ namespace ChartEditWPF.ViewModels
 
         private async Task<SampleFileData[][]> GetFromFiles(string[] fileNames, bool @new = false)
         {
+
             var fileInfos = GetFileInfo(fileNames);
             List<SampleFileData[]> res = [];
             foreach (var files in fileInfos)
@@ -141,7 +148,13 @@ namespace ChartEditWPF.ViewModels
                 try
                 {
                     var mainFile = files[0];
+                    if (Samples.Any(v => v.Main.DraggableChartVM.FileName == mainFile.FileName))
+                    {
+                        messageBox.Popup($"样品：'{mainFile.FileName}'已存在", NotificationType.Warning);
+                        continue;
+                    }
                     var cutFile = files[1];
+
                     var vms = await Task.WhenAll(
                         files.Skip(2).Select(v => DraggableChartVm.CreateAsync(v.FilePath, ExportType.TwoDimensionDP, DescriptionManager.COM, @new))
                         .Prepend(DraggableChartVm.CreateAsync(mainFile.FilePath, ExportType.TwoDimension, DescriptionManager.DP, false))
@@ -170,13 +183,17 @@ namespace ChartEditWPF.ViewModels
         {
             var fileInfos = fileNames.Select(v => new TwoDFileInfo(v)).GroupBy(v => v.SampleName).ToDictionary(v => v.Key, v => v.Order().ToList());
             List<TwoDFileInfo[]> res = [];
+
             foreach (var kv in fileInfos)
             {
                 var files = kv.Value;
                 var mainFile = files[0];
+                string extension = "";
+                if (mainFile.FilePath.EndsWith(string.Intern(SampleManager.ResultExtension + ".csv")))
+                    extension = SampleManager.ResultExtension;
                 if (mainFile.Extension.HasValue)
                 {
-                    var mainFileName = Directory.GetFiles(mainFile.DirectionName, mainFile.SampleName + ".csv");
+                    var mainFileName = Directory.GetFiles(mainFile.DirectionName, mainFile.SampleName + extension + ".csv");
                     if (mainFileName.Length == 0)
                     {
                         messageBox.Popup($"样品：'{kv.Key}'文件名不符合规范", NotificationType.Warning);
@@ -185,12 +202,8 @@ namespace ChartEditWPF.ViewModels
                     files.Insert(0, new TwoDFileInfo(mainFileName[0]));
                     mainFile = files[0];
                 }
-                if (Samples.Any(v => v.Main.DraggableChartVM.FileName == mainFile.FilePath))
-                {
-                    messageBox.Popup($"样品：'{kv.Key}'已存在", NotificationType.Warning);
-                    continue;
-                }
-                string[] others = Directory.GetFiles(mainFile.DirectionName, mainFile.SampleName + "*.csv");
+
+                string[] others = Directory.GetFiles(mainFile.DirectionName, mainFile.SampleName + $"*{extension}.csv");
                 if (others.Length != files.Count)
                 {
                     files = others.Select(v => new TwoDFileInfo(v)).Order().ToList();
@@ -271,6 +284,7 @@ namespace ChartEditWPF.ViewModels
         private void Clear()
         {
             Samples.Clear();
+            GC.Collect();
             messageBox.Popup("清空成功", NotificationType.Success);
         }
 
@@ -286,6 +300,7 @@ namespace ChartEditWPF.ViewModels
                 if (sample is not null)
                     Samples.Remove(sample);
             }
+            GC.Collect();
             messageBox.Popup("移除成功", NotificationType.Success);
         }
 
@@ -341,7 +356,7 @@ namespace ChartEditWPF.ViewModels
                 {
                     foreach (var detail in sample.Details.Prepend(sample.Main).Select(v => v.DraggableChartVM))
                     {
-                        if (detail.SplitLines.All(v => string.IsNullOrWhiteSpace(v.Description)))
+                        if (detail.SplitLines.Any(v => string.IsNullOrWhiteSpace(v.Description)))
                         {
                             int index = DescriptionManager.ComDescription.GetSortStart(detail.FileName) - 1;
                             string start = DescriptionManager.ComDescription.GetDescriptionStart(detail.FileName);
@@ -350,18 +365,24 @@ namespace ChartEditWPF.ViewModels
                                 line.Description = start + (++index);
                             }
                         }
-                        string fileName = Path.Combine(folderName, detail.FileName) + ".csv";
+                        string fileName = Path.Combine(folderName, detail.FileName + SampleManager.ResultExtension + ".csv");
                         var data = detail.GetSaveRow();
-                        data[1] = new(detail.Description, data[1].line);
-                        await File.WriteAllLinesAsync(fileName, data.Select(v => v.description + "," + v.line));
+                        string desc = detail.Description == DescriptionManager.DP ? DescriptionManager.DP : "";
+                        using var stream = File.Create(fileName);
+                        using var sw = new StreamWriter(stream);
+                        await sw.WriteLineAsync("," + data[0].line);
+                        await sw.WriteLineAsync(detail.Description + "," + data[1].line);
+                        foreach (var v in data.Skip(2))
+                            await sw.WriteLineAsync(desc + v.description + "," + v.line);
                     }
                 }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Export");
-                messageBox.Popup("导出成功", NotificationType.Success);
+                messageBox.Popup(ex.Message, NotificationType.Error);
             }
+            messageBox.Popup("导出成功", NotificationType.Success);
         }
 
         [RelayCommand]
@@ -380,11 +401,12 @@ namespace ChartEditWPF.ViewModels
         {
             if (!fileDialog.ShowDialog(null, out string[]? fileNames))
                 return;
-            //string[] fileNames = [@"C:\Users\hzlcs\Desktop\DragA\CS748A.csv", 
-            //    @"C:\Users\hzlcs\Desktop\DragA\FS316A.csv",@"C:\Users\hzlcs\Desktop\DragA\CS748A1.csv"
+            //string[] fileNames = [@"C:\Users\hzlcs\Desktop\DragA\CS748A-Content.csv",
+            //    @"C:\Users\hzlcs\Desktop\DragA\FS316A-Content.csv",@"C:\Users\hzlcs\Desktop\DragA\N23051741-Content.csv"
             //];
             try
             {
+
                 var fileInfos = GetFileInfo(fileNames, false);
                 if (fileInfos.Length == 0)
                     return;
@@ -398,6 +420,92 @@ namespace ChartEditWPF.ViewModels
                 logger.LogError(ex, nameof(ChartAnalysis));
             }
         }
+
+        private readonly bool[] checks = [.. Enumerable.Repeat(true, 5)];
+        public bool D1
+        {
+            get => checks[0];
+            set
+            {
+                if (checks[0] == value)
+                    return;
+                checks[0] = value;
+                FilterChanged(0);
+            }
+        }
+        public bool DP4
+        {
+            get => checks[1];
+            set
+            {
+                if (checks[1] == value)
+                    return;
+                checks[1] = value;
+                FilterChanged(1);
+            }
+        }
+        public bool DP6
+        {
+            get => checks[2];
+            set
+            {
+                if (checks[2] == value)
+                    return;
+                checks[2] = value;
+                FilterChanged(2);
+            }
+        }
+        public bool DP8
+        {
+            get => checks[3];
+            set
+            {
+                if (checks[3] == value)
+                    return;
+                checks[3] = value;
+                FilterChanged(3);
+            }
+        }
+        public bool DP10
+        {
+            get => checks[4];
+            set
+            {
+                if (checks[4] == value)
+                    return;
+                checks[4] = value;
+                FilterChanged(4);
+            }
+        }
+        
+        private void SetVisible(TwoDControlViewModel vm)
+        {
+            vm.Main.Visible = checks[0] ? Visibility.Visible : Visibility.Collapsed;
+            for (int i = 0; i < vm.Details.Length; i++)
+            {
+                vm.Details[i].Visible = checks[i + 1] ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        private void FilterChanged(int index)
+        {
+            var visible = checks[index];
+            if(index == 0)
+            {
+                foreach (var item in Samples)
+                {
+                    item.Main.Visible = visible ? Visibility.Visible : Visibility.Collapsed;
+                }
+            }    
+            else
+            {
+                foreach(var item in Samples)
+                {
+                    item.Details[index - 1].Visible = visible ? Visibility.Visible : Visibility.Collapsed;
+                }
+            }
+        }
+        
 
         private void ManualIntegralChanged(bool actived)
         {

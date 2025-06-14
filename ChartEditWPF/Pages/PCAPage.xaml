@@ -9,7 +9,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
     Title="PCAPage"
-    d:DataContext="{d:DesignInstance vm:PCAPageViewModel}"
+    d:DataContext="{d:DesignInstance vm:PCAPageVM}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
@@ -24,7 +24,7 @@
         <ScrollViewer
             Grid.Column="0"
             HorizontalScrollBarVisibility="Auto"
-            VerticalScrollBarVisibility="Disabled">
+            VerticalScrollBarVisibility="Auto">
             <StackPanel Orientation="Horizontal">
                 <DataGrid
     Grid.Column="0"

@@ -27,6 +27,9 @@ namespace ChartEditWPF.ViewModels
             }
         }
         public string SampleName { get; }
+
+
+
         public ShowControlViewModel Main { get; }
         public ShowControlViewModel[] Details { get; }
     }

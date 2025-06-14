@@ -1,5 +1,6 @@
 ﻿using ChartEditLibrary.Interfaces;
 using ChartEditWPF.Windows;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -34,6 +35,14 @@ namespace ChartEditWPF.Services
             return values.Cast<T>().ToArray();
         }
 
+        public object[]? ShowListDialog(string title, string itemName, SelectItem[] items)
+        {
+            new SelectMutiWindow(title, itemName, items, ValuesCallback).ShowDialog();
+            return values;
+        }
+
+
+
         private void ValuesCallback(object[] obj)
         {
             values = obj;
@@ -50,5 +59,20 @@ namespace ChartEditWPF.Services
         {
             result = obj;
         }
+
+        
+    }
+
+    public partial class SelectItem : ObservableObject
+    {
+        [ObservableProperty]
+        private bool isSelected;
+
+        public SelectItem(object item)
+        {
+            Item = item;
+        }
+
+        public object Item { get; set; }
     }
 }

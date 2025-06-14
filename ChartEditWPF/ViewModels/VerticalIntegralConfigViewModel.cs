@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ChartEditWPF.ViewModels
 {
-    internal partial class VerticalIntegralConfigViewModel : ObservableObject
+    internal partial class VerticalIntegralConfigPageVM : ObservableObject
     {
 
         public ExportType[] ExportTypes { get; } = Enum.GetValues(typeof(ExportType)).Cast<ExportType>().ToArray();
@@ -22,7 +22,7 @@ namespace ChartEditWPF.ViewModels
         private ExportType currentType;
         private readonly IMessageBox messageBox;
 
-        public VerticalIntegralConfigViewModel(IMessageBox messageBox)
+        public VerticalIntegralConfigPageVM(IMessageBox messageBox)
         {
             Config.LoadConfig();
             currentType = ExportType.Enoxaparin;

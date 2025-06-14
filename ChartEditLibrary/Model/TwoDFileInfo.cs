@@ -20,6 +20,8 @@ namespace ChartEditLibrary.Model
             this.FilePath = fileName;
             DirectionName = Path.GetDirectoryName(fileName)!;
             FileName = Path.GetFileNameWithoutExtension(fileName);
+            if(FileName.EndsWith(SampleManager.ResultExtension))
+                FileName = FileName[..^SampleManager.ResultExtension.Length];
             int index = FileName.LastIndexOf('-');
             if (index == -1)
             {

@@ -6,24 +6,29 @@
         xmlns:local="clr-namespace:ChartEditWPF.Windows"
         xmlns:chart ="clr-namespace:ChartEditWPF.Behaviors"
         mc:Ignorable="d"
-        Title="HotChartWindow" Height="1000" Width="1300">
+        Title="HotChartWindow" Height="1000" Width="1200" Closing="Window_Closing">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition/>
-            <RowDefinition/>
-        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
-            <ColumnDefinition/>
-            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="150"/>
         </Grid.ColumnDefinitions>
-        <chart:HotChartPlot x:Name="chart1" Grid.Column="0" Grid.Row="0"/>
-        <chart:HotChartPlot x:Name="chart2" Grid.Column="0" Grid.Row="1"/>
-        <chart:HotChartPlot x:Name="chart3" Grid.Column="1" Grid.Row="0"/>
-        <chart:HotChartPlot x:Name="chart4" Grid.Column="1" Grid.Row="1"/>
-        <StackPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">
-            <Button Content="图表自适应" Click="Button_Click"/>
-            <Button Content="导出图片" Click="ExportButton_Click"/>
+        <TabControl>
+            <TabItem Header="dp4">
+                <chart:HotChartPlot x:Name="chart1" Grid.Column="0" Grid.Row="0" Height="920" Width="920"/>
+            </TabItem>
+            <TabItem Header="dp6">
+                <chart:HotChartPlot x:Name="chart2" Grid.Column="0" Grid.Row="0" Height="920" Width="920"/>
+            </TabItem>
+            <TabItem Header="dp8">
+                <chart:HotChartPlot x:Name="chart3" Grid.Column="0" Grid.Row="0" Height="920" Width="920"/>
+            </TabItem>
+            <TabItem Header="dp10">
+                <chart:HotChartPlot x:Name="chart4" Grid.Column="0" Grid.Row="0" Height="920" Width="920"/>
+            </TabItem>
+        </TabControl>
+        <StackPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" Margin="0,20,0,0">
+            <Button Content="图表自适应" Click="Button_Click" Width="135" Margin="5"/>
+            <Button Content="导出图片" Click="ExportButton_Click" Width="135" Margin="5"/>
         </StackPanel>
     </Grid>
     

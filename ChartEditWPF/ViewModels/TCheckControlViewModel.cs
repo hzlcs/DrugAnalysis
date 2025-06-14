@@ -44,7 +44,9 @@ namespace ChartEditWPF.ViewModels
         public TCheckControlViewModel(string description, SampleArea[] sampleAreas)
         {
             SampleName = sampleAreas[0].SampleName;
-            SampleName = SampleName[..SampleName.LastIndexOf('-')];
+            int index = SampleName.LastIndexOf('-');
+            if (index > -1)
+                SampleName = SampleName[..];
             Samples = sampleAreas;
             Columns = sampleAreas.Select(s => s.SampleName).ToArray();
             dataWidth = Columns.Select(v => 50 + (v.Length - 4) * 6).ToArray();

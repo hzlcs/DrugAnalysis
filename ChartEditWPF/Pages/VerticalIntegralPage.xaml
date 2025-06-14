@@ -12,7 +12,7 @@
     xmlns:b="clr-namespace:ChartEditWPF"
     xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     Title="VerticalIntegralPage"
-    d:DataContext="{d:DesignInstance vm:VerticalIntegralViewModel}"
+    d:DataContext="{d:DesignInstance vm:VerticalIntegralPageVM}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">

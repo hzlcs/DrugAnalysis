@@ -60,7 +60,10 @@ namespace ChartEditWPF.ViewModels
             Columns = sampleAreas.Select(s => s.SampleName).ToArray();
             dataWidth = Columns.Select(v => 50 + (v.Length - 4) * 6).ToArray();
             DataColumns = [[.. Enumerable.Range(0, Columns.Length).Select(v => new LabelData(Columns[v], dataWidth[v])), .. SourceArray.Select(v => new LabelData(v, 50))]];
-            SampleName = Columns[0][..Columns[0].LastIndexOf('-')];
+            SampleName = Columns[0];
+            int index = SampleName.LastIndexOf('-');
+            if(index >  -1)
+                SampleName = SampleName[..index];
             Descriptions = sampleAreas[0].Descriptions;
             Description = description;
             for (var i = 0; i < Descriptions.Length; i++)

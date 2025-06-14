@@ -11,9 +11,20 @@ using System;
 using System.Diagnostics;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.IO;
+using System.Linq.Expressions;
+using ScottPlot;
 
 
-BenchmarkRunner.Run<BenchmarkProgram.FileIO>();
+string filePath = @"E:\WeChat Files\wxid_3cmszo7zcnp922\FileStorage\File\2025-03\CS748A-dp8.csv";
+char[] spe = [',', '\t'];
+DateTime d = DateTime.UtcNow;
+string[][] data;
+using (StreamReader sr = new(File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
+{
+    data = (await sr.ReadToEndAsync()).Split(Environment.NewLine,
+        StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(spe)).ToArray();
+}
+Console.WriteLine((DateTime.UtcNow - d).TotalMilliseconds);
 
 Console.ReadLine();
 
@@ -95,9 +106,12 @@ public class BenchmarkProgram
         }
     }
 
-    public class NumericComparer 
+    public class NumericComparer<T>
     {
+        public NumericComparer()
+        {
 
+        }
 
     }
 

@@ -21,7 +21,7 @@ using static ChartEditLibrary.ViewModel.DraggableChartVm;
 
 namespace ChartEditWPF.ViewModels
 {
-    public partial class VerticalIntegralViewModel : ObservableObject
+    public partial class VerticalIntegralPageVM : ObservableObject
     {
         private readonly IInputForm _selectDialog;
         private readonly IFileDialog _fileDialog;
@@ -44,7 +44,7 @@ namespace ChartEditWPF.ViewModels
         [ObservableProperty]
         private string linkButtonText = "链接坐标";
 
-        public VerticalIntegralViewModel(IInputForm selectDialog, IFileDialog fileDialog, IMessageBox messageBox, ILogger<VerticalIntegralViewModel> logger)
+        public VerticalIntegralPageVM(IInputForm selectDialog, IFileDialog fileDialog, IMessageBox messageBox, ILogger<VerticalIntegralPageVM> logger)
         {
             _selectDialog = selectDialog;
             _fileDialog = fileDialog;

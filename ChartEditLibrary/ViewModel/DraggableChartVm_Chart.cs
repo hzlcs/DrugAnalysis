@@ -1,5 +1,6 @@
 ﻿using ChartEditLibrary.Entitys;
 using ChartEditLibrary.Model;
+using LanguageExt.UnitsOfMeasure;
 using OpenTK.Mathematics;
 using ScottPlot;
 using System;
@@ -222,7 +223,8 @@ namespace ChartEditLibrary.ViewModel
             var dataEnd = GetDateSourceIndex(line.Start.X);
             var dataStart = GetDateSourceIndex(nextLine.Start.X);
 
-            return GetArea(line.BaseLine, dataStart, dataEnd);
+            double res = GetArea(line.BaseLine, dataStart, dataEnd);
+            return res;
         }
 
         /// <summary>
@@ -230,16 +232,14 @@ namespace ChartEditLibrary.ViewModel
         /// </summary>
         public double GetArea(BaseLine baseLine, int dataStart, int dataEnd)
         {
-            double area = 0;
-            for (var i = dataStart; i < dataEnd; ++i)
-            {
-                area += DataSource[i].Y + DataSource[i + 1].Y;
-            }
+            double area = DataSource[dataStart].Y + DataSource[dataEnd].Y;
+            for (var i = dataStart + 1; i < dataEnd; ++i)
+                area += DataSource[i].Y * 2;
 
             var res = area * Unit / 2;
-            var y1 = 0 - baseLine.GetY(DataSource[dataStart].X);
-            var y2 = 0 - baseLine.GetY(DataSource[dataEnd].X);
-            res += (y1 + y2) * (DataSource[dataEnd].X - DataSource[dataStart].X) / 2;
+            var y1 = baseLine.GetY(DataSource[dataStart].X);
+            var y2 = baseLine.GetY(DataSource[dataEnd].X);
+            res -= (y1 + y2) * (DataSource[dataEnd].X - DataSource[dataStart].X) / 2;
             return res;
         }
 
@@ -564,14 +564,15 @@ namespace ChartEditLibrary.ViewModel
             var startIndex = GetDateSourceIndex(newValue.Start.X);
             var endIndex = GetDateSourceIndex(sender.Start.X);
             Debug.Assert(startIndex < endIndex && startIndex >= 0 && endIndex < DataSource.Length);
-            
+
             var maxIndex = GetNearestMaxDotIndex(startIndex);
-            if (maxDots[maxIndex] < startIndex)
+            if (maxDots[maxIndex] < startIndex && maxIndex < maxDots.Length - 1)
                 ++maxIndex;
+            Debug.Assert(maxIndex < maxDots.Length);
             var maxY = DataSource[maxDots[maxIndex]].Y;
             int temp = maxIndex;
-            
-            while (maxDots[temp] <= endIndex)
+
+            while (temp < maxDots.Length && maxDots[temp] <= endIndex)
             {
                 if (DataSource[maxDots[temp]].Y > maxY)
                 {
@@ -579,7 +580,6 @@ namespace ChartEditLibrary.ViewModel
                     maxY = maxDots[temp];
                 }
                 ++temp;
-                Debug.Assert(temp < maxDots.Length);
             }
             maxIndex = maxDots[maxIndex];
             if (maxIndex < endIndex && maxIndex > startIndex)

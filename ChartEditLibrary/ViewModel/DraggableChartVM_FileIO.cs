@@ -4,6 +4,7 @@ using LanguageExt.Common;
 using ScottPlot;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,10 +28,9 @@ namespace ChartEditLibrary.ViewModel
                     return null;
                 return line.Skip(index).ToArray();
             }
-
             using (StreamReader sr = new(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
             {
-                data = (await sr.ReadToEndAsync().ConfigureAwait(false)).Split(Environment.NewLine,
+                data = (await sr.ReadToEndAsync()).Split(Environment.NewLine,
                     StringSplitOptions.RemoveEmptyEntries).Select(v => v.Split(spe)).ToArray();
             }
 
@@ -67,8 +67,9 @@ namespace ChartEditLibrary.ViewModel
                 double[][] temp = data.Skip(dataRow)
                     .Select(v => v.Skip(dataCol).Take(2).Select(double.Parse).ToArray())
                     .Where(v => v[0] >= start && v[0] <= end).ToArray();
-                return (temp.Select(v => new Coordinates(v[0], v[1])).ToArray(),
+                (Coordinates[], string[][] ?) res = (temp.Select(v => new Coordinates(v[0], v[1])).ToArray(),
                     hasResult ? [.. saveContent] : null);
+                return res;
             }
             catch
             {
@@ -142,8 +143,9 @@ namespace ChartEditLibrary.ViewModel
             {
                 (start, end) = TwoDConfig.Instance.GetRange(filePath);
             }
-            var (dataSource, saveLine) = await ReadCsv(filePath, start, end).ConfigureAwait(false);
-
+            DateTime d = DateTime.UtcNow;
+            var (dataSource, saveLine) = await ReadCsv(filePath, start, end);
+            Debug.WriteLine("readcsv:" + (DateTime.UtcNow - d).TotalMilliseconds);
             var res = new DraggableChartVm(filePath, dataSource, exportType, description);
             if (!@new && saveLine != null)
                 res.ApplyResult(saveLine);
@@ -183,7 +185,7 @@ namespace ChartEditLibrary.ViewModel
                     AddBaseLine(i);
                 }
                 CurrentBaseLine = BaseLines[BaseLines.Count - 1];
-                string desc = SaveDescription;
+                bool replace = lines[2][6].StartsWith(Description);
                 for (var i = 2; i < lines.Length; i++)
                 {
                     string[] data = lines[i];
@@ -199,9 +201,9 @@ namespace ChartEditLibrary.ViewModel
                             else
                                 line.End = line.Start = line.BaseLine.End;
                         }
-                        line.Description = data[6][desc.Length..].TrimEnd('\r');
-                        if (line.Description == "DP")
-                            line.Description = "";
+                        line.Description = data[6].TrimEnd('\r');
+                        if (replace)
+                            line.Description = line.Description[Description.Length..];
                     }
                 }
             }
@@ -225,8 +227,7 @@ namespace ChartEditLibrary.ViewModel
         private string[] GetSaveRowContent()
         {
             ResetArea();
-            var baseInfo =
-                $"{FileName},{exportType},{SaveManager.GetBaseLineStr(BaseLines)},,,,";
+            var baseInfo = $"{FileName},{exportType},{SaveManager.GetBaseLineStr(BaseLines)},,,,";
             var title = $"{string.Join(',', GetSaveTitle())},{Description}";
             string description = Description == DescriptionManager.DP ? Description : "";
             IEnumerable<string> lines = SplitLines.Select(x =>
@@ -237,9 +238,7 @@ namespace ChartEditLibrary.ViewModel
         public SaveRow[] GetSaveRow()
         {
             ResetArea();
-            var baseLineStr = SaveManager.GetBaseLineStr(BaseLines);
-            SaveRow baseInfo = new("",
-                $"{FileName},{exportType},{baseLineStr},,,");
+            SaveRow baseInfo = new("", $"{FileName},{exportType},{SaveManager.GetBaseLineStr(BaseLines)},,,");
             SaveRow title = new("", string.Join(',', GetSaveTitle()));
             var lines = SplitLines.Select(x =>
                 new SaveRow(x.Description!,

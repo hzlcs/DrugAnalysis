@@ -16,10 +16,12 @@ using System.Windows.Shapes;
 
 namespace ChartEditWPF.Pages
 {
-    
-    public partial class PCAPage : Page, IPage
+    /// <summary>
+    /// CommonConfigPage.xaml 的交互逻辑
+    /// </summary>
+    public partial class CommonConfigPage : Page, IPage
     {
-        public PCAPage()
+        public CommonConfigPage()
         {
             InitializeComponent();
         }

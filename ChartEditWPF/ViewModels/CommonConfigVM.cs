@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace ChartEditWPF.ViewModels
 {
-    public partial class TwoDConfigPageVM(IMessageBox messageBox) : ObservableObject
+    public partial class CommonConfigPageVM(IMessageBox messageBox) : ObservableObject
     {
-        public TwoDConfig TwoDConfig { get; } = TwoDConfig.Instance;
+        public CommonConfig CommonConfig { get; } = CommonConfig.Instance;
 
         [RelayCommand]
         void SaveConfig()
         {
-            TwoDConfig.SaveConfig();
+            CommonConfig.SaveConfig();
             messageBox.Popup("保存成功", NotificationType.Success);
         }
     }

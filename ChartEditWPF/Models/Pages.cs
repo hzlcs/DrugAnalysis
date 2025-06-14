@@ -8,13 +8,13 @@ namespace ChartEditWPF.Models
 {
     public enum Pages
     {
-        None,
         VerticalIntegral,
         MutiVerticalIntegral,
         TwoDVerticalIntegral,
         TCheck,
         PCA,
         QualityRange,
+        CommonConfig,
         VerticalIntegralConfig,
         MutiConfig,
         TwoDConfig

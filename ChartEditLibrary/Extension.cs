@@ -48,6 +48,7 @@ namespace ChartEditLibrary
 
         public static void RemoveEditLine(this IPlotControl chart, EditLineBase line)
         {
+            line.PropertyChanged -= OnLineChanged;
             if (LinePlotWeakTable.TryGetValue(line, out var linePlot))
                 chart.Plot.Remove(linePlot);
             if (line is BaseLine baseLine && baseline_StartLineWeakTable.TryGetValue(baseLine, out var baseLine_StartLine))

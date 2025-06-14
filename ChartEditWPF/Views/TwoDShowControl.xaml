@@ -11,9 +11,8 @@
              d:DataContext="{d:DesignInstance vm:TwoDControlViewModel}">
     <Border CornerRadius="5" Background="#FFEEEEEE" BorderBrush="#FFE0E0E0" Padding="6" BorderThickness="1">
         <StackPanel>
-            <view:ShowControl DataContext="{Binding Main}" Height="340"/>
-
-            <ScrollViewer VerticalScrollBarVisibility ="Visible" HorizontalScrollBarVisibility="Disabled" Height="680">
+            <view:ShowControl DataContext="{Binding Main}" Height="340" Visibility="{Binding Visible}"/>
+            <ScrollViewer VerticalScrollBarVisibility ="Visible" HorizontalScrollBarVisibility="Disabled" MaxHeight="680">
                 <ItemsControl ItemsSource="{Binding Details}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -22,7 +21,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <view:ShowControl DataContext="{Binding}" Height="340"/>
+                            <view:ShowControl DataContext="{Binding}" Height="340" Visibility="{Binding Visible}"/>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

@@ -1,4 +1,5 @@
 ﻿using ChartEditWPF.Models;
+using ChartEditWPF.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,8 +25,6 @@ namespace ChartEditWPF.Pages
         public MutiConfigPage()
         {
             InitializeComponent();
-
-            
         }
     }
 }

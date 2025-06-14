@@ -86,7 +86,7 @@ namespace ChartEditLibrary.ViewModel
         {
             CurrentBaseLine = GetDefaultBaseLine();
             BaseLines.Add(CurrentBaseLine);
-            var perVaule = yMax.Y / 100;
+            var perVaule = YMax.Y / 100;
             //double m = dataSource.Take(dataSource.Length / 2).Min(v => v.Y);
             //for (int i = 0; i < dataSource.Length; i++)
             //    dataSource[i].Y -= m;
@@ -168,7 +168,7 @@ namespace ChartEditLibrary.ViewModel
         {
             CurrentBaseLine = GetDefaultBaseLine();
             BaseLines.Add(CurrentBaseLine);
-            var perVaule = yMax.Y / 100;
+            var perVaule = YMax.Y / 100;
             //double m = dataSource.Take(dataSource.Length / 2).Min(v => v.Y);
             //for (int i = 0; i < dataSource.Length; i++)
             //    dataSource[i].Y -= m;
@@ -457,7 +457,7 @@ namespace ChartEditLibrary.ViewModel
         {
             CurrentBaseLine = GetDefaultBaseLine();
             BaseLines.Add(CurrentBaseLine);
-            var perVaule = yMax.Y / 100;
+            var perVaule = YMax.Y / 100;
             //double m = dataSource.Take(dataSource.Length / 2).Min(v => v.Y);
             //for (int i = 0; i < dataSource.Length; i++)
             //    dataSource[i].Y -= m;
@@ -478,9 +478,9 @@ namespace ChartEditLibrary.ViewModel
                     continue;
                 if (DataSource[max].X >= config.PeakRange.End)
                     break;
-                if (DataSource[max].Y < config.YMin * perVaule)
+                if (DataSource[max].Y < (double)config.YMin * perVaule)
                     continue;
-                if (DataSource[max].Y - DataSource[min].Y < config.MinHeight * perVaule)
+                if (DataSource[max].Y - DataSource[min].Y < (double)config.MinHeight * perVaule)
                     continue;
                 
 
@@ -524,7 +524,7 @@ namespace ChartEditLibrary.ViewModel
             }
             if (DataSource[minDots[endMin + 1]].X - DataSource[minDots[endMin]].X < 0.5)
                 ++endMin;
-            int dp4Start = 0;
+            int dp4Start = minDots[endMin];
             if (DataSource[minDots[endMin]].X - DataSource[minDots[startMin]].X > 0.9)
             {
                 var startT = minDots[startMin];
@@ -694,8 +694,16 @@ namespace ChartEditLibrary.ViewModel
                         sort = 1;
                     }
                 }
-
-                AddSplitLine(CurrentBaseLine, DataSource[i]).Description = dp + "-" + sort;
+                else
+                {
+                    dp = 2;
+                    sort = 1;
+                }
+                try
+                {
+                    AddSplitLine(CurrentBaseLine, DataSource[i]).Description = dp + "-" + sort;
+                }
+                catch { }
                 ++sort;
             }
 

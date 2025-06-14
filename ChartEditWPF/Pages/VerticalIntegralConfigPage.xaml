@@ -8,7 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:ChartEditWPF.ViewModels"
     Title="VerticalIntegralConfigPage"
-    d:DataContext="{d:DesignInstance vm:VerticalIntegralConfigViewModel}"
+    d:DataContext="{d:DesignInstance vm:VerticalIntegralConfigPageVM}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">

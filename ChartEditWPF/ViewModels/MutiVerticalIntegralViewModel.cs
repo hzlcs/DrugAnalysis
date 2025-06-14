@@ -25,7 +25,7 @@ using static ChartEditLibrary.ViewModel.DraggableChartVm;
 
 namespace ChartEditWPF.ViewModels
 {
-    internal partial class MutiVerticalIntegralViewModel : ObservableObject
+    internal partial class MutiVerticalIntegralPageVM : ObservableObject
     {
         private readonly IInputForm _selectDialog;
         private readonly IFileDialog _fileDialog;
@@ -49,7 +49,7 @@ namespace ChartEditWPF.ViewModels
         [ObservableProperty]
         private string showDescText = "显示归属";
 
-        public MutiVerticalIntegralViewModel(IInputForm selectDialog, IFileDialog fileDialog, IMessageBox messageBox, ILogger<VerticalIntegralViewModel> logger)
+        public MutiVerticalIntegralPageVM(IInputForm selectDialog, IFileDialog fileDialog, IMessageBox messageBox, ILogger<VerticalIntegralPageVM> logger)
         {
             _selectDialog = selectDialog;
             _fileDialog = fileDialog;

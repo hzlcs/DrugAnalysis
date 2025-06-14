@@ -56,7 +56,7 @@ namespace ChartEditWPF.Windows
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             foreach (var c in charts)
-                c.Plot.Axes.AutoScale();
+                c.AutoScale();
         }
 
         private void ExportButton_Click(object sender, RoutedEventArgs e)
@@ -81,6 +81,12 @@ namespace ChartEditWPF.Windows
             }
             message.Popup("导出成功", NotificationType.Success);
 
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            foreach (var c in charts)
+                c.Dispose();
         }
     }
 }

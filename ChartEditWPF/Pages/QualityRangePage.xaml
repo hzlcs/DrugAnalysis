@@ -10,7 +10,7 @@
     xmlns:b="clr-namespace:ChartEditWPF.Behaviors"
     xmlns:l="clr-namespace:ChartEditWPF"
     Title="QualityRangePage"
-    d:DataContext="{d:DesignInstance vm:QualityRangeViewModel}"
+    d:DataContext="{d:DesignInstance vm:QualityRangePageVM}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
@@ -22,25 +22,25 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="150" />
         </Grid.ColumnDefinitions>
-        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" DataContext="{Binding}">
-            <StackPanel Orientation="Horizontal">
-                <DataGrid ItemsSource="{Binding Descriptions}" b:ReadonlyDataGrid.Default="True" RowHeight="30">
+        <ScrollViewer x:Name="scroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" DataContext="{Binding}">
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <DataGrid ItemsSource="{Binding Descriptions}" b:ReadonlyDataGrid.Default="True" RowHeight="30" VerticalScrollBarVisibility="Disabled">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="{Binding Source={StaticResource bind},Path=Data.Description}" Binding="{Binding}"/>
                     </DataGrid.Columns>
                 </DataGrid>
-                <ItemsControl ItemsSource="{Binding QualityRanges}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <c:QualityRangeControl />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <ItemsControl ItemsSource="{Binding QualityRanges}" >
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <c:QualityRangeControl />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
             </StackPanel>
         </ScrollViewer>
 
